@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Team Attendance</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -145,10 +145,6 @@
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(26,71,42,0.1);
   }
-  .field input[type="text"].filled {
-    background: var(--card);
-    border-color: rgba(26,71,42,0.3);
-  }
 
   .toggle-row {
     display: flex;
@@ -282,37 +278,41 @@
 
   <div class="card">
 
+    <!-- Google Account -->
     <div class="field">
-  <label class="field-label">Account</label>
-  <div id="google-btn"></div>
-  <div id="user-info" style="display:none; margin-top:10px;">
-    <div style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--accent-light); border:1px solid rgba(26,71,42,0.2); border-radius:8px;">
-      <img id="user-avatar" src="" style="width:32px; height:32px; border-radius:50%;" />
-      <div>
-        <div style="font-size:13px; font-weight:500;" id="user-name"></div>
-        <div style="font-size:11px; color:var(--muted);" id="user-email"></div>
+      <label class="field-label">Account</label>
+      <div id="google-btn"></div>
+      <div id="user-info" style="display:none; margin-top:10px;">
+        <div style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--accent-light); border:1px solid rgba(26,71,42,0.2); border-radius:8px;">
+          <img id="user-avatar" src="" style="width:32px; height:32px; border-radius:50%;" />
+          <div>
+            <div style="font-size:13px; font-weight:500;" id="user-name"></div>
+            <div style="font-size:11px; color:var(--muted);" id="user-email"></div>
+          </div>
+          <button onclick="signOut()" style="margin-left:auto; font-size:10px; background:none; border:1px solid var(--border); border-radius:6px; padding:4px 8px; cursor:pointer; font-family:'IBM Plex Mono',monospace; color:var(--muted);">Sign out</button>
+        </div>
       </div>
-      <button onclick="signOut()" style="margin-left:auto; font-size:10px; background:none; border:1px solid var(--border); border-radius:6px; padding:4px 8px; cursor:pointer; font-family:'IBM Plex Mono',monospace; color:var(--muted);">Sign out</button>
     </div>
-  </div>
-</div>
 
+    <!-- Entry Type -->
     <div class="field" style="margin-bottom:8px;">
       <label class="field-label">Entry type</label>
     </div>
-    <div class="field" id="reason-field" style="display:none;">
-  <label class="field-label" for="reason-input">Reason for manual entry</label>
-  <input
-    type="text"
-    id="reason-input"
-    placeholder="e.g. Power outage, forgot to clock in"
-    autocomplete="off"
-    spellcheck="false"
-  />
-</div>
     <div class="toggle-row">
       <button class="tog active" id="tog-auto"   onclick="setType('auto')">  <span class="tog-dot"></span> Auto   </button>
       <button class="tog"        id="tog-manual" onclick="setType('manual')"><span class="tog-dot"></span> Manual </button>
+    </div>
+
+    <!-- Reason Field (Manual only) -->
+    <div class="field" id="reason-field" style="display:none; margin-bottom:16px;">
+      <label class="field-label" for="reason-input">Reason for manual entry</label>
+      <input
+        type="text"
+        id="reason-input"
+        placeholder="e.g. Power outage, forgot to clock in"
+        autocomplete="off"
+        spellcheck="false"
+      />
     </div>
 
     <hr class="div">
@@ -337,205 +337,203 @@
 
 </div>
 <script>
- const WEBHOOK = "https://e-formentera.app.n8n.cloud/webhook/attendance";
+  const WEBHOOK = "https://e-formentera.app.n8n.cloud/webhook/attendance";
 
-let entryType = 'auto';
-let googleUser = null;
+  let entryType = 'auto';
+  let googleUser = null;
 
-/* ── Google Sign In ── */
-window.onload = function() {
-  google.accounts.id.initialize({
-    client_id: '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com',
-    callback: handleCredentialResponse,
-    auto_select: false
-  });
-  google.accounts.id.renderButton(
-    document.getElementById('google-btn'),
-    { 
-      theme: 'outline', 
-      size: 'large',
-      width: 356,
-      text: 'signin_with'
+  /* ── Google Sign In ── */
+  window.onload = function() {
+    google.accounts.id.initialize({
+      client_id: '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com',
+      callback: handleCredentialResponse,
+      auto_select: false
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('google-btn'),
+      { 
+        theme: 'outline', 
+        size: 'large',
+        width: 356,
+        text: 'signin_with'
+      }
+    );
+  }
+
+  function parseJwt(token) {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(base64));
+  }
+
+  function handleCredentialResponse(response) {
+    const payload = parseJwt(response.credential);
+    googleUser = {
+      name: payload.name,
+      email: payload.email,
+      avatar: payload.picture
+    };
+    document.getElementById('google-btn').style.display = 'none';
+    document.getElementById('user-info').style.display = 'block';
+    document.getElementById('user-name').textContent = payload.name;
+    document.getElementById('user-email').textContent = payload.email;
+    document.getElementById('user-avatar').src = payload.picture;
+  }
+
+  function signOut() {
+    googleUser = null;
+    document.getElementById('google-btn').style.display = 'block';
+    document.getElementById('user-info').style.display = 'none';
+    google.accounts.id.disableAutoSelect();
+  }
+
+  /* ── Fingerprint ── */
+  function getFingerprint() {
+    const raw = [
+      navigator.userAgent,
+      navigator.language,
+      screen.width + 'x' + screen.height,
+      screen.colorDepth,
+      new Date().getTimezoneOffset(),
+      navigator.hardwareConcurrency || 'n/a',
+      navigator.platform || 'n/a'
+    ].join('|');
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+      hash = (Math.imul(31, hash) + raw.charCodeAt(i)) | 0;
     }
-  );
-}
-
-function parseJwt(token) {
-  const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-  return JSON.parse(atob(base64));
-}
-
-function handleCredentialResponse(response) {
-  const payload = parseJwt(response.credential);
-  googleUser = {
-    name: payload.name,
-    email: payload.email,
-    avatar: payload.picture
-  };
-  document.getElementById('google-btn').style.display = 'none';
-  document.getElementById('user-info').style.display = 'block';
-  document.getElementById('user-name').textContent = payload.name;
-  document.getElementById('user-email').textContent = payload.email;
-  document.getElementById('user-avatar').src = payload.picture;
-}
-
-function signOut() {
-  googleUser = null;
-  document.getElementById('google-btn').style.display = 'block';
-  document.getElementById('user-info').style.display = 'none';
-  google.accounts.id.disableAutoSelect();
-}
-
-/* ── Fingerprint ── */
-function getFingerprint() {
-  const raw = [
-    navigator.userAgent,
-    navigator.language,
-    screen.width + 'x' + screen.height,
-    screen.colorDepth,
-    new Date().getTimezoneOffset(),
-    navigator.hardwareConcurrency || 'n/a',
-    navigator.platform || 'n/a'
-  ].join('|');
-  let hash = 0;
-  for (let i = 0; i < raw.length; i++) {
-    hash = (Math.imul(31, hash) + raw.charCodeAt(i)) | 0;
-  }
-  return 'fp_' + Math.abs(hash).toString(16);
-}
-
-/* ── Entry type toggle ── */
-function setType(t) {
-  entryType = t;
-  document.getElementById('tog-auto').classList.toggle('active', t === 'auto');
-  document.getElementById('tog-manual').classList.toggle('active', t === 'manual');
-  
-  // Show/hide reason field
-  const reasonField = document.getElementById('reason-field');
-  reasonField.style.display = t === 'manual' ? 'block' : 'none';
-  
-  // Clear reason when switching back to auto
-  if (t === 'auto') {
-    document.getElementById('reason-input').value = '';
-  }
-}
-
-/* ── Live clock ── */
-function tick() {
-  const now = new Date();
-  const jst = new Date(now.getTime() + 9 * 3600000);
-  const p   = n => String(n).padStart(2, '0');
-  document.getElementById('local-time').textContent =
-    `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
-  const days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  document.getElementById('local-date').textContent =
-    `${days[now.getDay()]} · ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
-  const jh = p(jst.getUTCHours()), jm = p(jst.getUTCMinutes());
-  document.getElementById('jst-display').textContent = `UTC+9  ${jh}:${jm}`;
-  document.getElementById('jst-pill').textContent    = `JST ${jh}:${jm}`;
-}
-setInterval(tick, 1000); tick();
-
-/* ── Status helper ── */
-function showStatus(type, msg) {
-  const box = document.getElementById('status-box');
-  const ico = document.getElementById('s-icon');
-  box.className = `status show ${type}`;
-  document.getElementById('s-msg').textContent = msg;
-  ico.innerHTML = type === 'loading' ? '<span class="spin"></span>'
-                : type === 'success' ? '✓' : '✕';
-}
-function setBtns(off) {
-  document.getElementById('btn-in').disabled  = off;
-  document.getElementById('btn-out').disabled = off;
-}
-
-/* ── Submit ── */
-async function send(action) {
-  if (!googleUser) {
-    showStatus('error', 'Please sign in with Google first.');
-    return;
+    return 'fp_' + Math.abs(hash).toString(16);
   }
 
-  // Check if auto clock-in is still allowed
-  if (action === 'clock-in' && entryType === 'auto') {
+  /* ── Entry type toggle ── */
+  function setType(t) {
+    entryType = t;
+    document.getElementById('tog-auto').classList.toggle('active', t === 'auto');
+    document.getElementById('tog-manual').classList.toggle('active', t === 'manual');
+
+    // Show/hide reason field
+    const reasonField = document.getElementById('reason-field');
+    reasonField.style.display = t === 'manual' ? 'block' : 'none';
+
+    // Clear reason when switching back to auto
+    if (t === 'auto') {
+      document.getElementById('reason-input').value = '';
+    }
+  }
+
+  /* ── Live clock ── */
+  function tick() {
     const now = new Date();
     const jst = new Date(now.getTime() + 9 * 3600000);
-    const jstHour = jst.getUTCHours();
-    const jstMinute = jst.getUTCMinutes();
+    const p   = n => String(n).padStart(2, '0');
 
-    // Block auto after 9:10 AM JST
-    if (jstHour > 9 || (jstHour === 9 && jstMinute > 10)) {
-      showStatus('error', 
-        '⏰ Auto clock-in is closed. You are late! Please switch to Manual and provide a reason.');
-      // Auto switch to manual
-      setType('manual');
-      document.getElementById('reason-field').style.display = 'block';
+    document.getElementById('local-time').textContent =
+      `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+
+    const days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('local-date').textContent =
+      `${days[now.getDay()]} · ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+
+    const jh = p(jst.getUTCHours()), jm = p(jst.getUTCMinutes());
+    document.getElementById('jst-display').textContent = `UTC+9  ${jh}:${jm}`;
+    document.getElementById('jst-pill').textContent    = `JST ${jh}:${jm}`;
+  }
+  setInterval(tick, 1000); tick();
+
+  /* ── Status helper ── */
+  function showStatus(type, msg) {
+    const box = document.getElementById('status-box');
+    const ico = document.getElementById('s-icon');
+    box.className = `status show ${type}`;
+    document.getElementById('s-msg').textContent = msg;
+    ico.innerHTML = type === 'loading' ? '<span class="spin"></span>'
+                  : type === 'success' ? '✓' : '✕';
+  }
+  function setBtns(off) {
+    document.getElementById('btn-in').disabled  = off;
+    document.getElementById('btn-out').disabled = off;
+  }
+
+  /* ── Submit ── */
+  async function send(action) {
+
+    // Check Google login
+    if (!googleUser) {
+      showStatus('error', 'Please sign in with Google first.');
       return;
     }
-  }
-  // Validate reason for manual entry
-if (entryType === 'manual') {
-  const reason = document.getElementById('reason-input').value.trim();
-  if (!reason || reason.length < 5) {
-    showStatus('error', 'Please provide a reason for manual entry (min 5 characters).');
-    return;
-  }
-}
 
-setBtns(true);
-const label = action === 'clock-in' ? 'clock-in' : 'clock-out';
+    // Block auto clock-in after 9:10 AM JST
+    if (action === 'clock-in' && entryType === 'auto') {
+      const now = new Date();
+      const jst = new Date(now.getTime() + 9 * 3600000);
+      const jstHour   = jst.getUTCHours();
+      const jstMinute = jst.getUTCMinutes();
 
-  setBtns(true);
-  const label = action === 'clock-in' ? 'clock-in' : 'clock-out';
-  showStatus('loading', `Sending ${label} for ${googleUser.name}...`);
-
-  const now = new Date();
-  const jst = new Date(now.getTime() + 9 * 3600000);
-  const p   = n => String(n).padStart(2, '0');
-  const fp  = getFingerprint();
-
-  try {
-    const res = await fetch(WEBHOOK, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name:       googleUser.name,
-        email:      googleUser.email,
-        action,
-        entry_type:  entryType,
-        local_time:  now.toLocaleTimeString(),
-        date:        now.toLocaleDateString(),
-        timezone:    Intl.DateTimeFormat().resolvedOptions().timeZone,
-        jst_time:    jst.toUTCString(),
-        jst_hour:    jst.getUTCHours(),
-        jst_minute:  jst.getUTCMinutes(),
-        fingerprint: fp
-        jst_minute:  jst.getUTCMinutes(),
-fingerprint: fp,
-reason: entryType === 'manual' ? document.getElementById('reason-input').value.trim() : ''
-      })
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.error) {
-        showStatus('error', data.error);
-      } else {
-        const verb = action === 'clock-in' ? 'Clocked in' : 'Clocked out';
-        showStatus('success',
-          `${verb} at ${p(jst.getUTCHours())}:${p(jst.getUTCMinutes())} JST — logged to sheet & Discord.`);
+      if (jstHour > 9 || (jstHour === 9 && jstMinute > 10)) {
+        showStatus('error',
+          '⏰ Auto clock-in is closed. You are late! Please switch to Manual and provide a reason.');
+        setType('manual');
+        return;
       }
-    } else {
-      showStatus('error', `Server error ${res.status}. Make sure the n8n workflow is active.`);
     }
-  } catch (e) {
-    showStatus('error', 'Connection failed. Try again.');
-  } finally {
-    setBtns(false);
+
+    // Validate reason for manual entry
+    if (entryType === 'manual') {
+      const reason = document.getElementById('reason-input').value.trim();
+      if (!reason || reason.length < 5) {
+        showStatus('error', 'Please provide a reason for manual entry (min 5 characters).');
+        return;
+      }
+    }
+
+    setBtns(true);
+    const label = action === 'clock-in' ? 'clock-in' : 'clock-out';
+    showStatus('loading', `Sending ${label} for ${googleUser.name}...`);
+
+    const now = new Date();
+    const jst = new Date(now.getTime() + 9 * 3600000);
+    const p   = n => String(n).padStart(2, '0');
+    const fp  = getFingerprint();
+
+    try {
+      const res = await fetch(WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:        googleUser.name,
+          email:       googleUser.email,
+          action,
+          entry_type:  entryType,
+          local_time:  now.toLocaleTimeString(),
+          date:        now.toLocaleDateString(),
+          timezone:    Intl.DateTimeFormat().resolvedOptions().timeZone,
+          jst_time:    jst.toUTCString(),
+          jst_hour:    jst.getUTCHours(),
+          jst_minute:  jst.getUTCMinutes(),
+          fingerprint: fp,
+          reason:      entryType === 'manual' ? document.getElementById('reason-input').value.trim() : ''
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.error) {
+          showStatus('error', data.error);
+        } else {
+          const verb = action === 'clock-in' ? 'Clocked in' : 'Clocked out';
+          showStatus('success',
+            `${verb} at ${p(jst.getUTCHours())}:${p(jst.getUTCMinutes())} JST — logged to sheet & Discord.`);
+        }
+      } else {
+        showStatus('error', `Server error ${res.status}. Make sure the n8n workflow is active.`);
+      }
+    } catch (e) {
+      showStatus('error', 'Connection failed. Try again.');
+    } finally {
+      setBtns(false);
+    }
   }
-}
 </script>
 </body>
 </html>
