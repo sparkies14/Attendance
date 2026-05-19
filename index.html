@@ -409,6 +409,15 @@ function setType(t) {
   entryType = t;
   document.getElementById('tog-auto').classList.toggle('active', t === 'auto');
   document.getElementById('tog-manual').classList.toggle('active', t === 'manual');
+  
+  // Show/hide reason field
+  const reasonField = document.getElementById('reason-field');
+  reasonField.style.display = t === 'manual' ? 'block' : 'none';
+  
+  // Clear reason when switching back to auto
+  if (t === 'auto') {
+    document.getElementById('reason-input').value = '';
+  }
 }
 
 /* ── Live clock ── */
@@ -466,6 +475,17 @@ async function send(action) {
       return;
     }
   }
+  // Validate reason for manual entry
+if (entryType === 'manual') {
+  const reason = document.getElementById('reason-input').value.trim();
+  if (!reason || reason.length < 5) {
+    showStatus('error', 'Please provide a reason for manual entry (min 5 characters).');
+    return;
+  }
+}
+
+setBtns(true);
+const label = action === 'clock-in' ? 'clock-in' : 'clock-out';
 
   setBtns(true);
   const label = action === 'clock-in' ? 'clock-in' : 'clock-out';
@@ -492,6 +512,9 @@ async function send(action) {
         jst_hour:    jst.getUTCHours(),
         jst_minute:  jst.getUTCMinutes(),
         fingerprint: fp
+        jst_minute:  jst.getUTCMinutes(),
+fingerprint: fp,
+reason: entryType === 'manual' ? document.getElementById('reason-input').value.trim() : ''
       })
     });
 
