@@ -343,7 +343,7 @@
 
   function tick() {
     const now = new Date();
-    const gst = new Date(now.getTime() + 4 * 3600000);
+    const gst = new Date(now.getTime() + 9 * 3600000);
     const p = n => String(n).padStart(2, '0');
     document.getElementById('local-time').textContent =
       `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
@@ -383,7 +383,7 @@
     showStatus('loading', `Sending ${label} for ${name}...`);
 
     const now = new Date();
-    const gst = new Date(now.getTime() + 4 * 3600000);
+    const gst = new Date(now.getTime() + 9 * 3600000);
     const p   = n => String(n).padStart(2, '0');
 
     try {
