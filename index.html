@@ -300,6 +300,16 @@
     <div class="field" style="margin-bottom:8px;">
       <label class="field-label">Entry type</label>
     </div>
+    <div class="field" id="reason-field" style="display:none;">
+  <label class="field-label" for="reason-input">Reason for manual entry</label>
+  <input
+    type="text"
+    id="reason-input"
+    placeholder="e.g. Power outage, forgot to clock in"
+    autocomplete="off"
+    spellcheck="false"
+  />
+</div>
     <div class="toggle-row">
       <button class="tog active" id="tog-auto"   onclick="setType('auto')">  <span class="tog-dot"></span> Auto   </button>
       <button class="tog"        id="tog-manual" onclick="setType('manual')"><span class="tog-dot"></span> Manual </button>
@@ -437,6 +447,24 @@ async function send(action) {
   if (!googleUser) {
     showStatus('error', 'Please sign in with Google first.');
     return;
+  }
+
+  // Check if auto clock-in is still allowed
+  if (action === 'clock-in' && entryType === 'auto') {
+    const now = new Date();
+    const jst = new Date(now.getTime() + 9 * 3600000);
+    const jstHour = jst.getUTCHours();
+    const jstMinute = jst.getUTCMinutes();
+
+    // Block auto after 9:10 AM JST
+    if (jstHour > 9 || (jstHour === 9 && jstMinute > 10)) {
+      showStatus('error', 
+        '⏰ Auto clock-in is closed. You are late! Please switch to Manual and provide a reason.');
+      // Auto switch to manual
+      setType('manual');
+      document.getElementById('reason-field').style.display = 'block';
+      return;
+    }
   }
 
   setBtns(true);
