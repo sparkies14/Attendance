@@ -56,7 +56,7 @@
     letter-spacing: 0.18em;
     color: var(--muted);
   }
-  .gst-pill {
+  .jst-pill {
     font-size: 11px;
     color: var(--accent);
     background: var(--accent-light);
@@ -102,7 +102,7 @@
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
-  .clock-gst {
+  .clock-jst {
     font-size: 11px;
     color: rgba(255,255,255,0.75);
     letter-spacing: 0.06em;
@@ -268,14 +268,14 @@
 
   <div class="top-label">
     <span class="brand">Team Attendance</span>
-    <span class="gst-pill" id="gst-pill">JST --:--</span>
+    <span class="jst-pill" id="jst-pill">JST --:--</span>
   </div>
 
   <div class="clock-block">
     <div class="clock-time" id="local-time">--:--:--</div>
     <div class="clock-meta">
       <span class="clock-date" id="local-date">Loading...</span>
-      <span class="clock-gst" id="gst-display">UTC+9 --:--</span>
+      <span class="clock-jst" id="jst-display">UTC+9 --:--</span>
     </div>
   </div>
 
@@ -324,10 +324,31 @@
 </div>
 <script>
   const WEBHOOK = "https://e-formentera.app.n8n.cloud/webhook/attendance";
-  // Swap to webhook-test/attendance for testing
+  // For testing swap to: webhook-test/attendance
 
   let entryType = 'auto';
 
+  /* ── Fingerprint ── */
+  function getFingerprint() {
+    const raw = [
+      navigator.userAgent,
+      navigator.language,
+      screen.width + 'x' + screen.height,
+      screen.colorDepth,
+      new Date().getTimezoneOffset(),
+      navigator.hardwareConcurrency || 'n/a',
+      navigator.platform || 'n/a'
+    ].join('|');
+
+    /* Simple hash — good enough for duplicate detection */
+    let hash = 0;
+    for (let i = 0; i < raw.length; i++) {
+      hash = (Math.imul(31, hash) + raw.charCodeAt(i)) | 0;
+    }
+    return 'fp_' + Math.abs(hash).toString(16);
+  }
+
+  /* ── Name input ── */
   function onName(el) {
     const pos = el.selectionStart;
     el.value = el.value.replace(/\b\w/g, c => c.toUpperCase());
@@ -335,28 +356,34 @@
     el.classList.toggle('filled', el.value.trim().length > 0);
   }
 
+  /* ── Entry type toggle ── */
   function setType(t) {
     entryType = t;
     document.getElementById('tog-auto').classList.toggle('active', t === 'auto');
     document.getElementById('tog-manual').classList.toggle('active', t === 'manual');
   }
 
+  /* ── Live clock ── */
   function tick() {
     const now = new Date();
-    const gst = new Date(now.getTime() + 9 * 3600000);
-    const p = n => String(n).padStart(2, '0');
+    const jst = new Date(now.getTime() + 9 * 3600000);
+    const p   = n => String(n).padStart(2, '0');
+
     document.getElementById('local-time').textContent =
       `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+
     const days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     document.getElementById('local-date').textContent =
       `${days[now.getDay()]} · ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
-    const gh = p(gst.getUTCHours()), gm = p(gst.getUTCMinutes());
-    document.getElementById('gst-display').textContent = `UTC+9  ${gh}:${gm}`;
-    document.getElementById('gst-pill').textContent    = `JST ${gh}:${gm}`;
+
+    const jh = p(jst.getUTCHours()), jm = p(jst.getUTCMinutes());
+    document.getElementById('jst-display').textContent = `UTC+9  ${jh}:${jm}`;
+    document.getElementById('jst-pill').textContent    = `JST ${jh}:${jm}`;
   }
   setInterval(tick, 1000); tick();
 
+  /* ── Status helper ── */
   function showStatus(type, msg) {
     const box = document.getElementById('status-box');
     const ico = document.getElementById('s-icon');
@@ -370,41 +397,55 @@
     document.getElementById('btn-out').disabled = off;
   }
 
+  /* ── Submit ── */
   async function send(action) {
     const el   = document.getElementById('name-input');
     const name = el.value.trim();
+
     if (!name || name.length < 2) {
       el.focus();
       showStatus('error', 'Please enter your full name first.');
       return;
     }
+
     setBtns(true);
     const label = action === 'clock-in' ? 'clock-in' : 'clock-out';
     showStatus('loading', `Sending ${label} for ${name}...`);
 
-    const now = new Date();
-    const gst = new Date(now.getTime() + 9 * 3600000);
-    const p   = n => String(n).padStart(2, '0');
+    const now  = new Date();
+    const jst  = new Date(now.getTime() + 9 * 3600000);
+    const p    = n => String(n).padStart(2, '0');
+    const fp   = getFingerprint();
 
     try {
       const res = await fetch(WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name, action,
-          entry_type:  entryType,
-          local_time:  now.toLocaleTimeString(),
-          date:        now.toLocaleDateString(),
-          timezone:    Intl.DateTimeFormat().resolvedOptions().timeZone,
-          gst_time:    gst.toUTCString(),
-          gst_hour:    gst.getUTCHours(),
-          gst_minute:  gst.getUTCMinutes()
+          name,
+          action,
+          entry_type:   entryType,
+          local_time:   now.toLocaleTimeString(),
+          date:         now.toLocaleDateString(),
+          timezone:     Intl.DateTimeFormat().resolvedOptions().timeZone,
+          jst_time: jst.toUTCString(),
+jst_hour: jst.getUTCHours(),
+jst_minute: jst.getUTCMinutes(),
+fingerprint: fp
         })
       });
+
       if (res.ok) {
-        const verb = action === 'clock-in' ? 'Clocked in' : 'Clocked out';
-        showStatus('success',
-          `${verb} at ${p(gst.getUTCHours())}:${p(gst.getUTCMinutes())} JST — logged to sheet & Discord.`);
+        const data = await res.json();
+
+        /* n8n can send back a custom error message */
+        if (data && data.error) {
+          showStatus('error', data.error);
+        } else {
+          const verb = action === 'clock-in' ? 'Clocked in' : 'Clocked out';
+          showStatus('success',
+            `${verb} at ${p(jst.getUTCHours())}:${p(jst.getUTCMinutes())} JST — logged to sheet & Discord.`);
+        }
       } else {
         showStatus('error', `Server error ${res.status}. Make sure the n8n workflow is active.`);
       }
