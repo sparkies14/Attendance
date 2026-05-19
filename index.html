@@ -268,14 +268,14 @@
 
   <div class="top-label">
     <span class="brand">Team Attendance</span>
-    <span class="gst-pill" id="gst-pill">GST --:--</span>
+    <span class="gst-pill" id="gst-pill">JST --:--</span>
   </div>
 
   <div class="clock-block">
     <div class="clock-time" id="local-time">--:--:--</div>
     <div class="clock-meta">
       <span class="clock-date" id="local-date">Loading...</span>
-      <span class="clock-gst" id="gst-display">UTC+4 --:--</span>
+      <span class="clock-gst" id="gst-display">UTC+9 --:--</span>
     </div>
   </div>
 
@@ -319,7 +319,7 @@
 
   </div>
 
-  <div class="footer">Work hours&nbsp;&nbsp;9:00 AM – 6:00 PM&nbsp;&nbsp;GST (UTC+4)</div>
+  <div class="footer">Work hours&nbsp;&nbsp;9:00 AM – 6:00 PM&nbsp;&nbsp;JST (UTC+9)</div>
 
 </div>
 <script>
@@ -352,8 +352,8 @@
     document.getElementById('local-date').textContent =
       `${days[now.getDay()]} · ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
     const gh = p(gst.getUTCHours()), gm = p(gst.getUTCMinutes());
-    document.getElementById('gst-display').textContent = `UTC+4  ${gh}:${gm}`;
-    document.getElementById('gst-pill').textContent    = `GST ${gh}:${gm}`;
+    document.getElementById('gst-display').textContent = `UTC+9  ${gh}:${gm}`;
+    document.getElementById('gst-pill').textContent    = `JST ${gh}:${gm}`;
   }
   setInterval(tick, 1000); tick();
 
@@ -404,7 +404,7 @@
       if (res.ok) {
         const verb = action === 'clock-in' ? 'Clocked in' : 'Clocked out';
         showStatus('success',
-          `${verb} at ${p(gst.getUTCHours())}:${p(gst.getUTCMinutes())} GST — logged to sheet & Discord.`);
+          `${verb} at ${p(gst.getUTCHours())}:${p(gst.getUTCMinutes())} JST — logged to sheet & Discord.`);
       } else {
         showStatus('error', `Server error ${res.status}. Make sure the n8n workflow is active.`);
       }
