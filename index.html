@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Attendance</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0ede8;
+    --card: #faf9f7;
+    --border: #d8d4cc;
+    --accent: #1a472a;
+    --accent-light: #e8f0eb;
+    --danger: #8b2020;
+    --danger-light: #f5eaea;
+    --text: #1c1a18;
+    --muted: #7a756e;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,0,0,0.04) 39px, rgba(0,0,0,0.04) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,0,0,0.03) 39px, rgba(0,0,0,0.03) 40px);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text);
+  }
+
+  .wrapper {
+    width: 100%;
+    max-width: 400px;
+    animation: appear 0.5s ease both;
+  }
+  @keyframes appear {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .top-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .brand {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+  }
+  .gst-pill {
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-light);
+    border: 1px solid rgba(26,71,42,0.18);
+    padding: 4px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.06em;
+  }
+
+  .clock-block {
+    background: var(--accent);
+    border-radius: 12px;
+    padding: 28px 28px 22px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .clock-block::before {
+    content: '';
+    position: absolute;
+    right: -20px; top: -30px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    border: 28px solid rgba(255,255,255,0.05);
+    pointer-events: none;
+  }
+  .clock-time {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: 2px;
+  }
+  .clock-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+  .clock-date {
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .clock-gst {
+    font-size: 11px;
+    color: rgba(255,255,255,0.75);
+    letter-spacing: 0.06em;
+    background: rgba(255,255,255,0.1);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+  }
+
+  .field { margin-bottom: 16px; }
+  .field-label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+  .field input[type="text"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .field input[type="text"]::placeholder { color: #b0ab9f; }
+  .field input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(26,71,42,0.1);
+  }
+  .field input[type="text"].filled {
+    background: var(--card);
+    border-color: rgba(26,71,42,0.3);
+  }
+
+  .toggle-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .tog {
+    flex: 1;
+    padding: 9px 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .tog.active {
+    background: var(--accent-light);
+    border-color: rgba(26,71,42,0.3);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .tog-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.7;
+  }
+
+  hr.div {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 18px 0;
+  }
+
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .btn {
+    padding: 16px 10px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-icon { font-size: 20px; line-height: 1; }
+  .btn-in { background: var(--accent); color: #fff; }
+  .btn-in:not(:disabled):hover { background: #15391f; }
+  .btn-out {
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid rgba(139,32,32,0.25);
+  }
+  .btn-out:not(:disabled):hover { background: var(--danger-light); }
+
+  .status {
+    display: none;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    margin-top: 14px;
+    animation: appear 0.25s ease both;
+  }
+  .status.show { display: flex; }
+  .status.success { background: var(--accent-light); color: var(--accent); border: 1px solid rgba(26,71,42,0.2); }
+  .status.error   { background: var(--danger-light); color: var(--danger);  border: 1px solid rgba(139,32,32,0.2); }
+  .status.loading { background: #f5f3f0; color: var(--muted); border: 1px solid var(--border); }
+  .s-icon { font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin {
+    display: inline-block;
+    width: 13px; height: 13px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="top-label">
+    <span class="brand">Team Attendance</span>
+    <span class="gst-pill" id="gst-pill">GST --:--</span>
+  </div>
+
+  <div class="clock-block">
+    <div class="clock-time" id="local-time">--:--:--</div>
+    <div class="clock-meta">
+      <span class="clock-date" id="local-date">Loading...</span>
+      <span class="clock-gst" id="gst-display">UTC+4 --:--</span>
+    </div>
+  </div>
+
+  <div class="card">
+
+    <div class="field">
+      <label class="field-label" for="name-input">Your full name</label>
+      <input
+        type="text"
+        id="name-input"
+        placeholder="e.g. Erwin Formentera"
+        autocomplete="off"
+        spellcheck="false"
+        oninput="onName(this)"
+      />
+    </div>
+
+    <div class="field" style="margin-bottom:8px;">
+      <label class="field-label">Entry type</label>
+    </div>
+    <div class="toggle-row">
+      <button class="tog active" id="tog-auto"   onclick="setType('auto')">  <span class="tog-dot"></span> Auto   </button>
+      <button class="tog"        id="tog-manual" onclick="setType('manual')"><span class="tog-dot"></span> Manual </button>
+    </div>
+
+    <hr class="div">
+
+    <div class="btn-row">
+      <button class="btn btn-in"  id="btn-in"  onclick="send('clock-in')">
+        <span class="btn-icon">→</span>Clock In
+      </button>
+      <button class="btn btn-out" id="btn-out" onclick="send('clock-out')">
+        <span class="btn-icon">←</span>Clock Out
+      </button>
+    </div>
+
+    <div class="status" id="status-box">
+      <span id="s-icon"></span>
+      <span id="s-msg"></span>
+    </div>
+
+  </div>
+
+  <div class="footer">Work hours&nbsp;&nbsp;9:00 AM – 6:00 PM&nbsp;&nbsp;GST (UTC+4)</div>
+
+</div>
+<script>
+  const WEBHOOK = "https://e-formentera.app.n8n.cloud/webhook/attendance";
+  // Swap to webhook-test/attendance for testing
+
+  let entryType = 'auto';
+
+  function onName(el) {
+    const pos = el.selectionStart;
+    el.value = el.value.replace(/\b\w/g, c => c.toUpperCase());
+    el.setSelectionRange(pos, pos);
+    el.classList.toggle('filled', el.value.trim().length > 0);
+  }
+
+  function setType(t) {
+    entryType = t;
+    document.getElementById('tog-auto').classList.toggle('active', t === 'auto');
+    document.getElementById('tog-manual').classList.toggle('active', t === 'manual');
+  }
+
+  function tick() {
+    const now = new Date();
+    const gst = new Date(now.getTime() + 4 * 3600000);
+    const p = n => String(n).padStart(2, '0');
+    document.getElementById('local-time').textContent =
+      `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+    const days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('local-date').textContent =
+      `${days[now.getDay()]} · ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+    const gh = p(gst.getUTCHours()), gm = p(gst.getUTCMinutes());
+    document.getElementById('gst-display').textContent = `UTC+4  ${gh}:${gm}`;
+    document.getElementById('gst-pill').textContent    = `GST ${gh}:${gm}`;
+  }
+  setInterval(tick, 1000); tick();
+
+  function showStatus(type, msg) {
+    const box = document.getElementById('status-box');
+    const ico = document.getElementById('s-icon');
+    box.className = `status show ${type}`;
+    document.getElementById('s-msg').textContent = msg;
+    ico.innerHTML = type === 'loading' ? '<span class="spin"></span>'
+                  : type === 'success' ? '✓' : '✕';
+  }
+  function setBtns(off) {
+    document.getElementById('btn-in').disabled  = off;
+    document.getElementById('btn-out').disabled = off;
+  }
+
+  async function send(action) {
+    const el   = document.getElementById('name-input');
+    const name = el.value.trim();
+    if (!name || name.length < 2) {
+      el.focus();
+      showStatus('error', 'Please enter your full name first.');
+      return;
+    }
+    setBtns(true);
+    const label = action === 'clock-in' ? 'clock-in' : 'clock-out';
+    showStatus('loading', `Sending ${label} for ${name}...`);
+
+    const now = new Date();
+    const gst = new Date(now.getTime() + 4 * 3600000);
+    const p   = n => String(n).padStart(2, '0');
+
+    try {
+      const res = await fetch(WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name, action,
+          entry_type:  entryType,
+          local_time:  now.toLocaleTimeString(),
+          date:        now.toLocaleDateString(),
+          timezone:    Intl.DateTimeFormat().resolvedOptions().timeZone,
+          gst_time:    gst.toUTCString(),
+          gst_hour:    gst.getUTCHours(),
+          gst_minute:  gst.getUTCMinutes()
+        })
+      });
+      if (res.ok) {
+        const verb = action === 'clock-in' ? 'Clocked in' : 'Clocked out';
+        showStatus('success',
+          `${verb} at ${p(gst.getUTCHours())}:${p(gst.getUTCMinutes())} GST — logged to sheet & Discord.`);
+      } else {
+        showStatus('error', `Server error ${res.status}. Make sure the n8n workflow is active.`);
+      }
+    } catch (e) {
+      showStatus('error', 'Connection failed. Try opening this page from the n8n browser tab.');
+    } finally {
+      setBtns(false);
+    }
+  }
+</script>
+</body>
+</html>
