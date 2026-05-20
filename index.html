@@ -219,7 +219,27 @@
     color: var(--danger);
     border: 1px solid rgba(139,32,32,0.25);
   }
-  .btn-out:not(:disabled):hover { background: var(--danger-light); }
+  .btn-lunch {
+  background: transparent;
+  color: #d97706;
+  border: 1px solid rgba(217,119,6,0.25);
+}
+.btn-lunch:not(:disabled):hover { background: rgba(217,119,6,0.1); }
+
+.btn-break {
+  background: transparent;
+  color: #7c3aed;
+  border: 1px solid rgba(124,58,237,0.25);
+}
+.btn-break:not(:disabled):hover { background: rgba(124,58,237,0.1); }
+
+.btn-leave {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 12px;
+}
+.btn-leave:not(:disabled):hover { background: rgba(255,255,255,0.03); }
 
   .status {
     display: none;
@@ -318,13 +338,44 @@
     <hr class="div">
 
     <div class="btn-row">
-      <button class="btn btn-in"  id="btn-in"  onclick="send('clock-in')">
-        <span class="btn-icon">→</span>Clock In
-      </button>
-      <button class="btn btn-out" id="btn-out" onclick="send('clock-out')">
-        <span class="btn-icon">←</span>Clock Out
-      </button>
-    </div>
+  <button class="btn btn-in"  id="btn-in"  onclick="send('clock-in')">
+    <span class="btn-icon">→</span>Clock In
+  </button>
+  <button class="btn btn-out" id="btn-out" onclick="send('clock-out')">
+    <span class="btn-icon">←</span>Clock Out
+  </button>
+  <button class="btn btn-lunch" id="btn-lunch" onclick="sendLunch()">
+    <span class="btn-icon">🍱</span><span id="lunch-label">Lunch Out</span>
+  </button>
+  <button class="btn btn-break" id="btn-break" onclick="sendBreak()">
+    <span class="btn-icon">☕</span><span id="break-label">Break Out</span>
+  </button>
+</div>
+
+<div style="margin-top:10px;">
+  <button class="btn btn-leave" id="btn-leave" onclick="showLeave()" style="width:100%;">
+    <span class="btn-icon">🏖️</span>File Leave Request
+  </button>
+</div>
+
+<!-- Leave Form (hidden by default) -->
+<div id="leave-form" style="display:none; margin-top:12px;">
+  <div class="field" style="margin-bottom:8px;">
+    <label class="field-label">Leave Type</label>
+    <select id="leave-type" style="width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px 14px; font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--text); outline:none;">
+      <option value="Sick Leave">Sick Leave</option>
+      <option value="Personal">Personal</option>
+      <option value="Emergency">Emergency</option>
+    </select>
+  </div>
+  <div class="field" style="margin-bottom:8px;">
+    <label class="field-label">Reason</label>
+    <input type="text" id="leave-reason" placeholder="e.g. Fever, Family emergency" autocomplete="off" />
+  </div>
+  <button class="btn btn-in" onclick="send('leave')" style="width:100%;">
+    <span class="btn-icon">📤</span>Submit Leave
+  </button>
+</div>
 
     <div class="status" id="status-box">
       <span id="s-icon"></span>
@@ -450,9 +501,35 @@
                   : type === 'success' ? '✓' : '✕';
   }
   function setBtns(off) {
-    document.getElementById('btn-in').disabled  = off;
-    document.getElementById('btn-out').disabled = off;
-  }
+  document.getElementById('btn-in').disabled    = off;
+  document.getElementById('btn-out').disabled   = off;
+  document.getElementById('btn-lunch').disabled = off;
+  document.getElementById('btn-break').disabled = off;
+  document.getElementById('btn-leave').disabled = off;
+}
+
+// Track lunch/break state
+let lunchOut = false;
+let breakOut = false;
+
+function sendLunch() {
+  const action = lunchOut ? 'lunch-in' : 'lunch-out';
+  lunchOut = !lunchOut;
+  document.getElementById('lunch-label').textContent = lunchOut ? 'Lunch In' : 'Lunch Out';
+  send(action);
+}
+
+function sendBreak() {
+  const action = breakOut ? 'break-in' : 'break-out';
+  breakOut = !breakOut;
+  document.getElementById('break-label').textContent = breakOut ? 'Break In' : 'Break Out';
+  send(action);
+}
+
+function showLeave() {
+  const form = document.getElementById('leave-form');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
 
   /* ── Submit ── */
   async function send(action) {
@@ -462,7 +539,15 @@
       showStatus('error', 'Please sign in with Google first.');
       return;
     }
-
+// Handle leave action
+if (action === 'leave') {
+  const leaveType = document.getElementById('leave-type').value;
+  const leaveReason = document.getElementById('leave-reason').value.trim();
+  if (!leaveReason || leaveReason.length < 3) {
+    showStatus('error', 'Please provide a reason for your leave.');
+    return;
+  }
+}
     // Block auto clock-in after 9:10 AM JST
     if (action === 'clock-in' && entryType === 'auto') {
       const now = new Date();
@@ -512,7 +597,9 @@
           jst_hour:    jst.getUTCHours(),
           jst_minute:  jst.getUTCMinutes(),
           fingerprint: fp,
-          reason:      entryType === 'manual' ? document.getElementById('reason-input').value.trim() : ''
+          reason: entryType === 'manual' ? document.getElementById('reason-input').value.trim() : 
+        action === 'leave' ? document.getElementById('leave-reason').value.trim() : '',
+leave_type: action === 'leave' ? document.getElementById('leave-type').value : ''
         })
       });
 
