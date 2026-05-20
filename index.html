@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anosupo — Login</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0ede8;
+    --card: #faf9f7;
+    --border: #d8d4cc;
+    --accent: #1a472a;
+    --accent-light: #e8f0eb;
+    --gold: #b8860b;
+    --gold-light: #fdf8e8;
+    --danger: #8b2020;
+    --danger-light: #f5eaea;
+    --text: #1c1a18;
+    --muted: #7a756e;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,0,0,0.04) 39px, rgba(0,0,0,0.04) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,0,0,0.03) 39px, rgba(0,0,0,0.03) 40px);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text);
+  }
+  .wrapper {
+    width: 100%;
+    max-width: 380px;
+    animation: appear 0.5s ease both;
+  }
+  @keyframes appear {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .logo-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    color: var(--text);
+    letter-spacing: 4px;
+  }
+  .logo-sub {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-top: 4px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 24px;
+    text-align: center;
+  }
+  .card-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #google-btn {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+  .status {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    margin-top: 12px;
+    text-align: left;
+  }
+  .status.show { display: flex; }
+  .status.error { background: var(--danger-light); color: var(--danger); border: 1px solid rgba(139,32,32,0.2); }
+  .status.loading { background: #f5f3f0; color: var(--muted); border: 1px solid var(--border); }
+  .status.success { background: var(--accent-light); color: var(--accent); border: 1px solid rgba(26,71,42,0.2); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin {
+    display: inline-block;
+    width: 13px; height: 13px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  .footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="logo">
+    <div class="logo-title">ANOSUPO</div>
+    <div class="logo-sub">Attendance System</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Sign in to continue</div>
+    <div id="google-btn"></div>
+    <div class="status" id="status-box">
+      <span id="s-icon"></span>
+      <span id="s-msg"></span>
+    </div>
+  </div>
+  <div class="footer">Borderless Japan · Anosupo</div>
+</div>
+
+<script>
+  const CHECK_URL = "https://e-formentera.app.n8n.cloud/webhook/check-role";
+
+  function showStatus(type, msg) {
+    const box = document.getElementById('status-box');
+    const ico = document.getElementById('s-icon');
+    box.className = `status show ${type}`;
+    document.getElementById('s-msg').textContent = msg;
+    ico.innerHTML = type === 'loading' ? '<span class="spin"></span>'
+                  : type === 'error' ? '✕' : '✓';
+  }
+
+  function parseJwt(token) {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(base64));
+  }
+
+  window.onload = function() {
+    google.accounts.id.initialize({
+      client_id: '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com',
+      callback: handleCredentialResponse,
+      auto_select: false
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('google-btn'),
+      { theme: 'outline', size: 'large', width: 332, text: 'signin_with' }
+    );
+  }
+
+  async function handleCredentialResponse(response) {
+    const payload = parseJwt(response.credential);
+    showStatus('loading', `Checking access for ${payload.email}...`);
+
+    try {
+      const res = await fetch(CHECK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: payload.email, name: payload.name })
+      });
+
+      const data = await res.json();
+
+      if (data.role === 'goldlist') {
+        showStatus('success', 'Welcome back! Redirecting to dashboard...');
+        setTimeout(() => window.location.href = './dashboard.html', 1000);
+      } else if (data.role === 'whitelist') {
+        showStatus('success', 'Welcome back! Redirecting to attendance...');
+        setTimeout(() => window.location.href = './attendance.html', 1000);
+      } else {
+        showStatus('error', 'Access denied. Your email is not registered. Contact your manager.');
+      }
+    } catch(e) {
+      showStatus('error', 'Connection failed. Please try again.');
+    }
+  }
+</script>
+</body>
+</html>
