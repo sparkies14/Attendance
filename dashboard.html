@@ -3,411 +3,741 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Attendance Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<title>Anosupo · Dashboard</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0e0e0e;
-    --card: #161616;
-    --border: #2a2a2a;
-    --accent: #1a472a;
-    --accent-light: rgba(26,71,42,0.15);
-    --green: #22c55e;
-    --yellow: #eab308;
-    --red: #ef4444;
-    --blue: #3b82f6;
-    --orange: #f97316;
-    --text: #f0ede8;
-    --muted: #6b7280;
-    --card-border: #1f1f1f;
-  }
+:root {
+  --bg: #080a0e;
+  --surface: #0d1017;
+  --card: #111418;
+  --border: #1c2128;
+  --border2: #262d36;
+  --accent: #00d97e;
+  --accent-dim: rgba(0,217,126,0.12);
+  --accent-glow: rgba(0,217,126,0.25);
+  --yellow: #f5c518;
+  --yellow-dim: rgba(245,197,24,0.12);
+  --red: #ff4757;
+  --red-dim: rgba(255,71,87,0.12);
+  --blue: #4da6ff;
+  --blue-dim: rgba(77,166,255,0.12);
+  --orange: #ff7f50;
+  --orange-dim: rgba(255,127,80,0.12);
+  --purple: #a78bfa;
+  --purple-dim: rgba(167,139,250,0.12);
+  --text: #e8edf5;
+  --text2: #8b95a4;
+  --text3: #4a5568;
+}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    background: var(--bg);
-    background-image:
-      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.015) 39px, rgba(255,255,255,0.015) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.01) 39px, rgba(255,255,255,0.01) 40px);
-    min-height: 100vh;
-    font-family: 'IBM Plex Mono', monospace;
-    color: var(--text);
-    padding: 24px;
-  }
+body {
+  background: var(--bg);
+  font-family: 'DM Mono', monospace;
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  /* ── Header ── */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 32px;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .header-left { display: flex; flex-direction: column; gap: 4px; }
-  .brand {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 32px;
-    letter-spacing: 3px;
-    color: var(--text);
-    line-height: 1;
-  }
-  .subtitle {
-    font-size: 11px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-  }
-  .header-right { display: flex; align-items: center; gap: 12px; }
-  .date-pill {
-    font-size: 11px;
-    color: var(--green);
-    background: rgba(34,197,94,0.1);
-    border: 1px solid rgba(34,197,94,0.2);
-    padding: 6px 14px;
-    border-radius: 20px;
-    letter-spacing: 0.08em;
-  }
-  .refresh-btn {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    background: var(--card);
-    border: 1px solid var(--border);
-    padding: 6px 14px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .refresh-btn:hover { color: var(--text); border-color: var(--text); }
+/* ── Auth Gate ── */
+#auth-gate {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  gap: 32px;
+}
+#auth-gate.hidden { display: none; }
 
-  /* ── Summary Cards ── */
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-    margin-bottom: 28px;
-  }
-  .stat-card {
-    background: var(--card);
-    border: 1px solid var(--card-border);
-    border-radius: 12px;
-    padding: 18px 20px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
-  .stat-card:hover { border-color: var(--border); }
-  .stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-  }
-  .stat-card.green::before { background: var(--green); }
-  .stat-card.yellow::before { background: var(--yellow); }
-  .stat-card.red::before { background: var(--red); }
-  .stat-card.blue::before { background: var(--blue); }
-  .stat-card.orange::before { background: var(--orange); }
-  .stat-card.grey::before { background: var(--muted); }
+.auth-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: 6px;
+  background: linear-gradient(135deg, var(--accent), #00a86b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.auth-sub {
+  font-size: 11px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  margin-top: -20px;
+}
+.auth-card {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+.auth-title {
+  font-size: 11px;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 20px;
+}
+#auth-google-btn { display: flex; justify-content: center; }
+.auth-status {
+  display: none;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 11px;
+  align-items: center;
+  gap: 8px;
+}
+.auth-status.show { display: flex; }
+.auth-status.error { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,71,87,0.2); }
+.auth-status.loading { background: rgba(255,255,255,0.04); color: var(--text2); border: 1px solid var(--border); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { display: inline-block; width: 12px; height: 12px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
 
-  .stat-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: var(--muted);
-    margin-bottom: 10px;
-  }
-  .stat-number {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 40px;
-    line-height: 1;
-    letter-spacing: 2px;
-  }
-  .stat-card.green .stat-number { color: var(--green); }
-  .stat-card.yellow .stat-number { color: var(--yellow); }
-  .stat-card.red .stat-number { color: var(--red); }
-  .stat-card.blue .stat-number { color: var(--blue); }
-  .stat-card.orange .stat-number { color: var(--orange); }
-  .stat-card.grey .stat-number { color: var(--muted); }
+/* ── Main App ── */
+#app { display: none; min-height: 100vh; }
+#app.show { display: block; }
 
-  /* ── Filters ── */
-  .filters {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
-  .filter-btn {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    background: var(--card);
-    border: 1px solid var(--border);
-    padding: 7px 14px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .filter-btn:hover { color: var(--text); }
-  .filter-btn.active {
-    background: var(--accent-light);
-    border-color: rgba(26,71,42,0.4);
-    color: #4ade80;
-  }
+/* ── Sidebar ── */
+.layout { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.sidebar-logo {
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.sidebar-brand {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: var(--accent);
+}
+.sidebar-sub {
+  font-size: 9px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-top: 2px;
+}
+.nav-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text3);
+  padding: 0 20px;
+  margin-bottom: 6px;
+  margin-top: 16px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 20px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 2px solid transparent;
+}
+.nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-dim); }
+.nav-icon { font-size: 14px; width: 16px; text-align: center; }
+.nav-badge {
+  margin-left: auto;
+  background: var(--orange);
+  color: #000;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+}
 
-  /* ── Table ── */
-  .table-wrap {
-    background: var(--card);
-    border: 1px solid var(--card-border);
-    border-radius: 12px;
-    overflow: hidden;
-  }
-  .table-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-  }
-  .table-title {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: var(--muted);
-  }
-  .member-count {
-    font-size: 11px;
-    color: var(--muted);
-  }
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.user-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border2);
+  object-fit: cover;
+}
+.user-name { font-size: 11px; color: var(--text); }
+.user-role { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
+.signout-btn {
+  margin-top: 10px;
+  width: 100%;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text3);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.signout-btn:hover { color: var(--red); border-color: rgba(255,71,87,0.3); }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  thead th {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    padding: 12px 20px;
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-  }
-  tbody tr {
-    border-bottom: 1px solid var(--card-border);
-    transition: background 0.1s;
-  }
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: rgba(255,255,255,0.02); }
-  tbody td {
-    padding: 14px 20px;
-    font-size: 12px;
-    white-space: nowrap;
-  }
+/* ── Main Content ── */
+.main { flex: 1; padding: 28px 32px; overflow-y: auto; }
 
-  /* ── Status Badges ── */
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-weight: 500;
-  }
-  .badge-dot {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: currentColor;
-  }
-  .badge.clocked-in { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
-  .badge.clocked-out { background: rgba(59,130,246,0.1); color: var(--blue); border: 1px solid rgba(59,130,246,0.2); }
-  .badge.late { background: rgba(234,179,8,0.1); color: var(--yellow); border: 1px solid rgba(234,179,8,0.2); }
-  .badge.not-in { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
-  .badge.pending { background: rgba(249,115,22,0.1); color: var(--orange); border: 1px solid rgba(249,115,22,0.2); }
+/* ── Top Bar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.page-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.date-pill {
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(0,217,126,0.2);
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+.refresh-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text2);
+  background: var(--card);
+  border: 1px solid var(--border2);
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.refresh-btn:hover { color: var(--text); border-color: var(--border2); }
 
-  /* ── Role Badge ── */
-  .role-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    background: var(--accent-light);
-    color: #4ade80;
-    border: 1px solid rgba(26,71,42,0.3);
-  }
+/* ── Stats Grid ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+  cursor: default;
+}
+.stat-card:hover { transform: translateY(-2px); border-color: var(--border2); }
+.stat-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+}
+.stat-card.c-grey::after { background: linear-gradient(90deg, transparent, var(--text3), transparent); }
+.stat-card.c-green::after { background: linear-gradient(90deg, transparent, var(--accent), transparent); }
+.stat-card.c-yellow::after { background: linear-gradient(90deg, transparent, var(--yellow), transparent); }
+.stat-card.c-blue::after { background: linear-gradient(90deg, transparent, var(--blue), transparent); }
+.stat-card.c-orange::after { background: linear-gradient(90deg, transparent, var(--orange), transparent); }
+.stat-card.c-red::after { background: linear-gradient(90deg, transparent, var(--red), transparent); }
 
-  /* ── Loading ── */
-  .loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 80px 20px;
-    gap: 16px;
-    color: var(--muted);
-  }
-  .spinner {
-    width: 32px; height: 32px;
-    border: 2px solid var(--border);
-    border-top-color: var(--green);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-  }
+.stat-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text3);
+  margin-bottom: 10px;
+}
+.stat-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+}
+.stat-card.c-grey .stat-val { color: var(--text2); }
+.stat-card.c-green .stat-val { color: var(--accent); }
+.stat-card.c-yellow .stat-val { color: var(--yellow); }
+.stat-card.c-blue .stat-val { color: var(--blue); }
+.stat-card.c-orange .stat-val { color: var(--orange); }
+.stat-card.c-red .stat-val { color: var(--red); }
 
-  /* ── Error ── */
-  .error-box {
-    display: none;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 18px;
-    background: rgba(239,68,68,0.08);
-    border: 1px solid rgba(239,68,68,0.2);
-    border-radius: 8px;
-    color: var(--red);
-    font-size: 12px;
-    margin-bottom: 20px;
-  }
-  .error-box.show { display: flex; }
+/* ── Sections ── */
+.section { margin-bottom: 28px; }
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text2);
+}
+.section-count {
+  font-size: 11px;
+  color: var(--text3);
+}
 
-  /* ── Empty ── */
-  .empty {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--muted);
-    font-size: 12px;
-  }
+/* ── Table ── */
+.table-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text3);
+  padding: 12px 18px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,0.02); }
+tbody td { padding: 13px 18px; font-size: 12px; }
 
-  /* ── Last updated ── */
-  .last-updated {
-    text-align: right;
-    font-size: 10px;
-    color: var(--muted);
-    margin-top: 16px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
+/* ── Badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.b-green { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,217,126,0.2); }
+.b-yellow { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(245,197,24,0.2); }
+.b-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(77,166,255,0.2); }
+.b-red { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,71,87,0.2); }
+.b-orange { background: var(--orange-dim); color: var(--orange); border: 1px solid rgba(255,127,80,0.2); }
+.b-grey { background: rgba(255,255,255,0.05); color: var(--text2); border: 1px solid var(--border); }
+.b-purple { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
 
-  /* ── Responsive ── */
-  @media (max-width: 768px) {
-    body { padding: 16px; }
-    .summary-grid { grid-template-columns: repeat(3, 1fr); }
-    thead th:nth-child(n+5), tbody td:nth-child(n+5) { display: none; }
-  }
+/* ── Filters ── */
+.filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.filter-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text3);
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-btn:hover { color: var(--text2); }
+.filter-btn.active { background: var(--accent-dim); border-color: rgba(0,217,126,0.3); color: var(--accent); }
+
+/* ── Approvals ── */
+.approval-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  transition: border-color 0.2s;
+  margin-bottom: 8px;
+}
+.approval-card:hover { border-color: var(--border2); }
+.approval-info { flex: 1; }
+.approval-name { font-size: 13px; color: var(--text); margin-bottom: 4px; }
+.approval-meta { font-size: 11px; color: var(--text2); margin-bottom: 6px; }
+.approval-reason {
+  font-size: 11px;
+  color: var(--text3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-style: italic;
+}
+.approval-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.btn-approve, .btn-reject {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+  font-weight: 500;
+}
+.btn-approve { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,217,126,0.3); }
+.btn-approve:hover { background: var(--accent); color: #000; }
+.btn-reject { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,71,87,0.2); }
+.btn-reject:hover { background: var(--red); color: #fff; }
+.btn-approve:disabled, .btn-reject:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Lottie containers ── */
+.lottie-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+}
+.lottie-wrap p { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.15em; }
+
+/* ── Error ── */
+.error-box {
+  display: none;
+  padding: 12px 16px;
+  background: var(--red-dim);
+  border: 1px solid rgba(255,71,87,0.2);
+  border-radius: 8px;
+  color: var(--red);
+  font-size: 12px;
+  margin-bottom: 20px;
+  gap: 8px;
+  align-items: center;
+}
+.error-box.show { display: flex; }
+
+/* ── Last updated ── */
+.last-updated {
+  text-align: right;
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ── Page views ── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeUp 0.4s ease both; }
+
+@media (max-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main { padding: 16px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="header-left">
-    <div class="brand">Attendance Dashboard</div>
-    <div class="subtitle">Manager View · Real-time</div>
-  </div>
-  <div class="header-right">
-    <span class="date-pill" id="date-pill">Loading...</span>
-    <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
-  </div>
-</div>
-
-<div class="error-box" id="error-box">
-  ⚠️ <span id="error-msg">Failed to load data.</span>
-</div>
-
-<div class="summary-grid">
-  <div class="stat-card grey">
-    <div class="stat-label">Total Members</div>
-    <div class="stat-number" id="stat-total">—</div>
-  </div>
-  <div class="stat-card green">
-    <div class="stat-label">Clocked In</div>
-    <div class="stat-number" id="stat-in">—</div>
-  </div>
-  <div class="stat-card yellow">
-    <div class="stat-label">Late</div>
-    <div class="stat-number" id="stat-late">—</div>
-  </div>
-  <div class="stat-card blue">
-    <div class="stat-label">Clocked Out</div>
-    <div class="stat-number" id="stat-out">—</div>
-  </div>
-  <div class="stat-card orange">
-    <div class="stat-label">Pending</div>
-    <div class="stat-number" id="stat-pending">—</div>
-  </div>
-  <div class="stat-card red">
-    <div class="stat-label">Not In</div>
-    <div class="stat-number" id="stat-notIn">—</div>
-  </div>
-</div>
-
-<div class="filters">
-  <button class="filter-btn active" onclick="filterMembers('ALL', this)">All</button>
-  <button class="filter-btn" onclick="filterMembers('CLOCKED IN', this)">Clocked In</button>
-  <button class="filter-btn" onclick="filterMembers('CLOCKED IN (LATE)', this)">Late</button>
-  <button class="filter-btn" onclick="filterMembers('CLOCKED OUT', this)">Clocked Out</button>
-  <button class="filter-btn" onclick="filterMembers('PENDING APPROVAL', this)">Pending</button>
-  <button class="filter-btn" onclick="filterMembers('NOT CLOCKED IN', this)">Not In</button>
-</div>
-
-<div class="table-wrap">
-  <div class="table-header">
-    <span class="table-title">Member Attendance</span>
-    <span class="member-count" id="member-count">—</span>
-  </div>
-  <div id="table-container">
-    <div class="loading">
-      <div class="spinner"></div>
-      <div class="loading-text">Loading attendance data...</div>
+<!-- Auth Gate -->
+<div id="auth-gate">
+  <div class="auth-logo">ANOSUPO</div>
+  <div class="auth-sub">Manager Dashboard</div>
+  <div class="auth-card">
+    <div class="auth-title">Executive Access Only</div>
+    <div id="auth-google-btn"></div>
+    <div class="auth-status" id="auth-status">
+      <span id="auth-icon"></span>
+      <span id="auth-msg"></span>
     </div>
   </div>
 </div>
 
-<div class="last-updated" id="last-updated"></div>
+<!-- Main App -->
+<div id="app">
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-brand">ANOSUPO</div>
+        <div class="sidebar-sub">Manager Dashboard</div>
+      </div>
+
+      <div class="nav-label">Overview</div>
+      <div class="nav-item active" onclick="showPage('attendance', this)">
+        <span class="nav-icon">📊</span> Attendance
+      </div>
+
+      <div class="nav-label">Actions</div>
+      <div class="nav-item" onclick="showPage('approvals', this)" id="nav-approvals">
+        <span class="nav-icon">✅</span> Approvals
+        <span class="nav-badge" id="badge-count" style="display:none">0</span>
+      </div>
+      <div class="nav-item" onclick="showPage('leave', this)" id="nav-leave">
+        <span class="nav-icon">🏖️</span> Leave Requests
+        <span class="nav-badge" id="leave-badge-count" style="display:none">0</span>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <img class="user-avatar" id="sidebar-avatar" src="" alt="">
+          <div>
+            <div class="user-name" id="sidebar-name">—</div>
+            <div class="user-role">Executive</div>
+          </div>
+        </div>
+        <button class="signout-btn" onclick="signOut()">Sign Out</button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+
+      <!-- Attendance Page -->
+      <div class="page active" id="page-attendance">
+        <div class="topbar fade-in">
+          <div>
+            <div class="page-title">Attendance</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.1em;">Real-time · Auto refresh 5min</div>
+          </div>
+          <div class="topbar-right">
+            <span class="date-pill" id="date-pill">Loading...</span>
+            <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+          </div>
+        </div>
+
+        <div class="error-box" id="error-box">⚠️ <span id="error-msg"></span></div>
+
+        <div class="stats-grid fade-in" id="stats-grid">
+          <div class="stat-card c-grey"><div class="stat-label">Total</div><div class="stat-val" id="s-total">—</div></div>
+          <div class="stat-card c-green"><div class="stat-label">Clocked In</div><div class="stat-val" id="s-in">—</div></div>
+          <div class="stat-card c-yellow"><div class="stat-label">Late</div><div class="stat-val" id="s-late">—</div></div>
+          <div class="stat-card c-blue"><div class="stat-label">Clocked Out</div><div class="stat-val" id="s-out">—</div></div>
+          <div class="stat-card c-orange"><div class="stat-label">Pending</div><div class="stat-val" id="s-pending">—</div></div>
+          <div class="stat-card c-red"><div class="stat-label">Not In</div><div class="stat-val" id="s-notIn">—</div></div>
+        </div>
+
+        <div class="section fade-in">
+          <div class="filters">
+            <button class="filter-btn active" onclick="filterMembers('ALL',this)">All</button>
+            <button class="filter-btn" onclick="filterMembers('CLOCKED IN',this)">Clocked In</button>
+            <button class="filter-btn" onclick="filterMembers('CLOCKED IN (LATE)',this)">Late</button>
+            <button class="filter-btn" onclick="filterMembers('CLOCKED OUT',this)">Clocked Out</button>
+            <button class="filter-btn" onclick="filterMembers('PENDING APPROVAL',this)">Pending</button>
+            <button class="filter-btn" onclick="filterMembers('NOT CLOCKED IN',this)">Not In</button>
+          </div>
+          <div class="section-header">
+            <span class="section-title">Member Attendance</span>
+            <span class="section-count" id="member-count">—</span>
+          </div>
+          <div class="table-wrap" id="attendance-table">
+            <div class="lottie-wrap">
+              <dotlottie-player src="https://lottie.host/5d9f5a94-9c38-4e77-b7be-a80bc98c88c2/3bFMHFiYqG.lottie" background="transparent" speed="1" style="width:120px;height:120px" loop autoplay></dotlottie-player>
+              <p>Loading attendance data...</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="last-updated" id="last-updated"></div>
+      </div>
+
+      <!-- Approvals Page -->
+      <div class="page" id="page-approvals">
+        <div class="topbar fade-in">
+          <div>
+            <div class="page-title">Approvals</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.1em;">Manual Entry Requests</div>
+          </div>
+          <div class="topbar-right">
+            <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="approvals-container">
+          <div class="lottie-wrap">
+            <dotlottie-player src="https://lottie.host/5d9f5a94-9c38-4e77-b7be-a80bc98c88c2/3bFMHFiYqG.lottie" background="transparent" speed="1" style="width:120px;height:120px" loop autoplay></dotlottie-player>
+            <p>Loading requests...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leave Page -->
+      <div class="page" id="page-leave">
+        <div class="topbar fade-in">
+          <div>
+            <div class="page-title">Leave Requests</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.1em;">Pending Approvals</div>
+          </div>
+          <div class="topbar-right">
+            <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="leave-container">
+          <div class="lottie-wrap">
+            <dotlottie-player src="https://lottie.host/5d9f5a94-9c38-4e77-b7be-a80bc98c88c2/3bFMHFiYqG.lottie" background="transparent" speed="1" style="width:120px;height:120px" loop autoplay></dotlottie-player>
+            <p>Loading leave requests...</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /layout -->
+</div><!-- /app -->
 
 <script>
-  const API = 'https://e-formentera.app.n8n.cloud/webhook/dashboard';
+  const DASHBOARD_URL  = 'https://e-formentera.app.n8n.cloud/webhook/dashboard';
+  const CHECK_ROLE_URL = 'https://e-formentera.app.n8n.cloud/webhook/check-role';
+  const APPROVE_URL    = 'https://e-formentera.app.n8n.cloud/webhook/approve';
+  const CLIENT_ID      = '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com';
+
   let allMembers = [];
   let currentFilter = 'ALL';
+  let currentUser = null;
+  let pendingApprovals = [];
+  let pendingLeave = [];
 
-  function getStatusBadge(status) {
-    switch(status) {
-      case 'CLOCKED IN':
-        return `<span class="badge clocked-in"><span class="badge-dot"></span>Clocked In</span>`;
-      case 'CLOCKED IN (LATE)':
-        return `<span class="badge late"><span class="badge-dot"></span>Late</span>`;
-      case 'CLOCKED OUT':
-        return `<span class="badge clocked-out"><span class="badge-dot"></span>Clocked Out</span>`;
-      case 'PENDING APPROVAL':
-        return `<span class="badge pending"><span class="badge-dot"></span>Pending</span>`;
-      case 'NOT CLOCKED IN':
-        return `<span class="badge not-in"><span class="badge-dot"></span>Not In</span>`;
-      default:
-        return `<span class="badge not-in"><span class="badge-dot"></span>${status}</span>`;
+  /* ── Auth ── */
+  function parseJwt(token) {
+    const base64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(atob(base64));
+  }
+
+  function showAuthStatus(type, msg) {
+    const box = document.getElementById('auth-status');
+    const ico = document.getElementById('auth-icon');
+    box.className = `auth-status show ${type}`;
+    document.getElementById('auth-msg').textContent = msg;
+    ico.innerHTML = type === 'loading' ? '<span class="spin"></span>' : type === 'error' ? '✕' : '✓';
+  }
+
+  window.onload = function() {
+    google.accounts.id.initialize({
+      client_id: CLIENT_ID,
+      callback: handleAuth,
+      auto_select: false
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('auth-google-btn'),
+      { theme: 'filled_black', size: 'large', width: 304, text: 'signin_with' }
+    );
+  }
+
+  async function handleAuth(response) {
+    const payload = parseJwt(response.credential);
+    showAuthStatus('loading', `Verifying ${payload.email}...`);
+    try {
+      const res = await fetch(CHECK_ROLE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: payload.email, name: payload.name })
+      });
+      const data = await res.json();
+      if (data.role === 'goldlist') {
+        currentUser = { name: payload.name, email: payload.email, avatar: payload.picture };
+        document.getElementById('sidebar-name').textContent = payload.name;
+        document.getElementById('sidebar-avatar').src = payload.picture;
+        document.getElementById('auth-gate').classList.add('hidden');
+        document.getElementById('app').classList.add('show');
+        loadData();
+      } else {
+        showAuthStatus('error', 'Access denied. Executive accounts only.');
+        google.accounts.id.disableAutoSelect();
+      }
+    } catch(e) {
+      showAuthStatus('error', 'Connection failed. Please try again.');
     }
   }
 
+  function signOut() {
+    currentUser = null;
+    google.accounts.id.disableAutoSelect();
+    document.getElementById('auth-gate').classList.remove('hidden');
+    document.getElementById('app').classList.remove('show');
+  }
+
+  /* ── Navigation ── */
+  function showPage(page, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(`page-${page}`).classList.add('active');
+    el.classList.add('active');
+  }
+
+  /* ── Status helpers ── */
+  function getStatusBadge(status) {
+    const map = {
+      'CLOCKED IN':       `<span class="badge b-green"><span class="badge-dot"></span>Clocked In</span>`,
+      'CLOCKED IN (LATE)':`<span class="badge b-yellow"><span class="badge-dot"></span>Late</span>`,
+      'CLOCKED OUT':      `<span class="badge b-blue"><span class="badge-dot"></span>Clocked Out</span>`,
+      'PENDING APPROVAL': `<span class="badge b-orange"><span class="badge-dot"></span>Pending</span>`,
+      'NOT CLOCKED IN':   `<span class="badge b-red"><span class="badge-dot"></span>Not In</span>`,
+    };
+    return map[status] || `<span class="badge b-grey"><span class="badge-dot"></span>${status}</span>`;
+  }
+
+  /* ── Render attendance table ── */
   function renderTable(members) {
-    const container = document.getElementById('table-container');
+    const container = document.getElementById('attendance-table');
     document.getElementById('member-count').textContent = `${members.length} member${members.length !== 1 ? 's' : ''}`;
 
     if (members.length === 0) {
-      container.innerHTML = `<div class="empty">No members found for this filter.</div>`;
+      container.innerHTML = `
+        <div class="lottie-wrap">
+          <dotlottie-player src="https://lottie.host/e8a4bc0e-4b07-4ced-b904-7f9e5d5e5f9e/abcdef.lottie" background="transparent" speed="1" style="width:100px;height:100px" loop autoplay></dotlottie-player>
+          <p>No members found</p>
+        </div>`;
       return;
     }
 
@@ -415,77 +745,135 @@
       <table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Clock In</th>
-            <th>Clock Out</th>
-            <th>Total Hours</th>
-            <th>Reason</th>
+            <th>Name</th><th>Role</th><th>Status</th>
+            <th>Clock In</th><th>Clock Out</th><th>Total Hours</th><th>Reason</th>
           </tr>
         </thead>
         <tbody>
           ${members.map(m => `
             <tr>
-              <td>${m.name || '—'}</td>
-              <td><span class="role-badge">${m.role || '—'}</span></td>
+              <td style="font-weight:500">${m.name || '—'}</td>
+              <td><span class="badge b-purple"><span class="badge-dot"></span>${m.role || '—'}</span></td>
               <td>${getStatusBadge(m.status)}</td>
-              <td>${m.clockIn || '—'}</td>
-              <td>${m.clockOut || '—'}</td>
-              <td>${m.totalHours !== '-' && m.totalHours ? m.totalHours + ' hrs' : '—'}</td>
-              <td style="color:var(--muted); max-width:200px; overflow:hidden; text-overflow:ellipsis;">${m.reason !== '-' ? m.reason : '—'}</td>
+              <td style="color:var(--text2)">${m.clockIn || '—'}</td>
+              <td style="color:var(--text2)">${m.clockOut || '—'}</td>
+              <td style="color:var(--accent)">${m.totalHours && m.totalHours !== '-' ? m.totalHours + ' hrs' : '—'}</td>
+              <td style="color:var(--text3);max-width:180px;overflow:hidden;text-overflow:ellipsis">${m.reason && m.reason !== '-' ? m.reason : '—'}</td>
             </tr>
           `).join('')}
         </tbody>
-      </table>
-    `;
+      </table>`;
   }
 
   function filterMembers(filter, btn) {
     currentFilter = filter;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-
-    const filtered = filter === 'ALL'
-      ? allMembers
-      : allMembers.filter(m => m.status === filter);
-
+    const filtered = filter === 'ALL' ? allMembers : allMembers.filter(m => m.status === filter);
     renderTable(filtered);
   }
 
+  /* ── Render approvals ── */
+  function renderApprovals(items, containerId, type) {
+    const container = document.getElementById(containerId);
+    if (!items || items.length === 0) {
+      container.innerHTML = `
+        <div class="lottie-wrap">
+          <dotlottie-player src="https://lottie.host/97a1b098-8c41-4ded-8765-01d5e0b2e8c1/WqPjZbMGdB.lottie" background="transparent" speed="1" style="width:120px;height:120px" loop autoplay></dotlottie-player>
+          <p>No pending ${type} requests</p>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = items.map((item, idx) => `
+      <div class="approval-card fade-in" id="approval-${type}-${idx}" style="animation-delay:${idx * 0.05}s">
+        <div class="approval-info">
+          <div class="approval-name">${item.name || item.Name || '—'}</div>
+          <div class="approval-meta">
+            📅 ${item.date || item.Date || '—'} &nbsp;·&nbsp;
+            ⏰ ${item.time || item.clockIn || item['Clock In'] || '—'} &nbsp;·&nbsp;
+            <span class="badge b-orange" style="font-size:9px">${item.entryType || item['Entry Type'] || item['Leave Type'] || 'Manual'}</span>
+          </div>
+          ${(item.reason || item.Reason) ? `<div class="approval-reason">"${item.reason || item.Reason}"</div>` : ''}
+        </div>
+        <div class="approval-actions">
+          <button class="btn-approve" onclick="handleApproval('${type}', ${idx}, 'approve', this)">✓ Approve</button>
+          <button class="btn-reject" onclick="handleApproval('${type}', ${idx}, 'reject', this)">✕ Reject</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function handleApproval(type, idx, action, btn) {
+    const card = document.getElementById(`approval-${type}-${idx}`);
+    const btns = card.querySelectorAll('button');
+    btns.forEach(b => b.disabled = true);
+
+    const item = type === 'manual' ? pendingApprovals[idx] : pendingLeave[idx];
+    const rowNum = item.row_number || item['row_number'];
+
+    try {
+      const res = await fetch(`${APPROVE_URL}?action=${action}&row=${rowNum}&type=${type}`, {
+        method: 'GET'
+      });
+
+      if (res.ok) {
+        card.style.transition = 'opacity 0.3s, transform 0.3s';
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(20px)';
+        setTimeout(() => { card.remove(); }, 300);
+        await loadData();
+      } else {
+        btns.forEach(b => b.disabled = false);
+      }
+    } catch(e) {
+      btns.forEach(b => b.disabled = false);
+    }
+  }
+
+  /* ── Load data ── */
   async function loadData() {
     const errorBox = document.getElementById('error-box');
     errorBox.classList.remove('show');
 
-    document.getElementById('table-container').innerHTML = `
-      <div class="loading">
-        <div class="spinner"></div>
-        <div class="loading-text">Loading attendance data...</div>
-      </div>
-    `;
-
     try {
-      const res = await fetch(API);
+      const res = await fetch(DASHBOARD_URL);
       if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = await res.json();
 
-      // Update date pill
+      // Date
       document.getElementById('date-pill').textContent = `📅 ${data.date}`;
 
-      // Update summary stats
-      document.getElementById('stat-total').textContent = data.summary.total;
-      document.getElementById('stat-in').textContent = data.summary.clockedIn;
-      document.getElementById('stat-late').textContent = data.summary.late;
-      document.getElementById('stat-out').textContent = data.summary.clockedOut;
-      document.getElementById('stat-pending').textContent = data.summary.pending;
-      document.getElementById('stat-notIn').textContent = data.summary.notClockedIn;
+      // Stats
+      document.getElementById('s-total').textContent   = data.summary.total;
+      document.getElementById('s-in').textContent      = data.summary.clockedIn;
+      document.getElementById('s-late').textContent    = data.summary.late;
+      document.getElementById('s-out').textContent     = data.summary.clockedOut;
+      document.getElementById('s-pending').textContent = data.summary.pending;
+      document.getElementById('s-notIn').textContent   = data.summary.notClockedIn;
 
-      // Store and render members
+      // Members table
       allMembers = data.members || [];
-      const filtered = currentFilter === 'ALL'
-        ? allMembers
-        : allMembers.filter(m => m.status === currentFilter);
+      const filtered = currentFilter === 'ALL' ? allMembers : allMembers.filter(m => m.status === currentFilter);
       renderTable(filtered);
+
+      // Approvals
+      pendingApprovals = (data.pendingApprovals || []);
+      pendingLeave     = (data.pendingLeave || []);
+
+      const approvalCount = pendingApprovals.length;
+      const leaveCount    = pendingLeave.length;
+
+      // Update badges
+      const ab = document.getElementById('badge-count');
+      const lb = document.getElementById('leave-badge-count');
+      ab.textContent = approvalCount;
+      lb.textContent = leaveCount;
+      ab.style.display = approvalCount > 0 ? 'inline-block' : 'none';
+      lb.style.display = leaveCount > 0 ? 'inline-block' : 'none';
+
+      renderApprovals(pendingApprovals, 'approvals-container', 'manual');
+      renderApprovals(pendingLeave, 'leave-container', 'leave');
 
       // Last updated
       const now = new Date();
@@ -495,13 +883,13 @@
     } catch(e) {
       document.getElementById('error-msg').textContent = `Failed to load: ${e.message}`;
       errorBox.classList.add('show');
-      document.getElementById('table-container').innerHTML =
-        `<div class="empty">Could not load data. Check your n8n workflow is active.</div>`;
+      document.getElementById('attendance-table').innerHTML =
+        `<div class="lottie-wrap">
+          <dotlottie-player src="https://lottie.host/5d9f5a94-9c38-4e77-b7be-a80bc98c88c2/3bFMHFiYqG.lottie" background="transparent" speed="1" style="width:100px;height:100px" loop autoplay></dotlottie-player>
+          <p>Could not load data</p>
+        </div>`;
     }
   }
-
-  // Load on start
-  loadData();
 
   // Auto refresh every 5 minutes
   setInterval(loadData, 5 * 60 * 1000);
