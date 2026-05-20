@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --card: #161616;
+    --border: #2a2a2a;
+    --accent: #1a472a;
+    --accent-light: rgba(26,71,42,0.15);
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --orange: #f97316;
+    --text: #f0ede8;
+    --muted: #6b7280;
+    --card-border: #1f1f1f;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.015) 39px, rgba(255,255,255,0.015) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.01) 39px, rgba(255,255,255,0.01) 40px);
+    min-height: 100vh;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text);
+    padding: 24px;
+  }
+
+  /* ── Header ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .header-left { display: flex; flex-direction: column; gap: 4px; }
+  .brand {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 3px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .subtitle {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .date-pill {
+    font-size: 11px;
+    color: var(--green);
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.2);
+    padding: 6px 14px;
+    border-radius: 20px;
+    letter-spacing: 0.08em;
+  }
+  .refresh-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .refresh-btn:hover { color: var(--text); border-color: var(--text); }
+
+  /* ── Summary Cards ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--border); }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.yellow::before { background: var(--yellow); }
+  .stat-card.red::before { background: var(--red); }
+  .stat-card.blue::before { background: var(--blue); }
+  .stat-card.orange::before { background: var(--orange); }
+  .stat-card.grey::before { background: var(--muted); }
+
+  .stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .stat-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    line-height: 1;
+    letter-spacing: 2px;
+  }
+  .stat-card.green .stat-number { color: var(--green); }
+  .stat-card.yellow .stat-number { color: var(--yellow); }
+  .stat-card.red .stat-number { color: var(--red); }
+  .stat-card.blue .stat-number { color: var(--blue); }
+  .stat-card.orange .stat-number { color: var(--orange); }
+  .stat-card.grey .stat-number { color: var(--muted); }
+
+  /* ── Filters ── */
+  .filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { color: var(--text); }
+  .filter-btn.active {
+    background: var(--accent-light);
+    border-color: rgba(26,71,42,0.4);
+    color: #4ade80;
+  }
+
+  /* ── Table ── */
+  .table-wrap {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+  }
+  .member-count {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead th {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    padding: 12px 20px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--card-border);
+    transition: background 0.1s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  tbody td {
+    padding: 14px 20px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  /* ── Status Badges ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 500;
+  }
+  .badge-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .badge.clocked-in { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+  .badge.clocked-out { background: rgba(59,130,246,0.1); color: var(--blue); border: 1px solid rgba(59,130,246,0.2); }
+  .badge.late { background: rgba(234,179,8,0.1); color: var(--yellow); border: 1px solid rgba(234,179,8,0.2); }
+  .badge.not-in { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+  .badge.pending { background: rgba(249,115,22,0.1); color: var(--orange); border: 1px solid rgba(249,115,22,0.2); }
+
+  /* ── Role Badge ── */
+  .role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: var(--accent-light);
+    color: #4ade80;
+    border: 1px solid rgba(26,71,42,0.3);
+  }
+
+  /* ── Loading ── */
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    gap: 16px;
+    color: var(--muted);
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  /* ── Error ── */
+  .error-box {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 8px;
+    color: var(--red);
+    font-size: 12px;
+    margin-bottom: 20px;
+  }
+  .error-box.show { display: flex; }
+
+  /* ── Empty ── */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  /* ── Last updated ── */
+  .last-updated {
+    text-align: right;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 16px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { padding: 16px; }
+    .summary-grid { grid-template-columns: repeat(3, 1fr); }
+    thead th:nth-child(n+5), tbody td:nth-child(n+5) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="brand">Attendance Dashboard</div>
+    <div class="subtitle">Manager View · Real-time</div>
+  </div>
+  <div class="header-right">
+    <span class="date-pill" id="date-pill">Loading...</span>
+    <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+  </div>
+</div>
+
+<div class="error-box" id="error-box">
+  ⚠️ <span id="error-msg">Failed to load data.</span>
+</div>
+
+<div class="summary-grid">
+  <div class="stat-card grey">
+    <div class="stat-label">Total Members</div>
+    <div class="stat-number" id="stat-total">—</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-label">Clocked In</div>
+    <div class="stat-number" id="stat-in">—</div>
+  </div>
+  <div class="stat-card yellow">
+    <div class="stat-label">Late</div>
+    <div class="stat-number" id="stat-late">—</div>
+  </div>
+  <div class="stat-card blue">
+    <div class="stat-label">Clocked Out</div>
+    <div class="stat-number" id="stat-out">—</div>
+  </div>
+  <div class="stat-card orange">
+    <div class="stat-label">Pending</div>
+    <div class="stat-number" id="stat-pending">—</div>
+  </div>
+  <div class="stat-card red">
+    <div class="stat-label">Not In</div>
+    <div class="stat-number" id="stat-notIn">—</div>
+  </div>
+</div>
+
+<div class="filters">
+  <button class="filter-btn active" onclick="filterMembers('ALL', this)">All</button>
+  <button class="filter-btn" onclick="filterMembers('CLOCKED IN', this)">Clocked In</button>
+  <button class="filter-btn" onclick="filterMembers('CLOCKED IN (LATE)', this)">Late</button>
+  <button class="filter-btn" onclick="filterMembers('CLOCKED OUT', this)">Clocked Out</button>
+  <button class="filter-btn" onclick="filterMembers('PENDING APPROVAL', this)">Pending</button>
+  <button class="filter-btn" onclick="filterMembers('NOT CLOCKED IN', this)">Not In</button>
+</div>
+
+<div class="table-wrap">
+  <div class="table-header">
+    <span class="table-title">Member Attendance</span>
+    <span class="member-count" id="member-count">—</span>
+  </div>
+  <div id="table-container">
+    <div class="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Loading attendance data...</div>
+    </div>
+  </div>
+</div>
+
+<div class="last-updated" id="last-updated"></div>
+
+<script>
+  const API = 'https://e-formentera.app.n8n.cloud/webhook/dashboard';
+  let allMembers = [];
+  let currentFilter = 'ALL';
+
+  function getStatusBadge(status) {
+    switch(status) {
+      case 'CLOCKED IN':
+        return `<span class="badge clocked-in"><span class="badge-dot"></span>Clocked In</span>`;
+      case 'CLOCKED IN (LATE)':
+        return `<span class="badge late"><span class="badge-dot"></span>Late</span>`;
+      case 'CLOCKED OUT':
+        return `<span class="badge clocked-out"><span class="badge-dot"></span>Clocked Out</span>`;
+      case 'PENDING APPROVAL':
+        return `<span class="badge pending"><span class="badge-dot"></span>Pending</span>`;
+      case 'NOT CLOCKED IN':
+        return `<span class="badge not-in"><span class="badge-dot"></span>Not In</span>`;
+      default:
+        return `<span class="badge not-in"><span class="badge-dot"></span>${status}</span>`;
+    }
+  }
+
+  function renderTable(members) {
+    const container = document.getElementById('table-container');
+    document.getElementById('member-count').textContent = `${members.length} member${members.length !== 1 ? 's' : ''}`;
+
+    if (members.length === 0) {
+      container.innerHTML = `<div class="empty">No members found for this filter.</div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Clock In</th>
+            <th>Clock Out</th>
+            <th>Total Hours</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${members.map(m => `
+            <tr>
+              <td>${m.name || '—'}</td>
+              <td><span class="role-badge">${m.role || '—'}</span></td>
+              <td>${getStatusBadge(m.status)}</td>
+              <td>${m.clockIn || '—'}</td>
+              <td>${m.clockOut || '—'}</td>
+              <td>${m.totalHours !== '-' && m.totalHours ? m.totalHours + ' hrs' : '—'}</td>
+              <td style="color:var(--muted); max-width:200px; overflow:hidden; text-overflow:ellipsis;">${m.reason !== '-' ? m.reason : '—'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function filterMembers(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const filtered = filter === 'ALL'
+      ? allMembers
+      : allMembers.filter(m => m.status === filter);
+
+    renderTable(filtered);
+  }
+
+  async function loadData() {
+    const errorBox = document.getElementById('error-box');
+    errorBox.classList.remove('show');
+
+    document.getElementById('table-container').innerHTML = `
+      <div class="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading attendance data...</div>
+      </div>
+    `;
+
+    try {
+      const res = await fetch(API);
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = await res.json();
+
+      // Update date pill
+      document.getElementById('date-pill').textContent = `📅 ${data.date}`;
+
+      // Update summary stats
+      document.getElementById('stat-total').textContent = data.summary.total;
+      document.getElementById('stat-in').textContent = data.summary.clockedIn;
+      document.getElementById('stat-late').textContent = data.summary.late;
+      document.getElementById('stat-out').textContent = data.summary.clockedOut;
+      document.getElementById('stat-pending').textContent = data.summary.pending;
+      document.getElementById('stat-notIn').textContent = data.summary.notClockedIn;
+
+      // Store and render members
+      allMembers = data.members || [];
+      const filtered = currentFilter === 'ALL'
+        ? allMembers
+        : allMembers.filter(m => m.status === currentFilter);
+      renderTable(filtered);
+
+      // Last updated
+      const now = new Date();
+      document.getElementById('last-updated').textContent =
+        `Last updated: ${now.toLocaleTimeString()}`;
+
+    } catch(e) {
+      document.getElementById('error-msg').textContent = `Failed to load: ${e.message}`;
+      errorBox.classList.add('show');
+      document.getElementById('table-container').innerHTML =
+        `<div class="empty">Could not load data. Check your n8n workflow is active.</div>`;
+    }
+  }
+
+  // Load on start
+  loadData();
+
+  // Auto refresh every 5 minutes
+  setInterval(loadData, 5 * 60 * 1000);
+</script>
+</body>
+</html>
