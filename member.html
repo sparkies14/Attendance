@@ -1010,7 +1010,7 @@ body {
           name:        currentUser.name,
           email:       currentUser.email,
           action,
-          entry_type:  entryType,
+          entry_type: ['lunch-out','lunch-in','break-out','break-in','leave'].includes(action) ? 'auto' : entryType,
           local_time:  now.toLocaleTimeString(),
           date:        now.toLocaleDateString(),
           timezone:    Intl.DateTimeFormat().resolvedOptions().timeZone,
