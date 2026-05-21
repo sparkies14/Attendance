@@ -20,8 +20,7 @@
   --red: #9b2626;
   --red-light: #fdf0f0;
   --red-mid: #f5d0d0;
-  --shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
-  --radius: 16px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
   --radius-sm: 10px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -30,100 +29,161 @@ body {
   font-family: 'Instrument Sans', sans-serif;
   color: var(--text);
   min-height: 100vh;
-  display: flex;
-  align-items: stretch;
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;
 }
 
 /* ── Layout ── */
-.login-layout { display: flex; width: 100%; min-height: 100vh; }
+.login-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
 
 /* ── Left Panel ── */
 .left-panel {
   flex: 1;
   background: linear-gradient(145deg, #f0f7f3 0%, #e8f4ed 40%, #fdf6e8 100%);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 48px;
   position: relative;
   overflow: hidden;
 }
-.left-panel::before {
-  content: '';
-  position: absolute;
-  width: 500px; height: 500px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(26,107,60,0.08) 0%, transparent 70%);
-  top: -100px; left: -100px;
-  pointer-events: none;
-}
-.left-panel::after {
-  content: '';
-  position: absolute;
-  width: 400px; height: 400px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(146,104,10,0.07) 0%, transparent 70%);
-  bottom: -80px; right: -80px;
-  pointer-events: none;
-}
 .dot-grid {
   position: absolute;
   inset: 0;
   background-image: radial-gradient(circle, rgba(26,107,60,0.12) 1px, transparent 1px);
   background-size: 28px 28px;
-  pointer-events: none;
   opacity: 0.5;
+  pointer-events: none;
 }
-.left-panel-inner {
+.glow1 {
+  position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(26,107,60,0.1) 0%, transparent 70%);
+  top: -150px; left: -150px;
+  pointer-events: none;
+}
+.glow2 {
+  position: absolute;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(146,104,10,0.08) 0%, transparent 70%);
+  bottom: -100px; right: -100px;
+  pointer-events: none;
+}
+
+.left-inner {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  max-width: 460px;
+  max-width: 480px;
+  gap: 0;
 }
 
-/* Lottie replaced with animated SVG illustration */
-.illustration-wrap {
-  width: 300px;
-  height: 300px;
-  margin-bottom: 32px;
+/* ── Illustration ── */
+.ill-wrap {
+  width: 280px;
+  height: 280px;
+  position: relative;
+  margin-bottom: 36px;
+  flex-shrink: 0;
+}
+
+/* Center circle */
+.ill-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px; height: 120px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 8px 32px rgba(26,107,60,0.15);
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 3;
 }
+.ill-center-icon { font-size: 48px; }
+
+/* Orbiting cards */
+.ill-card {
+  position: absolute;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 2;
+}
+.ill-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Positions */
+.ill-card-1 { top: 0; left: 50%; transform: translateX(-50%); animation: float1 3.5s ease-in-out infinite; }
+.ill-card-2 { bottom: 20px; left: 0; animation: float2 4s ease-in-out 0.5s infinite; }
+.ill-card-3 { bottom: 20px; right: 0; animation: float3 3.8s ease-in-out 1s infinite; }
+.ill-card-4 { top: 50%; left: -10px; transform: translateY(-50%); animation: float1 4.2s ease-in-out 0.3s infinite; }
+.ill-card-5 { top: 50%; right: -10px; transform: translateY(-50%); animation: float2 3.6s ease-in-out 0.8s infinite; }
+
+/* Ring */
+.ill-ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(26,107,60,0.2);
+  animation: spin-slow 20s linear infinite;
+  z-index: 1;
+}
+
+@keyframes float1 { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-10px); } }
+@keyframes float2 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes float3 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes spin-slow { to { transform: translate(-50%,-50%) rotate(360deg); } }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .left-headline {
   font-family: 'Instrument Serif', serif;
-  font-size: 28px;
+  font-size: 30px;
   color: var(--text);
   letter-spacing: -0.5px;
-  line-height: 1.25;
+  line-height: 1.2;
   margin-bottom: 12px;
 }
 .left-headline span { color: var(--accent); }
 .left-sub {
   font-size: 14px;
   color: var(--text2);
-  line-height: 1.6;
-  max-width: 340px;
+  line-height: 1.65;
+  max-width: 360px;
+  margin-bottom: 28px;
 }
 .feature-pills {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
-  margin-top: 28px;
 }
 .pill {
   font-size: 12px;
   padding: 6px 14px;
   border-radius: 20px;
-  background: var(--white);
+  background: white;
   border: 1px solid var(--border);
   color: var(--text2);
   display: flex;
@@ -134,9 +194,9 @@ body {
 
 /* ── Right Panel ── */
 .right-panel {
-  width: 440px;
+  width: 420px;
   flex-shrink: 0;
-  background: var(--white);
+  background: white;
   border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -146,48 +206,50 @@ body {
   position: relative;
 }
 
-/* Logo mark above wordmark */
+/* Brand */
 .brand { text-align: center; margin-bottom: 40px; }
-.brand-logo {
-  width: 52px; height: 52px;
+.brand-logo-img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  margin: 0 auto 14px;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
+}
+/* Fallback if logo.png not uploaded yet */
+.brand-logo-fallback {
+  width: 56px; height: 56px;
   background: var(--accent);
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px;
+  margin: 0 auto 14px;
   box-shadow: 0 4px 12px rgba(26,107,60,0.25);
 }
-.brand-logo svg { width: 28px; height: 28px; }
 .brand-wordmark {
   font-family: 'Instrument Serif', serif;
-  font-size: 38px;
+  font-size: 36px;
   color: var(--text);
   letter-spacing: -1px;
   line-height: 1;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 .brand-wordmark span { color: var(--accent); }
 .brand-tagline {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text3);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
 }
 
-.login-card { width: 100%; max-width: 340px; }
+.login-card { width: 100%; max-width: 320px; }
 .login-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-.login-sub { font-size: 13px; color: var(--text2); margin-bottom: 28px; line-height: 1.5; }
-
-.google-btn-wrap { display: flex; justify-content: center; margin-bottom: 20px; }
-
-.divider { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-.divider-line { flex: 1; height: 1px; background: var(--border); }
-.divider-text { font-size: 11px; color: var(--text3); white-space: nowrap; }
+.login-sub { font-size: 13px; color: var(--text2); margin-bottom: 24px; line-height: 1.5; }
 
 .status-msg {
   display: none;
-  padding: 12px 14px;
+  padding: 11px 14px;
   border-radius: var(--radius-sm);
   font-size: 13px;
   align-items: center;
@@ -198,127 +260,83 @@ body {
 .status-msg.loading { background: #f5f5f3; color: var(--text2); border: 1px solid var(--border); }
 .status-msg.error   { background: var(--red-light); color: var(--red); border: 1px solid var(--red-mid); }
 .status-msg.success { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-mid); }
+.spin { display: inline-block; width: 13px; height: 13px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
 
-@keyframes spin { to { transform: rotate(360deg); } }
-.spin { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+.google-btn-wrap { display: flex; justify-content: center; margin-bottom: 18px; }
+.divider { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.divider-line { flex: 1; height: 1px; background: var(--border); }
+.divider-text { font-size: 11px; color: var(--text3); }
+.login-note { font-size: 11px; color: var(--text3); text-align: center; line-height: 1.6; }
+.right-footer { position: absolute; bottom: 20px; font-size: 11px; color: var(--text3); }
 
-.login-note { font-size: 11px; color: var(--text3); text-align: center; margin-top: 24px; line-height: 1.6; }
-.right-footer { position: absolute; bottom: 24px; font-size: 11px; color: var(--text3); text-align: center; }
-
-/* ── Animations ── */
-@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-.fade-in       { animation: fadeUp 0.5s ease both; }
-.fade-in-delay  { animation: fadeUp 0.5s ease 0.15s both; }
-.fade-in-delay2 { animation: fadeUp 0.5s ease 0.3s both; }
-
-/* Floating card animation */
-@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-@keyframes pulse-ring { 0%,100% { opacity:0.3; transform:scale(1); } 50% { opacity:0.6; transform:scale(1.05); } }
-
-/* SVG illustration animations */
-.ill-card1 { animation: float 4s ease-in-out infinite; }
-.ill-card2 { animation: float 4s ease-in-out 0.8s infinite; }
-.ill-card3 { animation: float 4s ease-in-out 1.6s infinite; }
-.ill-ring   { animation: pulse-ring 3s ease-in-out infinite; }
+/* Animations */
+@keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+.fade-in        { animation: fadeUp 0.5s ease both; }
+.fade-in-d1     { animation: fadeUp 0.5s ease 0.12s both; }
+.fade-in-d2     { animation: fadeUp 0.5s ease 0.24s both; }
 
 @media (max-width: 768px) {
-  body { overflow: auto; }
   .left-panel { display: none; }
   .right-panel { width: 100%; border-left: none; padding: 40px 24px; }
 }
 </style>
 </head>
 <body>
-
 <div class="login-layout">
 
-  <!-- Left: Illustration Panel -->
+  <!-- LEFT -->
   <div class="left-panel">
     <div class="dot-grid"></div>
-    <div class="left-panel-inner fade-in">
+    <div class="glow1"></div>
+    <div class="glow2"></div>
 
-      <!-- Custom SVG Illustration (no external dependency) -->
-      <div class="illustration-wrap">
-        <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
-          <!-- Background ring -->
-          <circle class="ill-ring" cx="150" cy="150" r="110" fill="none" stroke="#d4eadc" stroke-width="2" stroke-dasharray="8 6"/>
+    <div class="left-inner fade-in">
 
-          <!-- Main calendar card -->
-          <g class="ill-card1">
-            <rect x="60" y="80" width="180" height="140" rx="16" fill="white" filter="url(#shadow1)"/>
-            <rect x="60" y="80" width="180" height="44" rx="16" fill="#1a6b3c"/>
-            <rect x="60" y="108" width="180" height="16" fill="#1a6b3c"/>
-            <!-- Calendar header text -->
-            <rect x="80" y="94" width="60" height="8" rx="4" fill="white" opacity="0.9"/>
-            <rect x="204" y="92" width="20" height="12" rx="6" fill="white" opacity="0.4"/>
-            <!-- Calendar grid dots -->
-            <circle cx="88"  cy="148" r="5" fill="#d4eadc"/>
-            <circle cx="108" cy="148" r="5" fill="#1a6b3c"/>
-            <circle cx="128" cy="148" r="5" fill="#d4eadc"/>
-            <circle cx="148" cy="148" r="5" fill="#d4eadc"/>
-            <circle cx="168" cy="148" r="5" fill="#f5e4b8"/>
-            <circle cx="188" cy="148" r="5" fill="#d4eadc"/>
-            <circle cx="208" cy="148" r="5" fill="#d4eadc"/>
-            <circle cx="88"  cy="168" r="5" fill="#d4eadc"/>
-            <circle cx="108" cy="168" r="5" fill="#d4eadc"/>
-            <circle cx="128" cy="168" r="5" fill="#1a6b3c"/>
-            <circle cx="148" cy="168" r="5" fill="#d4eadc"/>
-            <circle cx="168" cy="168" r="5" fill="#f5d0d0"/>
-            <circle cx="188" cy="168" r="5" fill="#d4eadc"/>
-            <circle cx="208" cy="168" r="5" fill="#d4eadc"/>
-            <circle cx="88"  cy="188" r="5" fill="#d4eadc"/>
-            <circle cx="108" cy="188" r="5" fill="#d4eadc"/>
-            <circle cx="128" cy="188" r="5" fill="#d4eadc"/>
-            <circle cx="148" cy="188" r="5" fill="#1a6b3c"/>
-            <circle cx="168" cy="188" r="5" fill="#d4eadc"/>
-          </g>
+      <!-- Floating card illustration -->
+      <div class="ill-wrap">
+        <div class="ill-ring"></div>
 
-          <!-- Clock-in badge card -->
-          <g class="ill-card2">
-            <rect x="168" y="55" width="110" height="52" rx="12" fill="white" filter="url(#shadow1)"/>
-            <circle cx="190" cy="81" r="14" fill="#f0f7f3"/>
-            <!-- Clock icon -->
-            <circle cx="190" cy="81" r="9" fill="none" stroke="#1a6b3c" stroke-width="1.5"/>
-            <line x1="190" y1="75" x2="190" y2="81" stroke="#1a6b3c" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="190" y1="81" x2="194" y2="84" stroke="#1a6b3c" stroke-width="1.5" stroke-linecap="round"/>
-            <rect x="210" y="70" width="54" height="7" rx="3.5" fill="#d4eadc"/>
-            <rect x="210" y="82" width="38" height="7" rx="3.5" fill="#f0f7f3"/>
-          </g>
+        <!-- Center -->
+        <div class="ill-center">
+          <span class="ill-center-icon">📋</span>
+        </div>
 
-          <!-- Status badge -->
-          <g class="ill-card3">
-            <rect x="22" y="185" width="100" height="44" rx="12" fill="white" filter="url(#shadow1)"/>
-            <rect x="34" y="197" width="12" height="12" rx="6" fill="#1a6b3c"/>
-            <rect x="52" y="199" width="54" height="6" rx="3" fill="#d4eadc"/>
-            <rect x="52" y="210" width="36" height="5" rx="2.5" fill="#f0f7f3"/>
-          </g>
+        <!-- Floating cards -->
+        <div class="ill-card ill-card-1">
+          <div class="ill-dot" style="background:#1a6b3c"></div>
+          <span style="color:#1a6b3c">Clocked In</span>
+          <span style="color:#a8a59f;font-weight:400">9:02 AM</span>
+        </div>
 
-          <!-- On-time check badge -->
-          <g>
-            <circle cx="218" cy="210" r="22" fill="#1a6b3c" filter="url(#shadow2)"/>
-            <!-- Checkmark -->
-            <polyline points="208,210 215,217 228,203" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </g>
+        <div class="ill-card ill-card-2">
+          <div class="ill-dot" style="background:#92680a"></div>
+          <span style="color:#6b6860">Late · 9:14 AM</span>
+        </div>
 
-          <defs>
-            <filter id="shadow1" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="rgba(0,0,0,0.08)"/>
-            </filter>
-            <filter id="shadow2" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="rgba(26,107,60,0.3)"/>
-            </filter>
-          </defs>
-        </svg>
+        <div class="ill-card ill-card-3">
+          <span>🍱</span>
+          <span style="color:#6b6860">Lunch Out</span>
+        </div>
+
+        <div class="ill-card ill-card-4" style="padding:8px 12px;font-size:11px">
+          <span>✅</span>
+          <span style="color:#6b6860">Approved</span>
+        </div>
+
+        <div class="ill-card ill-card-5" style="padding:8px 12px;font-size:11px">
+          <span>📅</span>
+          <span style="color:#6b6860">Leave</span>
+        </div>
       </div>
 
-      <div class="left-headline fade-in-delay">
+      <div class="left-headline fade-in-d1">
         Track attendance the <span>smart way</span>
       </div>
-      <div class="left-sub fade-in-delay">
-        A simple, modern attendance system built for the Anosupo team. Clock in, track breaks, and manage leave — all in one place.
+      <div class="left-sub fade-in-d1">
+        A simple, modern attendance system for the Anosupo team. Clock in, track breaks, and manage leave — all in one place.
       </div>
 
-      <div class="feature-pills fade-in-delay2">
+      <div class="feature-pills fade-in-d2">
         <div class="pill">🕐 Real-time tracking</div>
         <div class="pill">📅 Leave management</div>
         <div class="pill">📊 Manager dashboard</div>
@@ -328,27 +346,34 @@ body {
     </div>
   </div>
 
-  <!-- Right: Login Panel -->
+  <!-- RIGHT -->
   <div class="right-panel">
-
     <div class="brand fade-in">
-      <!-- Logo mark -->
-      <div class="brand-logo">
-        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Company logo — upload logo.png to your repo root -->
+      <img
+        class="brand-logo-img"
+        src="logo.png"
+        alt="Anosupo"
+        onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='flex';"
+      >
+      <!-- Fallback shown if logo.png not uploaded yet -->
+      <div class="brand-logo-fallback" id="logo-fallback" style="display:none">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
           <rect x="4" y="6" width="20" height="17" rx="3" stroke="white" stroke-width="2"/>
           <line x1="4" y1="11" x2="24" y2="11" stroke="white" stroke-width="2"/>
-          <circle cx="9" cy="16" r="1.5" fill="white"/>
-          <circle cx="14" cy="16" r="1.5" fill="white"/>
-          <circle cx="19" cy="16" r="1.5" fill="white"/>
+          <circle cx="9" cy="17" r="1.5" fill="white"/>
+          <circle cx="14" cy="17" r="1.5" fill="white"/>
+          <circle cx="19" cy="17" r="1.5" fill="white"/>
           <line x1="9" y1="4" x2="9" y2="8" stroke="white" stroke-width="2" stroke-linecap="round"/>
           <line x1="19" y1="4" x2="19" y2="8" stroke="white" stroke-width="2" stroke-linecap="round"/>
         </svg>
       </div>
+
       <div class="brand-wordmark">Ano<span>supo</span></div>
       <div class="brand-tagline">Attendance System</div>
     </div>
 
-    <div class="login-card fade-in-delay">
+    <div class="login-card fade-in-d1">
       <div class="login-title">Welcome back 👋</div>
       <div class="login-sub">Sign in with your Google account to access your attendance dashboard.</div>
 
@@ -393,19 +418,28 @@ body {
   }
 
   window.onload = function() {
-    // If already logged in via sessionStorage, skip straight through
-    const saved = sessionStorage.getItem('anosupo_credential');
+    // Clear any stale session so no loop happens
+    // Only auto-redirect if session is valid AND not already on index
+    const saved     = sessionStorage.getItem('anosupo_credential');
     const savedRole = sessionStorage.getItem('anosupo_role');
+
     if (saved && savedRole) {
       try {
-        parseJwt(saved); // validate it parses
-        if (savedRole === 'goldlist') { window.location.href = 'dashboard.html'; return; }
-        if (savedRole === 'whitelist') { window.location.href = 'member.html'; return; }
+        parseJwt(saved); // if this throws, session is bad
+        if (savedRole === 'goldlist') {
+          window.location.replace('dashboard.html');
+          return;
+        }
+        if (savedRole === 'whitelist') {
+          window.location.replace('member.html');
+          return;
+        }
       } catch(e) {
         sessionStorage.clear();
       }
     }
 
+    // No valid session — show Google login button
     google.accounts.id.initialize({
       client_id: CLIENT_ID,
       callback: handleAuth,
@@ -413,7 +447,7 @@ body {
     });
     google.accounts.id.renderButton(
       document.getElementById('auth-google-btn'),
-      { theme: 'outline', size: 'large', width: 300, text: 'signin_with' }
+      { theme: 'outline', size: 'large', width: 288, text: 'signin_with' }
     );
   }
 
@@ -432,20 +466,20 @@ body {
         sessionStorage.setItem('anosupo_credential', response.credential);
         sessionStorage.setItem('anosupo_role', 'goldlist');
         showStatus('success', `Welcome, ${p.name.split(' ')[0]}! Redirecting...`);
-        setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
+        setTimeout(() => window.location.replace('dashboard.html'), 800);
 
       } else if (data.role === 'whitelist') {
         sessionStorage.setItem('anosupo_credential', response.credential);
         sessionStorage.setItem('anosupo_role', 'whitelist');
         showStatus('success', `Welcome, ${p.name.split(' ')[0]}! Redirecting...`);
-        setTimeout(() => { window.location.href = 'member.html'; }, 800);
+        setTimeout(() => window.location.replace('member.html'), 800);
 
       } else {
         showStatus('error', 'Access denied. Contact your manager.');
         google.accounts.id.disableAutoSelect();
       }
     } catch(e) {
-      showStatus('error', 'Connection failed. Please try again.');
+      showStatus('error', 'Connection failed. Check n8n is running.');
     }
   }
 </script>
