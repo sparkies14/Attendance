@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Anosupo · Sign In</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://unpkg.com/@dotlottie/player-component@latest/dist/dotlottie-player.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -22,7 +21,6 @@
   --red-light: #fdf0f0;
   --red-mid: #f5d0d0;
   --shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
-  --shadow-lg: 0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
   --radius: 16px;
   --radius-sm: 10px;
 }
@@ -39,13 +37,9 @@ body {
 }
 
 /* ── Layout ── */
-.login-layout {
-  display: flex;
-  width: 100%;
-  min-height: 100vh;
-}
+.login-layout { display: flex; width: 100%; min-height: 100vh; }
 
-/* ── Left Panel — Illustration ── */
+/* ── Left Panel ── */
 .left-panel {
   flex: 1;
   background: linear-gradient(145deg, #f0f7f3 0%, #e8f4ed 40%, #fdf6e8 100%);
@@ -57,8 +51,6 @@ body {
   position: relative;
   overflow: hidden;
 }
-
-/* Decorative background circles */
 .left-panel::before {
   content: '';
   position: absolute;
@@ -77,7 +69,14 @@ body {
   bottom: -80px; right: -80px;
   pointer-events: none;
 }
-
+.dot-grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(26,107,60,0.12) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  opacity: 0.5;
+}
 .left-panel-inner {
   position: relative;
   z-index: 1;
@@ -88,11 +87,14 @@ body {
   max-width: 460px;
 }
 
-.lottie-wrap {
-  width: 320px;
-  height: 320px;
+/* Lottie replaced with animated SVG illustration */
+.illustration-wrap {
+  width: 300px;
+  height: 300px;
   margin-bottom: 32px;
-  filter: drop-shadow(0 8px 24px rgba(26,107,60,0.15));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .left-headline {
@@ -104,15 +106,12 @@ body {
   margin-bottom: 12px;
 }
 .left-headline span { color: var(--accent); }
-
 .left-sub {
   font-size: 14px;
   color: var(--text2);
   line-height: 1.6;
   max-width: 340px;
 }
-
-/* Feature pills */
 .feature-pills {
   display: flex;
   gap: 8px;
@@ -133,7 +132,7 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
-/* ── Right Panel — Login Form ── */
+/* ── Right Panel ── */
 .right-panel {
   width: 440px;
   flex-shrink: 0;
@@ -147,10 +146,19 @@ body {
   position: relative;
 }
 
-.brand {
-  text-align: center;
-  margin-bottom: 40px;
+/* Logo mark above wordmark */
+.brand { text-align: center; margin-bottom: 40px; }
+.brand-logo {
+  width: 52px; height: 52px;
+  background: var(--accent);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  box-shadow: 0 4px 12px rgba(26,107,60,0.25);
 }
+.brand-logo svg { width: 28px; height: 28px; }
 .brand-wordmark {
   font-family: 'Instrument Serif', serif;
   font-size: 38px;
@@ -167,36 +175,13 @@ body {
   letter-spacing: 0.12em;
 }
 
-.login-card {
-  width: 100%;
-  max-width: 340px;
-}
+.login-card { width: 100%; max-width: 340px; }
+.login-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.login-sub { font-size: 13px; color: var(--text2); margin-bottom: 28px; line-height: 1.5; }
 
-.login-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 6px;
-}
-.login-sub {
-  font-size: 13px;
-  color: var(--text2);
-  margin-bottom: 28px;
-  line-height: 1.5;
-}
+.google-btn-wrap { display: flex; justify-content: center; margin-bottom: 20px; }
 
-.google-btn-wrap {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
+.divider { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
 .divider-line { flex: 1; height: 1px; background: var(--border); }
 .divider-text { font-size: 11px; color: var(--text3); white-space: nowrap; }
 
@@ -211,47 +196,30 @@ body {
 }
 .status-msg.show { display: flex; }
 .status-msg.loading { background: #f5f5f3; color: var(--text2); border: 1px solid var(--border); }
-.status-msg.error { background: var(--red-light); color: var(--red); border: 1px solid var(--red-mid); }
+.status-msg.error   { background: var(--red-light); color: var(--red); border: 1px solid var(--red-mid); }
 .status-msg.success { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-mid); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
 
-.login-note {
-  font-size: 11px;
-  color: var(--text3);
-  text-align: center;
-  margin-top: 24px;
-  line-height: 1.6;
-}
-
-/* Bottom branding */
-.right-footer {
-  position: absolute;
-  bottom: 24px;
-  font-size: 11px;
-  color: var(--text3);
-  text-align: center;
-}
-
-/* ── Floating dots decoration ── */
-.dot-grid {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle, rgba(26,107,60,0.12) 1px, transparent 1px);
-  background-size: 28px 28px;
-  pointer-events: none;
-  opacity: 0.5;
-}
+.login-note { font-size: 11px; color: var(--text3); text-align: center; margin-top: 24px; line-height: 1.6; }
+.right-footer { position: absolute; bottom: 24px; font-size: 11px; color: var(--text3); text-align: center; }
 
 /* ── Animations ── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.fade-in { animation: fadeUp 0.5s ease both; }
-.fade-in-delay { animation: fadeUp 0.5s ease 0.15s both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in       { animation: fadeUp 0.5s ease both; }
+.fade-in-delay  { animation: fadeUp 0.5s ease 0.15s both; }
 .fade-in-delay2 { animation: fadeUp 0.5s ease 0.3s both; }
+
+/* Floating card animation */
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+@keyframes pulse-ring { 0%,100% { opacity:0.3; transform:scale(1); } 50% { opacity:0.6; transform:scale(1.05); } }
+
+/* SVG illustration animations */
+.ill-card1 { animation: float 4s ease-in-out infinite; }
+.ill-card2 { animation: float 4s ease-in-out 0.8s infinite; }
+.ill-card3 { animation: float 4s ease-in-out 1.6s infinite; }
+.ill-ring   { animation: pulse-ring 3s ease-in-out infinite; }
 
 @media (max-width: 768px) {
   body { overflow: auto; }
@@ -269,16 +237,78 @@ body {
     <div class="dot-grid"></div>
     <div class="left-panel-inner fade-in">
 
-      <!-- Lottie Animation -->
-      <div class="lottie-wrap">
-        <dotlottie-player
-          src="https://lottie.host/4db68bbd-7f95-4b7a-b8b3-a5d58c5ffde2/GqPSCxV6yD.lottie"
-          background="transparent"
-          speed="0.8"
-          style="width:100%;height:100%"
-          loop
-          autoplay>
-        </dotlottie-player>
+      <!-- Custom SVG Illustration (no external dependency) -->
+      <div class="illustration-wrap">
+        <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%">
+          <!-- Background ring -->
+          <circle class="ill-ring" cx="150" cy="150" r="110" fill="none" stroke="#d4eadc" stroke-width="2" stroke-dasharray="8 6"/>
+
+          <!-- Main calendar card -->
+          <g class="ill-card1">
+            <rect x="60" y="80" width="180" height="140" rx="16" fill="white" filter="url(#shadow1)"/>
+            <rect x="60" y="80" width="180" height="44" rx="16" fill="#1a6b3c"/>
+            <rect x="60" y="108" width="180" height="16" fill="#1a6b3c"/>
+            <!-- Calendar header text -->
+            <rect x="80" y="94" width="60" height="8" rx="4" fill="white" opacity="0.9"/>
+            <rect x="204" y="92" width="20" height="12" rx="6" fill="white" opacity="0.4"/>
+            <!-- Calendar grid dots -->
+            <circle cx="88"  cy="148" r="5" fill="#d4eadc"/>
+            <circle cx="108" cy="148" r="5" fill="#1a6b3c"/>
+            <circle cx="128" cy="148" r="5" fill="#d4eadc"/>
+            <circle cx="148" cy="148" r="5" fill="#d4eadc"/>
+            <circle cx="168" cy="148" r="5" fill="#f5e4b8"/>
+            <circle cx="188" cy="148" r="5" fill="#d4eadc"/>
+            <circle cx="208" cy="148" r="5" fill="#d4eadc"/>
+            <circle cx="88"  cy="168" r="5" fill="#d4eadc"/>
+            <circle cx="108" cy="168" r="5" fill="#d4eadc"/>
+            <circle cx="128" cy="168" r="5" fill="#1a6b3c"/>
+            <circle cx="148" cy="168" r="5" fill="#d4eadc"/>
+            <circle cx="168" cy="168" r="5" fill="#f5d0d0"/>
+            <circle cx="188" cy="168" r="5" fill="#d4eadc"/>
+            <circle cx="208" cy="168" r="5" fill="#d4eadc"/>
+            <circle cx="88"  cy="188" r="5" fill="#d4eadc"/>
+            <circle cx="108" cy="188" r="5" fill="#d4eadc"/>
+            <circle cx="128" cy="188" r="5" fill="#d4eadc"/>
+            <circle cx="148" cy="188" r="5" fill="#1a6b3c"/>
+            <circle cx="168" cy="188" r="5" fill="#d4eadc"/>
+          </g>
+
+          <!-- Clock-in badge card -->
+          <g class="ill-card2">
+            <rect x="168" y="55" width="110" height="52" rx="12" fill="white" filter="url(#shadow1)"/>
+            <circle cx="190" cy="81" r="14" fill="#f0f7f3"/>
+            <!-- Clock icon -->
+            <circle cx="190" cy="81" r="9" fill="none" stroke="#1a6b3c" stroke-width="1.5"/>
+            <line x1="190" y1="75" x2="190" y2="81" stroke="#1a6b3c" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="190" y1="81" x2="194" y2="84" stroke="#1a6b3c" stroke-width="1.5" stroke-linecap="round"/>
+            <rect x="210" y="70" width="54" height="7" rx="3.5" fill="#d4eadc"/>
+            <rect x="210" y="82" width="38" height="7" rx="3.5" fill="#f0f7f3"/>
+          </g>
+
+          <!-- Status badge -->
+          <g class="ill-card3">
+            <rect x="22" y="185" width="100" height="44" rx="12" fill="white" filter="url(#shadow1)"/>
+            <rect x="34" y="197" width="12" height="12" rx="6" fill="#1a6b3c"/>
+            <rect x="52" y="199" width="54" height="6" rx="3" fill="#d4eadc"/>
+            <rect x="52" y="210" width="36" height="5" rx="2.5" fill="#f0f7f3"/>
+          </g>
+
+          <!-- On-time check badge -->
+          <g>
+            <circle cx="218" cy="210" r="22" fill="#1a6b3c" filter="url(#shadow2)"/>
+            <!-- Checkmark -->
+            <polyline points="208,210 215,217 228,203" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+
+          <defs>
+            <filter id="shadow1" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="rgba(0,0,0,0.08)"/>
+            </filter>
+            <filter id="shadow2" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="rgba(26,107,60,0.3)"/>
+            </filter>
+          </defs>
+        </svg>
       </div>
 
       <div class="left-headline fade-in-delay">
@@ -302,6 +332,18 @@ body {
   <div class="right-panel">
 
     <div class="brand fade-in">
+      <!-- Logo mark -->
+      <div class="brand-logo">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="6" width="20" height="17" rx="3" stroke="white" stroke-width="2"/>
+          <line x1="4" y1="11" x2="24" y2="11" stroke="white" stroke-width="2"/>
+          <circle cx="9" cy="16" r="1.5" fill="white"/>
+          <circle cx="14" cy="16" r="1.5" fill="white"/>
+          <circle cx="19" cy="16" r="1.5" fill="white"/>
+          <line x1="9" y1="4" x2="9" y2="8" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <line x1="19" y1="4" x2="19" y2="8" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
       <div class="brand-wordmark">Ano<span>supo</span></div>
       <div class="brand-tagline">Attendance System</div>
     </div>
@@ -330,10 +372,7 @@ body {
       </div>
     </div>
 
-    <div class="right-footer">
-      © 2026 Anosupo · Borderless Japan
-    </div>
-
+    <div class="right-footer">© 2026 Anosupo · Borderless Japan</div>
   </div>
 </div>
 
@@ -346,16 +385,27 @@ body {
   }
 
   function showStatus(type, msg) {
-    const el  = document.getElementById('status-msg');
-    const ico = document.getElementById('status-icon');
+    const el = document.getElementById('status-msg');
     el.className = `status-msg show ${type}`;
     document.getElementById('status-text').textContent = msg;
-    ico.innerHTML = type === 'loading'
-      ? '<span class="spin"></span>'
-      : type === 'error' ? '✕' : '✓';
+    document.getElementById('status-icon').innerHTML =
+      type === 'loading' ? '<span class="spin"></span>' : type === 'error' ? '✕' : '✓';
   }
 
   window.onload = function() {
+    // If already logged in via sessionStorage, skip straight through
+    const saved = sessionStorage.getItem('anosupo_credential');
+    const savedRole = sessionStorage.getItem('anosupo_role');
+    if (saved && savedRole) {
+      try {
+        parseJwt(saved); // validate it parses
+        if (savedRole === 'goldlist') { window.location.href = 'dashboard.html'; return; }
+        if (savedRole === 'whitelist') { window.location.href = 'member.html'; return; }
+      } catch(e) {
+        sessionStorage.clear();
+      }
+    }
+
     google.accounts.id.initialize({
       client_id: CLIENT_ID,
       callback: handleAuth,
@@ -370,7 +420,6 @@ body {
   async function handleAuth(response) {
     const p = parseJwt(response.credential);
     showStatus('loading', `Checking access for ${p.email}...`);
-
     try {
       const res  = await fetch(CHECK_ROLE, {
         method: 'POST',
@@ -380,23 +429,21 @@ body {
       const data = await res.json();
 
       if (data.role === 'goldlist') {
+        sessionStorage.setItem('anosupo_credential', response.credential);
+        sessionStorage.setItem('anosupo_role', 'goldlist');
         showStatus('success', `Welcome, ${p.name.split(' ')[0]}! Redirecting...`);
-        // Pass credential so dashboard skips login
-        setTimeout(() => {
-          window.location.href = `dashboard.html?credential=${encodeURIComponent(response.credential)}&role=goldlist`;
-        }, 800);
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
 
       } else if (data.role === 'whitelist') {
+        sessionStorage.setItem('anosupo_credential', response.credential);
+        sessionStorage.setItem('anosupo_role', 'whitelist');
         showStatus('success', `Welcome, ${p.name.split(' ')[0]}! Redirecting...`);
-        setTimeout(() => {
-          window.location.href = `member.html?credential=${encodeURIComponent(response.credential)}&role=whitelist`;
-        }, 800);
+        setTimeout(() => { window.location.href = 'member.html'; }, 800);
 
       } else {
         showStatus('error', 'Access denied. Contact your manager.');
         google.accounts.id.disableAutoSelect();
       }
-
     } catch(e) {
       showStatus('error', 'Connection failed. Please try again.');
     }

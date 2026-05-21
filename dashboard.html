@@ -471,47 +471,33 @@ tbody td { padding: 12px 16px; font-size: 13px; }
   }
 
   window.onload = function() {
-  const params     = new URLSearchParams(window.location.search);
-  const credential = params.get('credential');
-  const role       = params.get('role');
+  const saved     = sessionStorage.getItem('anosupo_credential');
+  const savedRole = sessionStorage.getItem('anosupo_role');
 
-  if (credential && role) {
+  if (saved && savedRole === 'goldlist') {
     try {
-      const p = parseJwt(credential);
-      sessionStorage.setItem('anosupo_credential', credential);
-      sessionStorage.setItem('anosupo_role', role);
-      window.history.replaceState({}, '', window.location.pathname);
-      bootMember(p);
+      const p = parseJwt(saved);
+      bootDashboard(p);
       return;
-    } catch(e) { window.location.href = 'index.html'; return; }
+    } catch(e) { sessionStorage.clear(); window.location.href = 'index.html'; return; }
   }
 
-  const savedCredential = sessionStorage.getItem('anosupo_credential');
-  if (savedCredential) {
-    try {
-      const p = parseJwt(savedCredential);
-      bootMember(p);
-      return;
-    } catch(e) { window.location.href = 'index.html'; return; }
-  }
-
+  // Not authorized or wrong role — back to login
+  sessionStorage.clear();
   window.location.href = 'index.html';
 }
 
-function bootMember(p) {
+function bootDashboard(p) {
   currentUser = { name: p.name, email: p.email, avatar: p.picture };
-  document.getElementById('user-name').textContent   = p.name.split(' ')[0];
-  document.getElementById('user-role').textContent   = 'Member';
-  document.getElementById('user-avatar').src         = p.picture;
-  document.getElementById('welcome-title').textContent = getGreeting() + ', ' + p.name.split(' ')[0];
+  document.getElementById('sidebar-name').textContent = p.name.split(' ')[0];
+  document.getElementById('sidebar-avatar').src = p.picture;
   document.getElementById('auth-gate').classList.add('hidden');
   document.getElementById('app').classList.add('show');
-  loadMemberData();
+  loadData();
 }
 
   function signOut() {
-  sessionStorage.removeItem('anosupo_credential');
-  sessionStorage.removeItem('anosupo_role');
+  sessionStorage.clear();
   window.location.href = 'index.html';
 }
 
