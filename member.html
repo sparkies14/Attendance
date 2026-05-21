@@ -494,7 +494,7 @@ body {
 /* ── Summary Cards ── */
 .summary-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 10px;
   margin-bottom: 20px;
 }
@@ -622,6 +622,8 @@ body {
       <div class="clock-label">Japan Standard Time</div>
       <div class="clock-time-sm" id="jst-time">--:--:--</div>
       <div class="clock-date-sm" id="jst-date">Loading...</div>
+      <div class="clock-label" style="margin-top:8px">Local Time</div>
+      <div class="clock-time-sm" id="local-time" style="font-size:16px">--:--:--</div>
     </div>
 
     <div class="nav-section">
@@ -918,17 +920,21 @@ body {
 
   /* ── Live Clock ── */
   function tick() {
-    const now = new Date();
-    const jst = new Date(now.getTime() + 9 * 3600000);
-    const p = n => String(n).padStart(2,'0');
-    document.getElementById('jst-time').textContent =
-      `${p(jst.getUTCHours())}:${p(jst.getUTCMinutes())}:${p(jst.getUTCSeconds())}`;
-    const days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    document.getElementById('jst-date').textContent =
-      `${days[jst.getUTCDay()]}, ${months[jst.getUTCMonth()]} ${jst.getUTCDate()}`;
-  }
-  setInterval(loadMemberData, 30 * 1000);
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9 * 3600000);
+  const p = n => String(n).padStart(2,'0');
+  document.getElementById('jst-time').textContent =
+    `${p(jst.getUTCHours())}:${p(jst.getUTCMinutes())}:${p(jst.getUTCSeconds())}`;
+  document.getElementById('local-time').textContent =
+    `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+  const days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('jst-date').textContent =
+    `${days[jst.getUTCDay()]}, ${months[jst.getUTCMonth()]} ${jst.getUTCDate()}`;
+}
+setInterval(tick, 1000);
+tick();
+setInterval(loadMemberData, 30 * 1000);
 
   /* ── Navigation ── */
   function showPage(page, el) {
