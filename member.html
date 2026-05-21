@@ -938,18 +938,20 @@ setInterval(loadMemberData, 30 * 1000);
 
   /* ── Navigation ── */
   function showPage(page, el) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById(`page-${page}`).classList.add('active');
-    el.classList.add('active');
-    if (page === 'calendar' || page === 'leave') {
-  if (memberData) {
-    renderMemberData();
-  } else {
-    loadMemberData();
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  el.classList.add('active');
+  if (page === 'calendar' || page === 'leave') {
+    if (memberData) {
+      renderMemberData();
+    } else if (currentUser) {
+      loadMemberData();
+    } else {
+      setTimeout(() => loadMemberData(), 500);
+    }
   }
 }
-  }
 
   /* ── Entry Type ── */
   function setEntryType(t) {
