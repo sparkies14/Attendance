@@ -1121,10 +1121,11 @@ setInterval(loadMemberData, 30 * 1000);
 }
 
   function renderMemberData() {
-    if (!memberData) return;
-    renderCalendar();
-    renderLeaveHistory();
-  }
+  console.log('renderMemberData called, memberData:', memberData);
+  if (!memberData) return;
+  renderCalendar();
+  renderLeaveHistory();
+}
 
   /* ── Calendar ── */
   function changeMonth(dir) {
