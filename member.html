@@ -942,7 +942,13 @@ setInterval(loadMemberData, 30 * 1000);
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById(`page-${page}`).classList.add('active');
     el.classList.add('active');
-    if (page === 'calendar' || page === 'leave') renderMemberData();
+    if (page === 'calendar' || page === 'leave') {
+  if (memberData) {
+    renderMemberData();
+  } else {
+    loadMemberData();
+  }
+}
   }
 
   /* ── Entry Type ── */
