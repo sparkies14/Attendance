@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Anosupo · Sign In</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -292,42 +293,7 @@ body {
 
     <div class="left-inner fade-in">
 
-      <!-- Floating card illustration -->
-      <div class="ill-wrap">
-        <div class="ill-ring"></div>
-
-        <!-- Center -->
-        <div class="ill-center">
-          <span class="ill-center-icon">📋</span>
-        </div>
-
-        <!-- Floating cards -->
-        <div class="ill-card ill-card-1">
-          <div class="ill-dot" style="background:#1a6b3c"></div>
-          <span style="color:#1a6b3c">Clocked In</span>
-          <span style="color:#a8a59f;font-weight:400">9:02 AM</span>
-        </div>
-
-        <div class="ill-card ill-card-2">
-          <div class="ill-dot" style="background:#92680a"></div>
-          <span style="color:#6b6860">Late · 9:14 AM</span>
-        </div>
-
-        <div class="ill-card ill-card-3">
-          <span>🍱</span>
-          <span style="color:#6b6860">Lunch Out</span>
-        </div>
-
-        <div class="ill-card ill-card-4" style="padding:8px 12px;font-size:11px">
-          <span>✅</span>
-          <span style="color:#6b6860">Approved</span>
-        </div>
-
-        <div class="ill-card ill-card-5" style="padding:8px 12px;font-size:11px">
-          <span>📅</span>
-          <span style="color:#6b6860">Leave</span>
-        </div>
-      </div>
+      <div id="lottie-wrap" style="width:320px; height:320px; margin-bottom:24px;"></div>
 
       <div class="left-headline fade-in-d1">
         Track attendance the <span>smart way</span>
@@ -482,6 +448,14 @@ body {
       showStatus('error', 'Connection failed. Check n8n is running.');
     }
   }
+  // Initialize Lottie animation
+lottie.loadAnimation({
+  container: document.getElementById('lottie-wrap'),
+  renderer: 'svg',
+  loop: true,
+  autoplay: true,
+  path: 'office.json'
+});
 </script>
 </body>
 </html>
