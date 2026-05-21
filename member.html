@@ -736,24 +736,27 @@ body {
 
       <!-- Today Summary -->
       <div class="summary-row fade-in" id="today-summary" style="display:none">
-        <div class="summary-card s-present">
-          <div class="summary-label">Clock In</div>
-          <div style="font-size:16px;font-weight:600;color:var(--accent);margin-top:4px" id="today-clockin">—</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-label">Clock Out</div>
-          <div style="font-size:16px;font-weight:600;color:var(--text2);margin-top:4px" id="today-clockout">—</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-label">Total Hours</div>
-          <div style="font-size:16px;font-weight:600;color:var(--blue);margin-top:4px" id="today-hours">—</div>
-        </div>
-        <div class="summary-card">
-          <div class="summary-label">Status</div>
-          <div style="font-size:14px;font-weight:600;margin-top:4px" id="today-status-val">—</div>
-        </div>
-      </div>
-    </div>
+  <div class="summary-card">
+    <div class="summary-label">Clock In</div>
+    <div style="font-size:15px;font-weight:600;color:var(--accent);margin-top:4px" id="today-clockin">—</div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-label">Clock Out</div>
+    <div style="font-size:15px;font-weight:600;color:var(--text2);margin-top:4px" id="today-clockout">—</div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-label">Status</div>
+    <div style="font-size:14px;font-weight:600;margin-top:4px" id="today-status-val">—</div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-label">Approval</div>
+    <div style="font-size:14px;font-weight:600;margin-top:4px" id="today-approval">—</div>
+  </div>
+  <div class="summary-card">
+    <div class="summary-label">Total Hours</div>
+    <div style="font-size:15px;font-weight:600;color:var(--blue);margin-top:4px" id="today-hours">—</div>
+  </div>
+</div>
 
     <!-- Calendar Page -->
     <div class="page" id="page-calendar">
@@ -925,7 +928,7 @@ body {
     document.getElementById('jst-date').textContent =
       `${days[jst.getUTCDay()]}, ${months[jst.getUTCMonth()]} ${jst.getUTCDate()}`;
   }
-  setInterval(tick, 1000); tick();
+  setInterval(loadMemberData, 30 * 1000);
 
   /* ── Navigation ── */
   function showPage(page, el) {
@@ -1071,22 +1074,37 @@ body {
   }
 
   function updateTodaySummary() {
-    if (!memberData) return;
-    const today = new Date().toLocaleDateString('en-US');
-    const todayRecord = memberData.calendar?.find(d => d.date === today);
-    if (todayRecord && todayRecord.clockIn !== '-') {
-      document.getElementById('today-summary').style.display = 'grid';
-      document.getElementById('today-clockin').textContent  = todayRecord.clockIn;
-      document.getElementById('today-clockout').textContent = todayRecord.clockOut !== '-' ? todayRecord.clockOut : '—';
-      document.getElementById('today-hours').textContent    = todayRecord.totalHours !== '-' ? todayRecord.totalHours + ' hrs' : '—';
-      const statusColors = { present:'var(--accent)', late:'var(--yellow)', 'clocked-out':'var(--blue)', pending:'var(--orange)' };
-      const statusLabels = { present:'On Time', late:'Late', 'clocked-out':'Clocked Out', pending:'Pending' };
-      const sv = document.getElementById('today-status-val');
-      sv.textContent = statusLabels[todayRecord.status] || todayRecord.status;
-      sv.style.color = statusColors[todayRecord.status] || 'var(--text2)';
-      document.getElementById('today-status').textContent = `Today · ${statusLabels[todayRecord.status] || ''}`;
+  if (!memberData) return;
+  const today = new Date().toLocaleDateString('en-US');
+  const todayRecord = memberData.calendar?.find(d => d.date === today);
+  if (todayRecord && todayRecord.clockIn !== '-') {
+    document.getElementById('today-summary').style.display = 'grid';
+    document.getElementById('today-clockin').textContent  = todayRecord.clockIn;
+    document.getElementById('today-clockout').textContent = todayRecord.clockOut !== '-' ? todayRecord.clockOut : '—';
+    document.getElementById('today-hours').textContent    = todayRecord.totalHours !== '-' ? todayRecord.totalHours + ' hrs' : '—';
+
+    const statusMap = { present:'On Time ✓', late:'Late ⏰', 'clocked-out':'Clocked Out', pending:'Pending ⏳' };
+    const statusColors = { present:'var(--accent)', late:'var(--yellow)', 'clocked-out':'var(--blue)', pending:'var(--orange)' };
+    const sv = document.getElementById('today-status-val');
+    sv.textContent = statusMap[todayRecord.status] || todayRecord.status;
+    sv.style.color = statusColors[todayRecord.status] || 'var(--text2)';
+
+    // Approval status
+    const approvalEl = document.getElementById('today-approval');
+    if (todayRecord.status === 'pending') {
+      approvalEl.textContent = 'Pending ⏳';
+      approvalEl.style.color = 'var(--orange)';
+    } else if (todayRecord.status === 'present' || todayRecord.status === 'late' || todayRecord.status === 'clocked-out') {
+      approvalEl.textContent = 'Approved ✓';
+      approvalEl.style.color = 'var(--accent)';
+    } else {
+      approvalEl.textContent = '—';
+      approvalEl.style.color = 'var(--text2)';
     }
+
+    document.getElementById('today-status').textContent = `Today · ${statusMap[todayRecord.status] || ''}`;
   }
+}
 
   function renderMemberData() {
     if (!memberData) return;

@@ -892,7 +892,9 @@ tbody td { padding: 13px 18px; font-size: 12px; }
   }
 
   // Auto refresh every 5 minutes
-  setInterval(loadData, 5 * 60 * 1000);
+  setInterval(() => {
+  loadData();
+}, 30 * 1000);setInterval(loadData, 5 * 60 * 1000);
 </script>
 </body>
 </html>
