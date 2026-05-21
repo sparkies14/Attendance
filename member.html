@@ -1121,16 +1121,9 @@ setInterval(loadMemberData, 30 * 1000);
 }
 
   function renderMemberData() {
-  console.log("renderMemberData called, memberData:", memberData);
-
   if (!memberData) return;
-
-  try {
-    // --- YOUR EXISTING CODE STAYS HERE, just wrapped ---
-
-  } catch (err) {
-    console.error("❌ renderMemberData crashed:", err);
-  }
+  renderCalendar();
+  renderLeaveHistory();
 }
 
   /* ── Calendar ── */
