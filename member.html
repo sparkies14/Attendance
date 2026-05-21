@@ -844,9 +844,9 @@ body {
 </div>
 
 <script>
-  const WEBHOOK      = 'https://e-formentera.app.n8n.cloud/webhook/attendance';
-  const CHECK_ROLE   = 'https://e-formentera.app.n8n.cloud/webhook/check-role';
-  const MEMBER_DATA  = 'https://e-formentera.app.n8n.cloud/webhook/member-data';
+  const WEBHOOK      = 'http://localhost:5678/webhook/attendance';
+  const CHECK_ROLE   = 'http://localhost:5678/webhook/check-role';
+  const MEMBER_DATA  = 'http://localhost:5678/webhook/member-data';
   const CLIENT_ID    = '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com';
 
   let currentUser = null;
@@ -861,18 +861,6 @@ body {
     return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
   }
 
-  window.onload = function() {
-    google.accounts.id.initialize({
-      client_id: CLIENT_ID,
-      callback: handleAuth,
-      auto_select: false
-    });
-    google.accounts.id.renderButton(
-      document.getElementById('auth-google-btn'),
-      { theme: 'outline', size: 'large', width: 296, text: 'signin_with' }
-    );
-  }
-
   function showAuthMsg(type, msg) {
     const el = document.getElementById('auth-msg');
     const ico = document.getElementById('auth-icon');
@@ -881,36 +869,50 @@ body {
     ico.innerHTML = type === 'loading' ? '<span class="spin"></span>' : type === 'error' ? '✕' : '✓';
   }
 
-  async function handleAuth(response) {
-    const p = parseJwt(response.credential);
-    showAuthMsg('loading', `Checking access for ${p.email}...`);
+  window.onload = function() {
+  const params     = new URLSearchParams(window.location.search);
+  const credential = params.get('credential');
+  const role       = params.get('role');
+
+  if (credential && role) {
     try {
-      const res  = await fetch(CHECK_ROLE, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email:p.email, name:p.name}) });
-      const data = await res.json();
-      if (data.role === 'whitelist' || data.role === 'goldlist') {
-        currentUser = { name: p.name, email: p.email, avatar: p.picture };
-        document.getElementById('user-name').textContent   = p.name.split(' ')[0];
-        document.getElementById('user-role').textContent   = data.role === 'goldlist' ? 'Manager' : 'Member';
-        document.getElementById('user-avatar').src         = p.picture;
-        document.getElementById('welcome-title').textContent = getGreeting() + ', ' + p.name.split(' ')[0];
-        document.getElementById('auth-gate').classList.add('hidden');
-        document.getElementById('app').classList.add('show');
-        loadMemberData();
-      } else {
-        showAuthMsg('error', 'Access denied. Contact your manager.');
-        google.accounts.id.disableAutoSelect();
-      }
-    } catch(e) {
-      showAuthMsg('error', 'Connection failed. Please try again.');
-    }
+      const p = parseJwt(credential);
+      sessionStorage.setItem('anosupo_credential', credential);
+      sessionStorage.setItem('anosupo_role', role);
+      window.history.replaceState({}, '', window.location.pathname);
+      bootMember(p);
+      return;
+    } catch(e) { window.location.href = 'index.html'; return; }
   }
 
-  function signOut() {
-    currentUser = null;
-    google.accounts.id.disableAutoSelect();
-    document.getElementById('auth-gate').classList.remove('hidden');
-    document.getElementById('app').classList.remove('show');
+  const savedCredential = sessionStorage.getItem('anosupo_credential');
+  if (savedCredential) {
+    try {
+      const p = parseJwt(savedCredential);
+      bootMember(p);
+      return;
+    } catch(e) { window.location.href = 'index.html'; return; }
   }
+
+  window.location.href = 'index.html';
+}
+
+function bootMember(p) {
+  currentUser = { name: p.name, email: p.email, avatar: p.picture };
+  document.getElementById('user-name').textContent   = p.name.split(' ')[0];
+  document.getElementById('user-role').textContent   = 'Member';
+  document.getElementById('user-avatar').src         = p.picture;
+  document.getElementById('welcome-title').textContent = getGreeting() + ', ' + p.name.split(' ')[0];
+  document.getElementById('auth-gate').classList.add('hidden');
+  document.getElementById('app').classList.add('show');
+  loadMemberData();
+}
+
+  function signOut() {
+  sessionStorage.removeItem('anosupo_credential');
+  sessionStorage.removeItem('anosupo_role');
+  window.location.href = 'index.html';
+}
 
   function getGreeting() {
     const h = new Date().getHours();

@@ -417,9 +417,9 @@ tbody td { padding: 12px 16px; font-size: 13px; }
 </div>
 
 <script>
-  const DASHBOARD_URL  = 'https://e-formentera.app.n8n.cloud/webhook/dashboard';
-  const CHECK_ROLE_URL = 'https://e-formentera.app.n8n.cloud/webhook/check-role';
-  const APPROVE_URL    = 'https://e-formentera.app.n8n.cloud/webhook/approve';
+  const DASHBOARD_URL  = 'http://localhost:5678/webhook/dashboard';
+  const CHECK_ROLE_URL = 'http://localhost:5678/webhook/check-role';
+  const APPROVE_URL    = 'http://localhost:5678/webhook/approve';
   const CLIENT_ID      = '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com';
 
   let allMembers = [];
@@ -462,41 +462,58 @@ tbody td { padding: 12px 16px; font-size: 13px; }
   function parseJwt(t) {
     return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
   }
-  window.onload = function() {
-    google.accounts.id.initialize({ client_id: CLIENT_ID, callback: handleAuth, auto_select: false });
-    google.accounts.id.renderButton(document.getElementById('auth-google-btn'), { theme: 'outline', size: 'large', width: 284, text: 'signin_with' });
-  }
+  
   function showAuthMsg(type, msg) {
     const el = document.getElementById('auth-msg');
     el.className = `auth-msg show ${type}`;
     document.getElementById('auth-text').textContent = msg;
     document.getElementById('auth-icon').innerHTML = type === 'loading' ? '<span class="spin"></span>' : type === 'error' ? '✕' : '✓';
   }
-  async function handleAuth(response) {
-    const p = parseJwt(response.credential);
-    showAuthMsg('loading', `Checking access for ${p.email}...`);
+
+  window.onload = function() {
+  const params     = new URLSearchParams(window.location.search);
+  const credential = params.get('credential');
+  const role       = params.get('role');
+
+  if (credential && role) {
     try {
-      const res  = await fetch(CHECK_ROLE_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email:p.email, name:p.name}) });
-      const data = await res.json();
-      if (data.role === 'goldlist') {
-        currentUser = { name: p.name, email: p.email, avatar: p.picture };
-        document.getElementById('sidebar-name').textContent = p.name.split(' ')[0];
-        document.getElementById('sidebar-avatar').src = p.picture;
-        document.getElementById('auth-gate').classList.add('hidden');
-        document.getElementById('app').classList.add('show');
-        loadData();
-      } else {
-        showAuthMsg('error', 'Access denied. Executive accounts only.');
-        google.accounts.id.disableAutoSelect();
-      }
-    } catch(e) { showAuthMsg('error', 'Connection failed. Please try again.'); }
+      const p = parseJwt(credential);
+      sessionStorage.setItem('anosupo_credential', credential);
+      sessionStorage.setItem('anosupo_role', role);
+      window.history.replaceState({}, '', window.location.pathname);
+      bootMember(p);
+      return;
+    } catch(e) { window.location.href = 'index.html'; return; }
   }
+
+  const savedCredential = sessionStorage.getItem('anosupo_credential');
+  if (savedCredential) {
+    try {
+      const p = parseJwt(savedCredential);
+      bootMember(p);
+      return;
+    } catch(e) { window.location.href = 'index.html'; return; }
+  }
+
+  window.location.href = 'index.html';
+}
+
+function bootMember(p) {
+  currentUser = { name: p.name, email: p.email, avatar: p.picture };
+  document.getElementById('user-name').textContent   = p.name.split(' ')[0];
+  document.getElementById('user-role').textContent   = 'Member';
+  document.getElementById('user-avatar').src         = p.picture;
+  document.getElementById('welcome-title').textContent = getGreeting() + ', ' + p.name.split(' ')[0];
+  document.getElementById('auth-gate').classList.add('hidden');
+  document.getElementById('app').classList.add('show');
+  loadMemberData();
+}
+
   function signOut() {
-    currentUser = null;
-    google.accounts.id.disableAutoSelect();
-    document.getElementById('auth-gate').classList.remove('hidden');
-    document.getElementById('app').classList.remove('show');
-  }
+  sessionStorage.removeItem('anosupo_credential');
+  sessionStorage.removeItem('anosupo_role');
+  window.location.href = 'index.html';
+}
 
   /* ── Navigation ── */
   function showPage(page, el) {
