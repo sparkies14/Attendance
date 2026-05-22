@@ -216,6 +216,44 @@ body {
 }
 .signout:hover { background: var(--red-bg); color: var(--red); }
 
+/* ─── Sidebar Clock ─── */
+.sidebar-clock {
+  margin: 10px 10px 0;
+  padding: 11px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  transition: background 0.3s, border-color 0.3s;
+}
+.clock-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.clock-block { flex: 1; }
+.clock-label {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text3);
+  margin-bottom: 2px;
+}
+.clock-time {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.clock-time.sm { font-size: 14px; color: var(--text2); }
+.clock-date {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.clock-divider {
+  width: 1px;
+  background: var(--border);
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
 /* ─── Main ─── */
 .main { flex: 1; overflow-y: auto; }
 
@@ -679,6 +717,23 @@ tbody td:not(:first-child) { text-align: center; }
       </div>
     </div>
 
+    <!-- Live Clock -->
+    <div class="sidebar-clock">
+      <div class="clock-row">
+        <div class="clock-block">
+          <div class="clock-label">Japan (JST)</div>
+          <div class="clock-time" id="jst-time">--:--:--</div>
+          <div class="clock-date" id="jst-date">—</div>
+        </div>
+        <div class="clock-divider"></div>
+        <div class="clock-block">
+          <div class="clock-label">Local Time</div>
+          <div class="clock-time sm" id="local-time">--:--:--</div>
+          <div class="clock-date" id="local-date">—</div>
+        </div>
+      </div>
+    </div>
+
     <div class="sidebar-bottom">
       <div class="theme-toggle">
         <button class="theme-btn active" id="theme-light" onclick="setTheme('light')">☀️ Light</button>
@@ -888,6 +943,27 @@ let searchQuery      = '';
 let pendingApprovals = [];
 let pendingLeave     = [];
 let weekOffset       = 0; // 0 = current week
+
+/* ─── Live Clock ─── */
+function tick() {
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9 * 3600000);
+  const p   = n => String(n).padStart(2,'0');
+  const days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  document.getElementById('jst-time').textContent =
+    `${p(jst.getUTCHours())}:${p(jst.getUTCMinutes())}:${p(jst.getUTCSeconds())}`;
+  document.getElementById('jst-date').textContent =
+    `${days[jst.getUTCDay()]}, ${months[jst.getUTCMonth()]} ${jst.getUTCDate()}`;
+
+  document.getElementById('local-time').textContent =
+    `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+  document.getElementById('local-date').textContent =
+    `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+}
+setInterval(tick, 1000);
+tick();
 
 /* ─── Theme ─── */
 function setTheme(t) {
