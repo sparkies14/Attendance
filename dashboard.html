@@ -238,6 +238,14 @@ tbody td { padding: 12px 16px; font-size: 13px; }
 @media (max-width: 1200px) { .stats-row { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 900px)  { .active-row { grid-template-columns: 1fr; } }
 @media (max-width: 768px)  { .sidebar { display: none; } .page { padding: 16px; } .stats-row { grid-template-columns: repeat(2, 1fr); } }
+
+@keyframes pulse-border {
+  0%, 100% { border-color: var(--border); }
+  50% { border-color: var(--accent); color: var(--accent); }
+}
+.refresh-pulse {
+  animation: pulse-border 2s ease-in-out infinite;
+}
 </style>
 </head>
 <body>
@@ -319,7 +327,9 @@ tbody td { padding: 12px 16px; font-size: 13px; }
           <span class="date-tag" id="date-pill">—</span>
           <span class="rate-pill" id="rate-pill">—% on time</span>
           <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
-          <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+          <button class="refresh-btn" id="refresh-btn" onclick="loadData()">
+  ↻ Refresh
+</button>
         </div>
       </div>
 
@@ -421,6 +431,15 @@ tbody td { padding: 12px 16px; font-size: 13px; }
   const CHECK_ROLE_URL = 'http://localhost:5678/webhook/check-role';
   const APPROVE_URL    = 'http://localhost:5678/webhook/approve';
   const CLIENT_ID      = '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com';
+
+  let refreshTimer;
+function resetRefreshPulse() {
+  clearTimeout(refreshTimer);
+  document.getElementById('refresh-btn').classList.remove('refresh-pulse');
+  refreshTimer = setTimeout(() => {
+    document.getElementById('refresh-btn').classList.add('refresh-pulse');
+  }, 2 * 60 * 1000);
+}
 
   let allMembers = [];
   let currentFilter = 'ALL';
@@ -742,9 +761,8 @@ function bootDashboard(p) {
       document.getElementById('error-msg').textContent = `Failed to load data — ${e.message}`;
       document.getElementById('error-banner').classList.add('show');
     }
-  }
-
-  setInterval(loadData, 30 * 1000);
+  resetRefreshPulse(); // ← add this line
+}
 </script>
 </body>
 </html>
