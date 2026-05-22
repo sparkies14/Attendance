@@ -952,6 +952,98 @@ tbody td:not(:first-child) { text-align: center; }
 .pbv-red   { color: #f87171; }
 .pbv-amber { color: #fbbf24; }
 .pbv-white { color: #f0ede8; }
+/* ─── Notifications Panel ─── */
+.notif-panel {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 100;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); box-shadow: var(--shadow);
+  width: 320px; max-height: 420px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transition: background 0.3s;
+}
+.notif-panel.hidden { display: none; }
+.notif-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px 12px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.notif-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.notif-clear {
+  font-family: 'DM Sans', sans-serif; font-size: 11.5px; color: var(--text3);
+  background: none; border: none; cursor: pointer; transition: color 0.15s;
+}
+.notif-clear:hover { color: var(--red); }
+#notif-list { overflow-y: auto; flex: 1; }
+.notif-empty { padding: 32px 16px; text-align: center; font-size: 13px; color: var(--text3); }
+.notif-item {
+  display: flex; gap: 11px; padding: 12px 16px;
+  border-bottom: 1px solid var(--border); cursor: default;
+  transition: background 0.1s; position: relative;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background: var(--surface2); }
+.notif-item.unread { background: var(--accent-bg); }
+.notif-item.unread:hover { background: var(--accent-bg); filter: brightness(0.97); }
+.notif-unread-dot {
+  position: absolute; top: 14px; right: 14px;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+}
+.notif-icon-wrap {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.ni-amber  { background: var(--amber-bg); }
+.ni-red    { background: var(--red-bg); }
+.ni-blue   { background: var(--accent-bg); }
+.ni-green  { background: var(--green-bg); }
+.ni-purple { background: var(--purple-bg); }
+.notif-body { flex: 1; min-width: 0; }
+.notif-body-title { font-size: 12.5px; font-weight: 500; color: var(--text); line-height: 1.3; margin-bottom: 2px; }
+.notif-body-meta  { font-size: 11px; color: var(--text3); }
+
+/* ─── Settings Page ─── */
+.settings-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 22px 24px; box-shadow: var(--shadow-sm);
+  transition: background 0.3s, border-color 0.3s;
+}
+.settings-card-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.settings-card-sub   { font-size: 12px; color: var(--text3); }
+
+/* Toggle switch */
+.settings-toggle {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  padding: 6px 0; user-select: none;
+}
+.settings-toggle input { display: none; }
+.settings-toggle-slider {
+  width: 36px; height: 20px; border-radius: 10px;
+  background: var(--border2); flex-shrink: 0; position: relative;
+  transition: background 0.2s;
+}
+.settings-toggle-slider::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; transition: transform 0.2s;
+}
+.settings-toggle input:checked + .settings-toggle-slider { background: var(--accent); }
+.settings-toggle input:checked + .settings-toggle-slider::after { transform: translateX(16px); }
+.settings-toggle-label { font-size: 13px; color: var(--text2); }
+
+/* Goldlist email tags */
+.goldlist-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--accent-bg); color: var(--accent);
+  border: 1px solid var(--accent-bd); border-radius: 20px;
+  font-size: 12px; padding: 4px 10px;
+}
+.goldlist-tag button {
+  background: none; border: none; cursor: pointer;
+  color: var(--accent); font-size: 13px; line-height: 1;
+  padding: 0; opacity: 0.6; transition: opacity 0.15s;
+}
+.goldlist-tag button:hover { opacity: 1; }
 </style>
 </head>
 <body>
@@ -992,7 +1084,7 @@ tbody td:not(:first-child) { text-align: center; }
       </div>
 
       <div class="nav-label">System</div>
-      <div class="nav-item" onclick="showPage('settings',this)">
+      <div class="nav-item" onclick="showPage('settings',this);initSettings()">
         <span class="nav-icon">⚙️</span> Settings
       </div>
       <div class="nav-item" onclick="showPage('integrations',this)">
@@ -1049,10 +1141,22 @@ tbody td:not(:first-child) { text-align: center; }
         <button class="topbar-icon-btn">
           💬
         </button>
-        <button class="topbar-icon-btn">
-          🔔
-          <span class="topbar-notif-dot"></span>
-        </button>
+        <div style="position:relative">
+          <button class="topbar-icon-btn" id="notif-btn" onclick="toggleNotifPanel()">
+            🔔
+            <span class="topbar-notif-dot" id="notif-dot" style="display:none"></span>
+          </button>
+          <!-- Notification Panel -->
+          <div class="notif-panel hidden" id="notif-panel">
+            <div class="notif-header">
+              <span class="notif-title">Notifications</span>
+              <button class="notif-clear" onclick="clearAllNotifs()">Clear all</button>
+            </div>
+            <div id="notif-list">
+              <div class="notif-empty">No notifications yet</div>
+            </div>
+          </div>
+        </div>
         <div class="topbar-profile">
           <div class="topbar-avatar" id="topbar-avatar">M</div>
           <span class="topbar-uname" id="topbar-name">Manager</span>
@@ -1364,8 +1468,162 @@ tbody td:not(:first-child) { text-align: center; }
       </div>
     </div>
     <div class="page fade-in" id="page-settings">
-      <div class="page-header"><div><div class="page-title">Settings</div><div class="page-sub">System configuration</div></div></div>
-      <div class="empty"><div class="empty-icon">⚙️</div>Settings coming soon.</div>
+      <div class="page-header">
+        <div>
+          <div class="page-title">Settings</div>
+          <div class="page-sub">Configure your dashboard, pay period, and notifications</div>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-primary" onclick="saveSettings()">💾 Save Changes</button>
+        </div>
+      </div>
+
+      <!-- Settings Grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+        <!-- Pay Period -->
+        <div class="settings-card">
+          <div class="settings-card-title">💳 Pay Period</div>
+          <div class="settings-card-sub">Define when the pay period starts and ends each month</div>
+          <div class="form-row" style="margin-top:16px">
+            <label class="form-label">Pay Period Start Day</label>
+            <select class="form-select" id="set-pay-start">
+              <option value="25" selected>25th of the month</option>
+              <option value="1">1st of the month</option>
+              <option value="15">15th of the month</option>
+              <option value="20">20th of the month</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Pay Period End Day</label>
+            <select class="form-select" id="set-pay-end">
+              <option value="24" selected>24th of the month</option>
+              <option value="last">Last day of the month</option>
+              <option value="14">14th of the month</option>
+              <option value="19">19th of the month</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Target Hours Per Period</label>
+            <input class="form-input" id="set-target-hours" type="number" value="160" min="1" max="400">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Standard Daily Hours</label>
+            <input class="form-input" id="set-daily-hours" type="number" value="8" min="1" max="24">
+          </div>
+        </div>
+
+        <!-- Attendance Rules -->
+        <div class="settings-card">
+          <div class="settings-card-title">⏰ Attendance Rules</div>
+          <div class="settings-card-sub">Define what counts as on-time, late, and absent</div>
+          <div class="form-row" style="margin-top:16px">
+            <label class="form-label">Shift Start Time (JST)</label>
+            <input class="form-input" id="set-shift-start" type="time" value="09:00">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Grace Period (minutes before marked Late)</label>
+            <input class="form-input" id="set-grace" type="number" value="15" min="0" max="60">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Lunch Break Duration (excluded from hours)</label>
+            <select class="form-select" id="set-lunch">
+              <option value="60" selected>1 hour</option>
+              <option value="30">30 minutes</option>
+              <option value="0">No lunch deduction</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Minimum Hours to Count as Present</label>
+            <input class="form-input" id="set-min-hours" type="number" value="4" min="1" max="12">
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="settings-card">
+          <div class="settings-card-title">🔔 Notification Triggers</div>
+          <div class="settings-card-sub">Choose what triggers a dashboard notification</div>
+          <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">
+            <label class="settings-toggle">
+              <input type="checkbox" id="notif-late" checked>
+              <span class="settings-toggle-slider"></span>
+              <span class="settings-toggle-label">Member clocks in late</span>
+            </label>
+            <label class="settings-toggle">
+              <input type="checkbox" id="notif-absent" checked>
+              <span class="settings-toggle-slider"></span>
+              <span class="settings-toggle-label">Member not clocked in by 10:00 AM</span>
+            </label>
+            <label class="settings-toggle">
+              <input type="checkbox" id="notif-approval" checked>
+              <span class="settings-toggle-slider"></span>
+              <span class="settings-toggle-label">New manual clock-in approval request</span>
+            </label>
+            <label class="settings-toggle">
+              <input type="checkbox" id="notif-leave" checked>
+              <span class="settings-toggle-slider"></span>
+              <span class="settings-toggle-label">New leave request submitted</span>
+            </label>
+            <label class="settings-toggle">
+              <input type="checkbox" id="notif-short" checked>
+              <span class="settings-toggle-slider"></span>
+              <span class="settings-toggle-label">Member at risk of short hours</span>
+            </label>
+            <label class="settings-toggle">
+              <input type="checkbox" id="notif-payend">
+              <span class="settings-toggle-slider"></span>
+              <span class="settings-toggle-label">Pay period ending in 3 days</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="settings-card">
+          <div class="settings-card-title">🎛️ Dashboard Behaviour</div>
+          <div class="settings-card-sub">Control how the dashboard refreshes and displays data</div>
+          <div class="form-row" style="margin-top:16px">
+            <label class="form-label">Auto-Refresh Interval</label>
+            <select class="form-select" id="set-refresh">
+              <option value="30000" selected>Every 30 seconds</option>
+              <option value="60000">Every 1 minute</option>
+              <option value="300000">Every 5 minutes</option>
+              <option value="0">Manual only</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Webhook Base URL (n8n)</label>
+            <input class="form-input" id="set-webhook" type="text" value="http://localhost:5678">
+          </div>
+          <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">
+            <label class="settings-toggle">
+              <input type="checkbox" id="set-show-weekends" checked>
+              <span class="settings-toggle-slider"></span>
+              <span class="settings-toggle-label">Show weekends in calendar</span>
+            </label>
+            <label class="settings-toggle">
+              <input type="checkbox" id="set-dark-auto">
+              <span class="settings-toggle-slider"></span>
+              <span class="settings-toggle-label">Auto dark mode after 6:00 PM (JST)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Goldlist / Access -->
+        <div class="settings-card" style="grid-column:1/-1">
+          <div class="settings-card-title">🔐 Manager Access (Goldlist)</div>
+          <div class="settings-card-sub">Only Google accounts on this list can access the manager dashboard</div>
+          <div class="form-row" style="margin-top:16px">
+            <label class="form-label">Add email to goldlist</label>
+            <div style="display:flex;gap:8px">
+              <input class="form-input" id="set-goldlist-input" type="email" placeholder="e.g. manager@yourcompany.com" style="flex:1">
+              <button class="btn btn-primary" onclick="addGoldlistEmail()" style="flex-shrink:0">Add</button>
+            </div>
+          </div>
+          <div id="goldlist-emails" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+          <div style="margin-top:12px;font-size:11.5px;color:var(--text3)">⚠ Changes to the goldlist take effect on the next login. Actual enforcement is handled by your n8n check-role webhook.</div>
+        </div>
+
+      </div>
     </div>
     <div class="page fade-in" id="page-integrations">
       <div class="page-header"><div><div class="page-title">Integration</div><div class="page-sub">Connect external services</div></div></div>
@@ -1482,9 +1740,8 @@ window.onload = function() {
       return;
     } catch(e) {}
   }
-  // Demo mode — no redirect so the file works standalone
-  setUser({ name: 'Manager', email: 'manager@example.com', picture: '' });
-  loadDemoData();
+  sessionStorage.clear();
+  window.location.href = 'index.html';
 };
 
 function parseJwt(t) {
@@ -1770,7 +2027,6 @@ async function loadData() {
   } catch(e) {
     document.getElementById('error-msg').textContent = `Failed to load — ${e.message}`;
     document.getElementById('error-bar').classList.add('show');
-    loadDemoData();
   }
 }
 
@@ -1799,35 +2055,7 @@ function ingestData(data) {
   document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
   initCalendar();
   renderPayroll();
-}
-
-/* ─── Demo Data ─── */
-function loadDemoData() {
-  const demo = {
-    date: new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'}),
-    summary: { total:12, clockedIn:5, late:3, clockedOut:2, pending:1, notClockedIn:1 },
-    members: [
-      { name:'Dianne Russell',  role:'UI/UX Designer',     status:'CLOCKED IN',        clockIn:'08:02', clockOut:'—',    totalHours:'8h 0m',  reason:'' },
-      { name:'Bessie Cooper',   role:'Product Designer',   status:'CLOCKED IN (LATE)', clockIn:'09:24', clockOut:'—',    totalHours:'6h 24m', reason:'Bus delay' },
-      { name:'Brooklyn Jones',  role:'Marketing Officer',  status:'CLOCKED IN',        clockIn:'08:00', clockOut:'—',    totalHours:'8h 12m', reason:'' },
-      { name:'Eleanor Pena',    role:'Content Writer',     status:'CLOCKED OUT',       clockIn:'08:05', clockOut:'17:00',totalHours:'8h 15m', reason:'' },
-      { name:'Darlene Robert',  role:'UX Engineer',        status:'CLOCKED IN (LATE)', clockIn:'09:17', clockOut:'—',    totalHours:'5h 17m', reason:'' },
-      { name:'Jacob Jones',     role:'Frontend Dev',       status:'CLOCKED IN',        clockIn:'07:58', clockOut:'—',    totalHours:'8h 39m', reason:'' },
-      { name:'Kristin Watson',  role:'Backend Dev',        status:'CLOCKED IN (LATE)', clockIn:'09:45', clockOut:'—',    totalHours:'4h 13m', reason:'Doctor appt' },
-      { name:'Cameron Williamson', role:'DevOps',          status:'CLOCKED OUT',       clockIn:'08:00', clockOut:'16:30',totalHours:'8h 0m',  reason:'' },
-      { name:'Jenny Wilson',    role:'QA Engineer',        status:'PENDING APPROVAL',  clockIn:'—',     clockOut:'—',    totalHours:'—',      reason:'Manual clock-in request' },
-      { name:'Ralph Edwards',   role:'Scrum Master',       status:'NOT CLOCKED IN',    clockIn:'—',     clockOut:'—',    totalHours:'—',      reason:'' },
-      { name:'Theresa Webb',    role:'Data Analyst',       status:'CLOCKED IN',        clockIn:'08:10', clockOut:'—',    totalHours:'7h 24m', reason:'' },
-      { name:'Guy Hawkins',     role:'Product Manager',    status:'CLOCKED IN',        clockIn:'08:00', clockOut:'—',    totalHours:'8h 0m',  reason:'' },
-    ],
-    pendingApprovals: [
-      { name:'Jenny Wilson', date:'08. August 2025', time:'09:15 AM', entryType:'Manual Clock-in', reason:'Forgot to clock in at arrival — was in the server room.', row_number: 5 }
-    ],
-    pendingLeave: [
-      { name:'Bessie Cooper', date:'10–12 August 2025', time:'—', 'Leave Type':'Sick Leave', Reason:'Flu symptoms, doctor confirmed.', row_number: 3 }
-    ]
-  };
-  ingestData(demo);
+  generateNotifs(data);
 }
 
 /* ─── Calendar State ─── */
@@ -1839,30 +2067,7 @@ let calFilter      = 'all';
 let calEvents      = [];
 
 /* ─── Demo event data ─── */
-const DEMO_EVENTS = [
-  { id:1,  emp:'Dianne Russell',     type:'meeting',  title:'Marketing Stand-up',       date:'2026-05-26', time:'10:00 AM – 10:30 AM', location:'Zoom',                 note:'' },
-  { id:2,  emp:'Dianne Russell',     type:'task',     title:'Finish wireframes for app', date:'2026-05-27', time:'All day',              location:'',                     note:'Due EOD' },
-  { id:3,  emp:'Bessie Cooper',      type:'meeting',  title:'Design Review',             date:'2026-05-26', time:'02:30 PM – 03:00 PM', location:'Meeting Room B',        note:'' },
-  { id:4,  emp:'Bessie Cooper',      type:'leave',    title:'Sick Leave',                date:'2026-05-28', time:'Full Day',             location:'',                     note:'Doctor confirmed' },
-  { id:5,  emp:'Brooklyn Jones',     type:'task',     title:'Social media post — June',  date:'2026-05-29', time:'All day',              location:'',                     note:'' },
-  { id:6,  emp:'Brooklyn Jones',     type:'meeting',  title:'Campaign Debrief',          date:'2026-05-27', time:'01:00 PM – 02:00 PM', location:'Zoom',                 note:'' },
-  { id:7,  emp:'Eleanor Pena',       type:'task',     title:'Blog article draft',        date:'2026-05-26', time:'All day',              location:'',                     note:'2000 words' },
-  { id:8,  emp:'Eleanor Pena',       type:'meeting',  title:'Editorial meeting',         date:'2026-05-28', time:'09:00 AM – 09:30 AM', location:'Zoom',                 note:'' },
-  { id:9,  emp:'Darlene Robert',     type:'task',     title:'UX audit – checkout flow',  date:'2026-05-27', time:'All day',              location:'',                     note:'' },
-  { id:10, emp:'Jacob Jones',        type:'meeting',  title:'Sprint planning',           date:'2026-05-26', time:'10:00 AM – 11:00 AM', location:'Meeting Room A',        note:'' },
-  { id:11, emp:'Jacob Jones',        type:'task',     title:'Fix login page bug',        date:'2026-05-27', time:'All day',              location:'',                     note:'Critical' },
-  { id:12, emp:'Kristin Watson',     type:'meeting',  title:'Backend sync',              date:'2026-05-28', time:'03:00 PM – 03:30 PM', location:'Zoom',                 note:'' },
-  { id:13, emp:'Kristin Watson',     type:'leave',    title:'Personal Leave',            date:'2026-05-30', time:'Full Day',             location:'',                     note:'' },
-  { id:14, emp:'Cameron Williamson', type:'task',     title:'Server migration plan',     date:'2026-05-26', time:'All day',              location:'',                     note:'' },
-  { id:15, emp:'Jenny Wilson',       type:'task',     title:'Test regression suite',     date:'2026-05-27', time:'All day',              location:'',                     note:'' },
-  { id:16, emp:'Theresa Webb',       type:'meeting',  title:'Data pipeline review',      date:'2026-05-29', time:'11:00 AM – 11:30 AM', location:'Zoom',                 note:'' },
-  { id:17, emp:'Guy Hawkins',        type:'meeting',  title:'Sprint retrospective',      date:'2026-05-30', time:'04:00 PM – 05:00 PM', location:'Meeting Room A',        note:'' },
-  { id:18, emp:'Guy Hawkins',        type:'task',     title:'Roadmap Q3 draft',          date:'2026-05-28', time:'All day',              location:'',                     note:'' },
-  { id:19, emp:'Ralph Edwards',      type:'leave',    title:'Vacation',                  date:'2026-05-26', time:'Full Day',             location:'',                     note:'' },
-  { id:20, emp:'Ralph Edwards',      type:'leave',    title:'Vacation',                  date:'2026-05-27', time:'Full Day',             location:'',                     note:'' },
-  { id:21, emp:'ALL',                type:'holiday',  title:'Independence Day (PH)',     date:'2026-06-12', time:'1 Day Off',            location:'',                     note:'' },
-  { id:22, emp:'ALL',                type:'meeting',  title:'All-hands Meeting',         date:'2026-05-29', time:'09:00 AM – 10:00 AM', location:'Main Conference Room', note:'' },
-];
+const DEMO_EVENTS = [];
 
 const TYPE_COLOR = {
   meeting: { dot:'var(--accent)',  cls:'ce-meeting',  badge:'c-blue'   },
@@ -1874,7 +2079,7 @@ const TYPE_EMOJI = { meeting:'🤝', leave:'🏖️', task:'✅', holiday:'🎉'
 
 /* ─── Calendar Init ─── */
 function initCalendar() {
-  calEvents = [...DEMO_EVENTS];
+  if (!calEvents.length) calEvents = [];
   buildEmpDropdown();
   renderCalSummary();
   renderCalendar();
@@ -2389,4 +2594,137 @@ function exportPayrollCSV() {
   toast('Payroll CSV exported!');
 }
 
+/* ─── Notifications ─── */
+let notifications = JSON.parse(localStorage.getItem('anosupo_notifs') || '[]');
+
+function pushNotif(icon, iconCls, title, meta, type) {
+  const settingMap = { late:'notif-late', absent:'notif-absent', approval:'notif-approval', leave:'notif-leave', short:'notif-short', payend:'notif-payend' };
+  const settingEl = settingMap[type] ? document.getElementById(settingMap[type]) : null;
+  if (settingEl && !settingEl.checked) return;
+  const notif = { id: Date.now() + Math.random(), icon, iconCls, title, meta, unread: true, time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) };
+  notifications.unshift(notif);
+  if (notifications.length > 50) notifications = notifications.slice(0, 50);
+  saveNotifs();
+  renderNotifPanel();
+}
+
+function saveNotifs() { localStorage.setItem('anosupo_notifs', JSON.stringify(notifications)); }
+
+function renderNotifPanel() {
+  const list   = document.getElementById('notif-list');
+  const dot    = document.getElementById('notif-dot');
+  const unread = notifications.filter(n => n.unread).length;
+  dot.style.display = unread > 0 ? 'block' : 'none';
+  if (notifications.length === 0) { list.innerHTML = `<div class="notif-empty">🎉 All caught up!</div>`; return; }
+  list.innerHTML = notifications.map(n => `
+    <div class="notif-item${n.unread?' unread':''}" onclick="markRead(${n.id})">
+      ${n.unread ? '<div class="notif-unread-dot"></div>' : ''}
+      <div class="notif-icon-wrap ${n.iconCls}">${n.icon}</div>
+      <div class="notif-body">
+        <div class="notif-body-title">${n.title}</div>
+        <div class="notif-body-meta">${n.meta} · ${n.time}</div>
+      </div>
+    </div>`).join('');
+}
+
+function markRead(id) {
+  notifications = notifications.map(n => n.id === id ? {...n, unread:false} : n);
+  saveNotifs(); renderNotifPanel();
+}
+
+function clearAllNotifs() { notifications = []; saveNotifs(); renderNotifPanel(); toast('Notifications cleared'); }
+
+function toggleNotifPanel() {
+  const panel = document.getElementById('notif-panel');
+  panel.classList.toggle('hidden');
+  if (!panel.classList.contains('hidden')) {
+    notifications = notifications.map(n => ({...n, unread:false}));
+    saveNotifs(); renderNotifPanel();
+  }
+}
+
+function generateNotifs(data) {
+  const members   = data.members           || [];
+  const approvals = data.pendingApprovals  || [];
+  const leave     = data.pendingLeave      || [];
+  const today     = new Date().toDateString();
+
+  members.filter(m => m.status === 'CLOCKED IN (LATE)').forEach(m => {
+    const key = `late-${m.name}-${today}`;
+    if (!localStorage.getItem(key)) { pushNotif('⏰','ni-amber',`${m.name} clocked in late`, m.clockIn||'', 'late'); localStorage.setItem(key,'1'); }
+  });
+  members.filter(m => m.status === 'NOT CLOCKED IN').forEach(m => {
+    const key = `absent-${m.name}-${today}`;
+    if (!localStorage.getItem(key)) { pushNotif('🔴','ni-red',`${m.name} has not clocked in`,'Not clocked in today','absent'); localStorage.setItem(key,'1'); }
+  });
+  approvals.forEach(a => {
+    const name = a.name||a.Name||''; const key = `appr-${name}-${a.row_number}`;
+    if (!localStorage.getItem(key)) { pushNotif('✅','ni-blue',`Manual clock-in request — ${name}`,a.reason||'Awaiting approval','approval'); localStorage.setItem(key,'1'); }
+  });
+  leave.forEach(a => {
+    const name = a.name||a.Name||''; const key = `leave-${name}-${a.row_number}`;
+    if (!localStorage.getItem(key)) { pushNotif('🏖️','ni-purple',`Leave request — ${name}`,a.Reason||a.reason||'Awaiting approval','leave'); localStorage.setItem(key,'1'); }
+  });
+  renderNotifPanel();
+}
+
+document.addEventListener('click', e => {
+  const panel = document.getElementById('notif-panel');
+  const btn   = document.getElementById('notif-btn');
+  if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) panel.classList.add('hidden');
+});
+renderNotifPanel();
+
+/* ─── Settings ─── */
+let settingsData   = JSON.parse(localStorage.getItem('anosupo_settings') || '{}');
+let goldlistEmails = JSON.parse(localStorage.getItem('anosupo_goldlist')  || '[]');
+
+function initSettings() {
+  const fields = { 'set-pay-start':'payStart','set-pay-end':'payEnd','set-target-hours':'targetHours','set-daily-hours':'dailyHours','set-shift-start':'shiftStart','set-grace':'grace','set-lunch':'lunch','set-min-hours':'minHours','set-refresh':'refresh','set-webhook':'webhook' };
+  Object.entries(fields).forEach(([id, key]) => { if (settingsData[key]) document.getElementById(id).value = settingsData[key]; });
+  const toggles = ['notif-late','notif-absent','notif-approval','notif-leave','notif-short','notif-payend','set-show-weekends','set-dark-auto'];
+  toggles.forEach(id => { if (settingsData[id] !== undefined) document.getElementById(id).checked = settingsData[id]; });
+  renderGoldlist();
+}
+
+function saveSettings() {
+  settingsData = {
+    payStart: document.getElementById('set-pay-start').value,
+    payEnd:   document.getElementById('set-pay-end').value,
+    targetHours: document.getElementById('set-target-hours').value,
+    dailyHours:  document.getElementById('set-daily-hours').value,
+    shiftStart:  document.getElementById('set-shift-start').value,
+    grace:       document.getElementById('set-grace').value,
+    lunch:       document.getElementById('set-lunch').value,
+    minHours:    document.getElementById('set-min-hours').value,
+    refresh:     document.getElementById('set-refresh').value,
+    webhook:     document.getElementById('set-webhook').value,
+  };
+  ['notif-late','notif-absent','notif-approval','notif-leave','notif-short','notif-payend','set-show-weekends','set-dark-auto'].forEach(id => { settingsData[id] = document.getElementById(id).checked; });
+  localStorage.setItem('anosupo_settings', JSON.stringify(settingsData));
+  localStorage.setItem('anosupo_goldlist',  JSON.stringify(goldlistEmails));
+  if (settingsData['set-dark-auto']) { const jst = new Date(new Date().getTime()+9*3600000); if(jst.getUTCHours()>=18) setTheme('dark'); }
+  toast('Settings saved successfully!');
+}
+
+function addGoldlistEmail() {
+  const input = document.getElementById('set-goldlist-input');
+  const email = input.value.trim().toLowerCase();
+  if (!email || !email.includes('@')) { toast('Please enter a valid email.','error'); return; }
+  if (goldlistEmails.includes(email)) { toast('Email already in list.','error'); return; }
+  goldlistEmails.push(email); input.value = '';
+  renderGoldlist(); toast(`${email} added to goldlist`);
+}
+
+function removeGoldlistEmail(email) { goldlistEmails = goldlistEmails.filter(e=>e!==email); renderGoldlist(); }
+
+function renderGoldlist() {
+  const el = document.getElementById('goldlist-emails');
+  if (!el) return;
+  if (!goldlistEmails.length) { el.innerHTML=`<span style="font-size:12px;color:var(--text3)">No emails added yet</span>`; return; }
+  el.innerHTML = goldlistEmails.map(e=>`<span class="goldlist-tag">${e}<button onclick="removeGoldlistEmail('${e}')">×</button></span>`).join('');
+}
+
 </script>
+</body>
+</html>
