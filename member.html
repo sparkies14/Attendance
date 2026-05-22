@@ -377,6 +377,49 @@ body {
 @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .fade-in { animation: fadeUp 0.3s ease both; }
 
+/* ── Payroll Tab ── */
+.payroll-grid { display: flex; flex-direction: column; gap: 16px; }
+.payroll-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
+.payroll-title { font-family: 'Instrument Serif', serif; font-size: 26px; color: var(--text); letter-spacing: -0.5px; line-height: 1.1; }
+.payroll-sub { font-size: 12px; color: var(--text3); margin-top: 3px; }
+.period-badge { font-size: 11px; font-weight: 500; background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-mid); border-radius: 20px; padding: 5px 14px; white-space: nowrap; align-self: flex-start; margin-top: 4px; }
+.period-badge.warn { background: var(--yellow-light); color: var(--yellow); border-color: var(--yellow-mid); }
+.pay-stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.pay-stat { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow-sm); }
+.pay-stat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 6px; }
+.pay-stat-val { font-size: 18px; font-weight: 500; color: var(--text); }
+.pay-stat-val.green { color: var(--accent); }
+.pay-stat-val.yellow { color: var(--yellow); }
+.pay-stat-val.blue { color: var(--blue); }
+.pay-stat-val.red { color: var(--red); }
+.progress-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow-sm); }
+.prog-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+.prog-title { font-size: 14px; font-weight: 500; color: var(--text); }
+.prog-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.prog-pct { font-size: 24px; font-weight: 500; color: var(--accent); line-height: 1; text-align: right; }
+.prog-pct.warn { color: var(--yellow); }
+.prog-pct-sub { font-size: 11px; color: var(--text3); text-align: right; margin-top: 3px; }
+.prog-bar-wrap { height: 10px; background: var(--bg); border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
+.prog-bar-fill { height: 100%; border-radius: 99px; background: var(--accent); transition: width 0.6s ease; }
+.prog-bar-fill.warn { background: var(--yellow); }
+.prog-bar-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); }
+.day-chips { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.day-chip { font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 500; }
+.chip-done { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-mid); }
+.chip-today { background: var(--accent); color: #fff; }
+.chip-remain { background: var(--bg); color: var(--text2); border: 1px solid var(--border); }
+.breakdown-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow-sm); }
+.breakdown-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 14px; }
+.bd-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.bd-row:last-child { border-bottom: none; padding-bottom: 0; }
+.bd-label { color: var(--text2); }
+.bd-val { font-weight: 500; color: var(--text); }
+.bd-val.green { color: var(--accent); }
+.bd-val.red { color: var(--red); }
+.bd-val.yellow { color: var(--yellow); }
+.bd-val.muted { color: var(--text3); font-weight: 400; }
+.payroll-note { font-size: 11px; color: var(--text2); background: var(--yellow-light); border: 1px solid var(--yellow-mid); border-radius: var(--radius-sm); padding: 10px 14px; line-height: 1.6; }
+
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .page { padding: 16px; }
@@ -424,6 +467,9 @@ body {
       </div>
       <div class="nav-item" onclick="showPage('leave', this)">
         <span class="nav-icon">🏖️</span> Leave History
+      </div>
+      <div class="nav-item" onclick="showPage('payroll', this)">
+        <span class="nav-icon">💴</span> Payroll
       </div>
     </div>
     <div class="sidebar-footer">
@@ -483,8 +529,7 @@ body {
               <!-- Elapsed / clocked-in time -->
               <div class="hero-time">
                 <div class="hero-elapsed" id="hero-clockin-time">—</div>
-<div class="hero-elapsed" id="hero-elapsed-timer" style="font-size:20px;color:var(--text2);display:none;">00:00:00</div>
-<div class="hero-elapsed-sub" id="hero-clockin-sub">Not clocked in yet</div>
+                <div class="hero-elapsed-sub" id="hero-clockin-sub">Not clocked in yet</div>
               </div>
 
               <!-- Approval banner -->
@@ -677,6 +722,93 @@ body {
         </div>
       </div>
 
+      <!-- Payroll Page -->
+      <div class="page" id="page-payroll">
+        <div class="payroll-grid">
+
+          <div class="payroll-header">
+            <div>
+              <div class="payroll-title">Payroll</div>
+              <div class="payroll-sub" id="pay-period-label">Loading pay period...</div>
+            </div>
+            <div class="period-badge" id="pay-period-badge">—</div>
+          </div>
+
+          <div class="pay-stat-grid">
+            <div class="pay-stat">
+              <div class="pay-stat-lbl">Hours Worked</div>
+              <div class="pay-stat-val green" id="pay-hours-worked">—</div>
+            </div>
+            <div class="pay-stat">
+              <div class="pay-stat-lbl">Hours Required</div>
+              <div class="pay-stat-val" id="pay-hours-required">160h</div>
+            </div>
+            <div class="pay-stat">
+              <div class="pay-stat-lbl">Remaining</div>
+              <div class="pay-stat-val yellow" id="pay-hours-remaining">—</div>
+            </div>
+            <div class="pay-stat">
+              <div class="pay-stat-lbl">Days Worked</div>
+              <div class="pay-stat-val blue" id="pay-days-worked">—</div>
+            </div>
+          </div>
+
+          <div class="progress-card">
+            <div class="prog-header">
+              <div>
+                <div class="prog-title">Hours progress</div>
+                <div class="prog-sub" id="pay-prog-sub">— of 160h completed</div>
+              </div>
+              <div>
+                <div class="prog-pct" id="pay-prog-pct">0%</div>
+                <div class="prog-pct-sub" id="pay-prog-status">—</div>
+              </div>
+            </div>
+            <div class="prog-bar-wrap">
+              <div class="prog-bar-fill" id="pay-prog-bar" style="width:0%"></div>
+            </div>
+            <div class="prog-bar-labels">
+              <span id="pay-period-start">—</span>
+              <span id="pay-period-end">—</span>
+            </div>
+            <div class="day-chips">
+              <span class="day-chip chip-done" id="chip-days-done">— days done</span>
+              <span class="day-chip chip-today" id="chip-today-label">Today</span>
+              <span class="day-chip chip-remain" id="chip-days-remain">— days left</span>
+            </div>
+          </div>
+
+          <div class="breakdown-card">
+            <div class="breakdown-title">Pay period breakdown</div>
+            <div class="bd-row">
+              <span class="bd-label">Regular hours</span>
+              <span class="bd-val green" id="bd-regular-hours">—</span>
+            </div>
+            <div class="bd-row">
+              <span class="bd-label">Late days</span>
+              <span class="bd-val red" id="bd-late-days">—</span>
+            </div>
+            <div class="bd-row">
+              <span class="bd-label">Absent days</span>
+              <span class="bd-val red" id="bd-absent-days">—</span>
+            </div>
+            <div class="bd-row">
+              <span class="bd-label">Leave taken</span>
+              <span class="bd-val muted" id="bd-leave-taken">—</span>
+            </div>
+            <div class="bd-row">
+              <span class="bd-label">Hours still needed</span>
+              <span class="bd-val yellow" id="bd-hours-needed">—</span>
+            </div>
+          </div>
+
+          <div class="payroll-note">
+            💴 All hours calculated in JST. Lunch break (1 hour) is excluded from daily totals. Fixed target: <strong>160h per pay period</strong>. Pay period runs from the <strong>25th to the 24th</strong> of each month.
+          </div>
+
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -694,8 +826,6 @@ body {
   let memberData    = null;
   let leaveFormOpen = false;
   let lottieAnim    = null;
-  let elapsedInterval = null;
-let clockInTime     = null;
   let dataRefreshInterval = null;
 
   /* ── Lottie ── */
@@ -744,46 +874,6 @@ let clockInTime     = null;
     loadMemberData();
     dataRefreshInterval = setInterval(() => loadMemberData(), 30000);
   }
-  /* ── Elapsed Timer ── */
-function startElapsedTimer(clockInStr) {
-  if (elapsedInterval) clearInterval(elapsedInterval);
-  const pad = n => String(n).padStart(2,'0');
-
-  function parseClockIn(str) {
-    if (!str || str === '—' || str === '-') return null;
-    const [time, period] = str.split(' ');
-    let [h, m, s] = (time + ':00').split(':').map(Number);
-    if (period === 'PM' && h !== 12) h += 12;
-    if (period === 'AM' && h === 12) h = 0;
-    const now = new Date();
-    const jst = new Date(now.getTime() + 9 * 3600000);
-    const base = new Date(Date.UTC(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate(), h, m, s || 0));
-    return base;
-  }
-
-  const base = parseClockIn(clockInStr);
-  if (!base) return;
-
-  const timerEl = document.getElementById('hero-elapsed-timer');
-  timerEl.style.display = 'block';
-
-  elapsedInterval = setInterval(() => {
-    const now     = new Date();
-    const jst     = new Date(now.getTime() + 9 * 3600000);
-    const diffMs  = jst - base;
-    if (diffMs < 0) return;
-    const totalSec = Math.floor(diffMs / 1000);
-    const h = Math.floor(totalSec / 3600);
-    const m = Math.floor((totalSec % 3600) / 60);
-    const s = totalSec % 60;
-    timerEl.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
-  }, 1000);
-}
-
-function stopElapsedTimer() {
-  if (elapsedInterval) { clearInterval(elapsedInterval); elapsedInterval = null; }
-  document.getElementById('hero-elapsed-timer').style.display = 'none';
-}
 
   function signOut() {
     if (dataRefreshInterval) clearInterval(dataRefreshInterval);
@@ -823,6 +913,10 @@ function stopElapsedTimer() {
     el.classList.add('active');
     if (page === 'calendar' || page === 'leave') {
       if (memberData) renderMemberData();
+      else if (currentUser) loadMemberData();
+    }
+    if (page === 'payroll') {
+      if (memberData) renderPayroll();
       else if (currentUser) loadMemberData();
     }
   }
@@ -972,6 +1066,7 @@ function stopElapsedTimer() {
       memberData = data;
       renderMemberData();
       updateTodaySummary();
+      renderPayroll();
     } catch(e) {
       console.error('Failed to load member data:', e);
     }
@@ -1020,17 +1115,14 @@ function stopElapsedTimer() {
         document.getElementById('pill-working').style.display = 'inline-flex';
       }
 
-      // Lottie + timer state on load
-if (todayRecord.clockOut && todayRecord.clockOut !== '—') {
-  playLottie('lottie-clockout.json', 'Shift complete!', false);
-  stopElapsedTimer();
-} else if (todayRecord.status === 'pending') {
-  playLottie('lottie-late.json', "Pending approval...", true);
-  startElapsedTimer(todayRecord.clockIn);
-} else {
-  playLottie('lottie-work.json', "You're working...", true);
-  startElapsedTimer(todayRecord.clockIn);
-}
+      // Lottie state on load
+      if (todayRecord.clockOut && todayRecord.clockOut !== '—') {
+        playLottie('lottie-clockout.json', 'Shift complete!', false);
+      } else if (todayRecord.status === 'pending') {
+        playLottie('lottie-late.json', "Pending approval...", true);
+      } else {
+        playLottie('lottie-work.json', "You're working...", true);
+      }
 
       // Timesheet
       renderTimesheet(todayRecord);
@@ -1038,7 +1130,6 @@ if (todayRecord.clockOut && todayRecord.clockOut !== '—') {
     } else {
       document.getElementById('hero-clockin-time').textContent = '—';
       document.getElementById('hero-clockin-sub').textContent  = 'Not clocked in yet';
-      stopElapsedTimer();
       playLottie('lottie-waiting.json', 'Not clocked in yet...', true);
     }
   }
@@ -1159,6 +1250,180 @@ if (todayRecord.clockOut && todayRecord.clockOut !== '—') {
     });
 
     body.innerHTML = html;
+  }
+
+  /* ── Payroll ── */
+  function getPayPeriod() {
+    const now   = new Date();
+    const today = now.getDate();
+    const month = now.getMonth();
+    const year  = now.getFullYear();
+    let startDate, endDate;
+    if (today >= 25) {
+      startDate = new Date(year, month, 25);
+      endDate   = new Date(year, month + 1, 24);
+    } else {
+      startDate = new Date(year, month - 1, 25);
+      endDate   = new Date(year, month, 24);
+    }
+    return { startDate, endDate };
+  }
+
+  function parseHours(timeStr) {
+    if (!timeStr || timeStr === '-' || timeStr === '—') return null;
+    const clean = timeStr.trim();
+    // Format: "8.5" or "8h 30m" or "8:30"
+    if (clean.includes('h')) {
+      const parts = clean.match(/(\d+)h\s*(\d*)m?/);
+      if (parts) return parseFloat(parts[1]) + (parseFloat(parts[2] || 0) / 60);
+    }
+    if (clean.includes(':')) {
+      const [h, m] = clean.split(':').map(Number);
+      return h + m / 60;
+    }
+    const n = parseFloat(clean);
+    return isNaN(n) ? null : n;
+  }
+
+  function calcHoursFromClockTimes(clockIn, clockOut) {
+    if (!clockIn || clockIn === '-' || !clockOut || clockOut === '-') return null;
+    function toMins(str) {
+      const [time, period] = str.trim().split(' ');
+      let [h, m] = time.split(':').map(Number);
+      if (period === 'PM' && h !== 12) h += 12;
+      if (period === 'AM' && h === 12) h = 0;
+      return h * 60 + m;
+    }
+    const diff = toMins(clockOut) - toMins(clockIn);
+    if (diff <= 0) return null;
+    return Math.max(0, (diff / 60) - 1); // minus 1hr lunch
+  }
+
+  function isWeekday(date) {
+    const d = date.getDay();
+    return d !== 0 && d !== 6;
+  }
+
+  function countWeekdaysInPeriod(start, end) {
+    let count = 0;
+    const cur = new Date(start);
+    while (cur <= end) {
+      if (isWeekday(cur)) count++;
+      cur.setDate(cur.getDate() + 1);
+    }
+    return count;
+  }
+
+  function renderPayroll() {
+    if (!memberData) return;
+    const { startDate, endDate } = getPayPeriod();
+    const now     = new Date();
+    const today   = now;
+    const months  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    const startLabel = `${months[startDate.getMonth()]} ${startDate.getDate()}`;
+    const endLabel   = `${months[endDate.getMonth()]} ${endDate.getDate()}`;
+    const todayLabel = `${months[today.getMonth()]} ${today.getDate()}`;
+
+    document.getElementById('pay-period-label').textContent  = `${startLabel} – ${endLabel}, ${endDate.getFullYear()}`;
+    document.getElementById('pay-period-start').textContent  = startLabel;
+    document.getElementById('pay-period-end').textContent    = endLabel;
+    document.getElementById('chip-today-label').textContent  = `Today · ${todayLabel}`;
+
+    // Days remaining in pay period
+    const msLeft       = endDate - today;
+    const daysLeft     = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
+    const totalDays    = countWeekdaysInPeriod(startDate, endDate);
+    const daysWorkedSoFar = countWeekdaysInPeriod(startDate, today > endDate ? endDate : today);
+
+    // Badge
+    const badge = document.getElementById('pay-period-badge');
+    if (daysLeft <= 3) {
+      badge.textContent = `Pay period · ends in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`;
+      badge.className = 'period-badge warn';
+    } else {
+      badge.textContent = `Pay period · ${daysLeft} days left`;
+      badge.className = 'period-badge';
+    }
+
+    // Filter calendar days within pay period
+    const periodDays = (memberData.calendar || []).filter(d => {
+      const date = new Date(d.date);
+      return date >= startDate && date <= endDate && !d.isWeekend;
+    });
+
+    // Calculate hours
+    let totalHoursWorked = 0;
+    let lateDays   = 0;
+    let absentDays = 0;
+    let daysWorked = 0;
+
+    periodDays.forEach(d => {
+      if (d.status === 'absent') { absentDays++; return; }
+      if (d.status === 'late') lateDays++;
+      // Try totalHours first, fallback to clock times
+      let hrs = parseHours(d.totalHours);
+      if (hrs === null) hrs = calcHoursFromClockTimes(d.clockIn, d.clockOut);
+      if (hrs !== null && hrs > 0) {
+        totalHoursWorked += hrs;
+        daysWorked++;
+      }
+    });
+
+    // Leave taken this period
+    const leaveTaken = (memberData.leaveHistory || []).filter(l => {
+      if (l.status !== 'Approved') return false;
+      const d = new Date(l.date);
+      return d >= startDate && d <= endDate;
+    }).length;
+
+    const REQUIRED    = 160;
+    const remaining   = Math.max(0, REQUIRED - totalHoursWorked);
+    const pct         = Math.min(100, Math.round((totalHoursWorked / REQUIRED) * 100));
+
+    function fmtHours(h) {
+      const hrs  = Math.floor(h);
+      const mins = Math.round((h - hrs) * 60);
+      return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
+    }
+
+    // Update DOM
+    document.getElementById('pay-hours-worked').textContent   = fmtHours(totalHoursWorked);
+    document.getElementById('pay-hours-remaining').textContent = remaining > 0 ? fmtHours(remaining) : 'Complete ✓';
+    document.getElementById('pay-days-worked').textContent    = `${daysWorked} / ${totalDays}`;
+    document.getElementById('pay-prog-sub').textContent       = `${fmtHours(totalHoursWorked)} of ${REQUIRED}h completed`;
+    document.getElementById('pay-prog-pct').textContent       = `${pct}%`;
+    document.getElementById('bd-regular-hours').textContent   = fmtHours(totalHoursWorked);
+    document.getElementById('bd-late-days').textContent       = `${lateDays} day${lateDays !== 1 ? 's' : ''}`;
+    document.getElementById('bd-absent-days').textContent     = `${absentDays} day${absentDays !== 1 ? 's' : ''}`;
+    document.getElementById('bd-leave-taken').textContent     = leaveTaken > 0 ? `${leaveTaken} day${leaveTaken !== 1 ? 's' : ''} (approved)` : 'None';
+    document.getElementById('bd-hours-needed').textContent    = remaining > 0 ? fmtHours(remaining) : 'Target reached ✓';
+    document.getElementById('chip-days-done').textContent     = `${daysWorked} days done`;
+    document.getElementById('chip-days-remain').textContent   = `${daysLeft} days left`;
+
+    // Progress bar + status
+    const bar = document.getElementById('pay-prog-bar');
+    bar.style.width = pct + '%';
+    const progPct    = document.getElementById('pay-prog-pct');
+    const progStatus = document.getElementById('pay-prog-status');
+    if (pct >= 100) {
+      bar.className = 'prog-bar-fill';
+      progPct.className = 'prog-pct';
+      progStatus.textContent = 'target reached ✓';
+    } else if (pct >= 70) {
+      bar.className = 'prog-bar-fill';
+      progPct.className = 'prog-pct';
+      progStatus.textContent = 'on track';
+    } else {
+      bar.className = 'prog-bar-fill warn';
+      progPct.className = 'prog-pct warn';
+      progStatus.textContent = 'behind target';
+    }
+
+    // Remaining hours color
+    const remEl = document.getElementById('pay-hours-remaining');
+    remEl.className = remaining <= 0 ? 'pay-stat-val green' : 'pay-stat-val yellow';
+    document.getElementById('bd-hours-needed').className = remaining <= 0 ? 'bd-val green' : 'bd-val yellow';
   }
 
   /* ── Leave History ── */
