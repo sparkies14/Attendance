@@ -27,13 +27,19 @@
   --red-mid: #f5d0d0;
   --blue: #1a4a8a;
   --blue-light: #f0f4fd;
+  --blue-mid: #c4d4f0;
   --orange: #8a4a1a;
   --orange-light: #fdf5f0;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow: 0 4px 16px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06);
-  --radius: 12px;
+  --orange-mid: #f0d0b8;
+  --sidebar-bg: #141412;
+  --sidebar-border: rgba(255,255,255,0.07);
+  --sidebar-text: #a8a59f;
+  --sidebar-active: #1a6b3c;
+  --radius: 14px;
   --radius-sm: 8px;
+  --radius-xs: 6px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+  --shadow: 0 4px 16px rgba(0,0,0,0.07);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,418 +54,296 @@ body {
 
 /* ── Auth Gate ── */
 #auth-gate {
-  position: fixed;
-  inset: 0;
+  position: fixed; inset: 0;
   background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  gap: 28px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 100; gap: 28px;
 }
 #auth-gate.hidden { display: none; }
-
-.auth-wordmark {
-  font-family: 'Instrument Serif', serif;
-  font-size: 36px;
-  color: var(--text);
-  letter-spacing: -0.5px;
-}
+.auth-wordmark { font-family: 'Instrument Serif', serif; font-size: 36px; color: var(--text); }
 .auth-wordmark span { color: var(--accent); }
-
 .auth-card {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 32px 28px;
-  width: 100%;
-  max-width: 340px;
-  box-shadow: var(--shadow);
-  text-align: center;
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 16px; padding: 32px 28px;
+  width: 100%; max-width: 340px;
+  box-shadow: var(--shadow); text-align: center;
 }
-.auth-label {
-  font-size: 13px;
-  color: var(--text2);
-  margin-bottom: 20px;
-  letter-spacing: 0.01em;
-}
+.auth-label { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
 #auth-google-btn { display: flex; justify-content: center; }
-.auth-msg {
-  display: none;
-  margin-top: 14px;
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  align-items: center;
-  gap: 8px;
-  text-align: left;
-}
+.auth-msg { display: none; margin-top: 14px; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 12px; align-items: center; gap: 8px; }
 .auth-msg.show { display: flex; }
 .auth-msg.error { background: var(--red-light); color: var(--red); border: 1px solid var(--red-mid); }
 .auth-msg.loading { background: #f5f5f3; color: var(--text2); border: 1px solid var(--border); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
 
-/* ── App Layout ── */
-#app { display: none; min-height: 100vh; }
+/* ── App Shell ── */
+#app { display: none; height: 100vh; overflow: hidden; }
 #app.show { display: flex; }
 
 /* ── Sidebar ── */
 .sidebar {
-  width: 240px;
-  flex-shrink: 0;
-  background: var(--white);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  position: sticky;
-  top: 0;
-  padding: 0;
+  width: 210px; flex-shrink: 0;
+  background: var(--sidebar-bg);
+  display: flex; flex-direction: column;
+  height: 100vh; position: sticky; top: 0;
 }
 .sidebar-top {
-  padding: 20px 20px 16px;
-  border-bottom: 1px solid var(--border);
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--sidebar-border);
 }
-.wordmark {
-  font-family: 'Instrument Serif', serif;
-  font-size: 20px;
-  color: var(--text);
-  letter-spacing: -0.3px;
-  margin-bottom: 2px;
-}
+.wordmark { font-family: 'Instrument Serif', serif; font-size: 20px; color: #fff; letter-spacing: -0.3px; }
 .wordmark span { color: var(--accent); }
-.tagline { font-size: 11px; color: var(--text3); }
+.tagline { font-size: 11px; color: var(--sidebar-text); margin-top: 2px; }
 
-.nav-section { padding: 12px 12px 0; }
-.nav-section-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text3);
-  padding: 0 8px;
-  margin-bottom: 4px;
-}
+.nav-section { padding: 14px 10px 0; flex: 1; }
+.nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #555; padding: 0 10px; margin-bottom: 6px; }
 .nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  color: var(--text2);
-  cursor: pointer;
-  transition: all 0.15s;
-  margin-bottom: 1px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: var(--radius-sm);
+  font-size: 13px; color: var(--sidebar-text);
+  cursor: pointer; transition: all 0.15s; margin-bottom: 2px;
 }
-.nav-item:hover { background: var(--bg); color: var(--text); }
-.nav-item.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+.nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+.nav-item.active { background: var(--sidebar-active); color: #fff; }
 .nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
 
-/* JST clock in sidebar */
-.sidebar-clock {
-  margin: 12px;
-  padding: 12px 14px;
-  background: var(--bg);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-}
-.clock-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
-.clock-time-sm {
-  font-family: 'Instrument Serif', serif;
-  font-size: 22px;
-  color: var(--text);
-  letter-spacing: -0.5px;
-  line-height: 1;
-}
-.clock-date-sm { font-size: 11px; color: var(--text2); margin-top: 3px; }
-
 .sidebar-footer {
-  margin-top: auto;
-  padding: 14px 16px;
-  border-top: 1px solid var(--border);
+  margin-top: auto; padding: 14px 16px;
+  border-top: 1px solid var(--sidebar-border);
 }
-.user-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.user-avatar {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.user-name { font-size: 13px; font-weight: 500; color: var(--text); }
-.user-role { font-size: 11px; color: var(--text3); }
+.user-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.user-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+.user-name { font-size: 13px; font-weight: 500; color: #fff; }
+.user-role { font-size: 11px; color: var(--sidebar-text); }
 .signout-btn {
-  width: 100%;
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 12px;
-  color: var(--text2);
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 7px;
-  cursor: pointer;
-  transition: all 0.15s;
+  width: 100%; font-family: 'Instrument Sans', sans-serif;
+  font-size: 12px; color: var(--sidebar-text);
+  background: none; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm); padding: 7px; cursor: pointer; transition: all 0.15s;
 }
 .signout-btn:hover { background: var(--red-light); color: var(--red); border-color: var(--red-mid); }
 
-/* ── Main ── */
-.main { flex: 1; overflow-y: auto; }
+/* ── Main Area ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-/* ── Page ── */
-.page { display: none; padding: 28px 32px; }
+/* ── Topbar ── */
+.topbar {
+  background: var(--white); border-bottom: 1px solid var(--border);
+  padding: 14px 28px; display: flex; align-items: center;
+  justify-content: space-between; flex-shrink: 0;
+}
+.tb-left .tb-title { font-size: 15px; font-weight: 500; color: var(--text); }
+.tb-left .tb-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.tb-right { text-align: right; }
+.tb-clock { font-size: 22px; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: -0.5px; line-height: 1; }
+.tb-tz { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+/* ── Page Content ── */
+.content-area { flex: 1; overflow-y: auto; }
+.page { display: none; padding: 24px 28px; }
 .page.active { display: block; }
 
-/* ── Page Header ── */
-.page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.page-title {
-  font-family: 'Instrument Serif', serif;
-  font-size: 26px;
-  color: var(--text);
-  letter-spacing: -0.5px;
-  line-height: 1.1;
-}
-.page-sub { font-size: 13px; color: var(--text2); margin-top: 3px; }
+/* ── Home Layout ── */
+.home-grid { display: flex; flex-direction: column; gap: 16px; }
 
-/* ── Clock In Card ── */
-.clockin-card {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px 22px;
-  margin-bottom: 20px;
+/* ── Hero Card ── */
+.hero-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px;
+  display: flex; gap: 20px; align-items: stretch;
   box-shadow: var(--shadow-sm);
 }
-.clockin-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-  gap: 12px;
+.hero-left { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.hero-right {
+  width: 130px; flex-shrink: 0;
+  background: var(--bg); border-radius: 12px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 6px; padding: 14px;
 }
-.clockin-label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; }
+#lottie-container { width: 90px; height: 90px; }
+#lottie-label { font-size: 11px; color: var(--text3); text-align: center; line-height: 1.4; }
+
+/* Status pills row */
+.pills-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 500;
+}
+.pill-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.pill-working { background: var(--accent-light); color: var(--accent); }
+.pill-working .pill-dot { background: var(--accent); }
+.pill-late { background: var(--yellow-light); color: var(--yellow); }
+.pill-late .pill-dot { background: var(--yellow); }
+.pill-pending { background: var(--orange-light); color: var(--orange); }
+.pill-pending .pill-dot { background: var(--orange); }
+.pill-out { background: var(--blue-light); color: var(--blue); }
+.pill-out .pill-dot { background: var(--blue); }
+
+/* Clock in time display */
+.hero-time { line-height: 1; }
+.hero-elapsed { font-size: 32px; font-weight: 500; color: var(--text); letter-spacing: -1.5px; font-variant-numeric: tabular-nums; }
+.hero-elapsed-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+/* Approval banner */
+.approval-banner {
+  background: var(--yellow-light); border: 1px solid var(--yellow-mid);
+  border-radius: var(--radius-sm); padding: 9px 12px;
+  font-size: 12px; color: var(--yellow);
+  display: flex; align-items: center; gap: 8px;
+}
+.approval-banner.hidden { display: none; }
+
+/* Entry toggle */
 .entry-toggle {
-  display: flex;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 3px;
-  gap: 2px;
+  display: flex; background: var(--bg);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 3px; gap: 2px; align-self: flex-start;
 }
 .tog-btn {
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 12px;
-  padding: 5px 12px;
-  border-radius: 6px;
-  border: none;
-  background: none;
-  color: var(--text2);
-  cursor: pointer;
-  transition: all 0.15s;
+  font-family: 'Instrument Sans', sans-serif; font-size: 11px;
+  padding: 4px 12px; border-radius: 6px; border: none;
+  background: none; color: var(--text2); cursor: pointer; transition: all 0.15s;
 }
 .tog-btn.active { background: var(--white); color: var(--text); font-weight: 500; box-shadow: var(--shadow-sm); }
 
-.reason-field {
-  display: none;
-  margin-bottom: 14px;
-}
+/* Manual reason field */
+.reason-field { display: none; }
 .reason-field.show { display: block; }
-.field-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; font-weight: 500; }
+.field-label { font-size: 12px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
 .field-input {
-  width: 100%;
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 13px;
-  color: var(--text);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 9px 12px;
-  outline: none;
-  transition: all 0.15s;
+  width: 100%; font-family: 'Instrument Sans', sans-serif;
+  font-size: 13px; color: var(--text); background: var(--bg);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 9px 12px; outline: none; transition: all 0.15s;
 }
-.field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,107,60,0.08); background: var(--white); }
+.field-input:focus { border-color: var(--accent); background: var(--white); box-shadow: 0 0 0 3px rgba(26,107,60,0.08); }
 .field-input::placeholder { color: var(--text3); }
 
-.action-btns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.action-btn {
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 11px 12px;
-  border-radius: var(--radius-sm);
-  border: none;
-  cursor: pointer;
+/* Action buttons */
+.btns-main { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btns-secondary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.abtn {
+  font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 500;
+  padding: 10px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: var(--white); color: var(--text); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
   transition: all 0.15s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
 }
-.action-btn:active { transform: scale(0.98); }
-.action-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-.action-btn-icon { font-size: 18px; }
-.action-btn-label { font-size: 11px; }
+.abtn:active { transform: scale(0.97); }
+.abtn:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
+.abtn-icon { font-size: 14px; }
+.abtn.clockin { background: var(--accent); color: #fff; border-color: var(--accent); }
+.abtn.clockin:not(:disabled):hover { background: #145930; }
+.abtn.clockout { background: var(--red-light); color: var(--red); border-color: var(--red-mid); }
+.abtn.clockout:not(:disabled):hover { background: #fde8e8; }
+.abtn.lunch { color: var(--yellow); border-color: var(--yellow-mid); }
+.abtn.lunch:not(:disabled):hover { background: var(--yellow-light); }
+.abtn.brk { color: var(--blue); border-color: var(--blue-mid); }
+.abtn.brk:not(:disabled):hover { background: var(--blue-light); }
+.abtn.leave-btn { color: var(--orange); border-color: var(--orange-mid); font-size: 11px; }
+.abtn.leave-btn:not(:disabled):hover { background: var(--orange-light); }
 
-.btn-clockin { background: var(--accent); color: #fff; }
-.btn-clockin:not(:disabled):hover { background: #145930; box-shadow: 0 4px 12px rgba(26,107,60,0.25); }
-.btn-clockout { background: var(--white); color: var(--red); border: 1px solid var(--red-mid); }
-.btn-clockout:not(:disabled):hover { background: var(--red-light); }
-.btn-lunch { background: var(--white); color: var(--yellow); border: 1px solid var(--yellow-mid); font-size: 12px; }
-.btn-lunch:not(:disabled):hover { background: var(--yellow-light); }
-.btn-break { background: var(--white); color: var(--blue); border: 1px solid #c4d4f0; font-size: 12px; }
-.btn-break:not(:disabled):hover { background: var(--blue-light); }
-
-.secondary-btns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.status-msg {
-  display: none;
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  align-items: center;
-  gap: 8px;
-}
+/* Status message */
+.status-msg { display: none; padding: 9px 12px; border-radius: var(--radius-sm); font-size: 12px; align-items: center; gap: 8px; }
 .status-msg.show { display: flex; }
 .status-msg.success { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-mid); }
 .status-msg.error { background: var(--red-light); color: var(--red); border: 1px solid var(--red-mid); }
 .status-msg.loading { background: #f5f5f3; color: var(--text2); border: 1px solid var(--border); }
 
+/* ── Stat Cards Row ── */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.stat-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow-sm); }
+.stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 6px; }
+.stat-val { font-size: 15px; font-weight: 500; color: var(--text); }
+.stat-val.green { color: var(--accent); }
+.stat-val.yellow { color: var(--yellow); }
+.stat-val.blue { color: var(--blue); }
+.stat-val.orange { color: var(--orange); }
+
 /* ── Leave Form ── */
-.leave-card {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px 22px;
-  margin-bottom: 20px;
-  box-shadow: var(--shadow-sm);
-  display: none;
+.leave-form-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px;
+  box-shadow: var(--shadow-sm); display: none;
 }
-.leave-card.show { display: block; }
+.leave-form-card.show { display: block; }
 .leave-card-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 14px; }
 .leave-select {
-  width: 100%;
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 13px;
-  color: var(--text);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 9px 12px;
-  outline: none;
-  margin-bottom: 10px;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
+  width: 100%; font-family: 'Instrument Sans', sans-serif;
+  font-size: 13px; color: var(--text); background: var(--bg);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 9px 12px; outline: none; margin-bottom: 10px;
+  cursor: pointer; appearance: none; -webkit-appearance: none;
 }
 .leave-select:focus { border-color: var(--accent); }
 .submit-leave-btn {
-  width: 100%;
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 10px;
-  background: var(--orange-light);
-  color: var(--orange);
-  border: 1px solid #f0d0b8;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.15s;
-  margin-top: 4px;
+  width: 100%; font-family: 'Instrument Sans', sans-serif;
+  font-size: 13px; font-weight: 500; padding: 10px;
+  background: var(--orange-light); color: var(--orange);
+  border: 1px solid var(--orange-mid); border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.15s; margin-top: 4px;
 }
 .submit-leave-btn:hover { background: #fdeadc; }
 
-/* ── Calendar ── */
-.calendar-card {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
+/* ── Timesheet ── */
+.timesheet-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 22px;
   box-shadow: var(--shadow-sm);
-  margin-bottom: 20px;
 }
-.calendar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
+.ts-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
 }
-.calendar-month {
-  font-family: 'Instrument Serif', serif;
-  font-size: 18px;
-  color: var(--text);
-  letter-spacing: -0.3px;
+.ts-title { font-size: 14px; font-weight: 500; color: var(--text); }
+.ts-subtitle { font-size: 11px; color: var(--text3); }
+.ts-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
 }
-.cal-nav {
-  display: flex;
-  gap: 6px;
+.ts-row:last-of-type { border-bottom: none; }
+.ts-date { width: 88px; flex-shrink: 0; }
+.ts-day { font-size: 12px; font-weight: 500; color: var(--text); }
+.ts-datenum { font-size: 10px; color: var(--text3); margin-top: 1px; }
+.ts-cin { width: 50px; font-size: 11px; color: var(--text2); flex-shrink: 0; }
+.ts-bar-wrap { flex: 1; position: relative; height: 18px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+.ts-seg { position: absolute; top: 3px; height: 12px; border-radius: 3px; }
+.ts-cout { width: 50px; font-size: 11px; color: var(--text2); flex-shrink: 0; text-align: right; }
+.ts-dur { width: 42px; font-size: 11px; font-weight: 500; color: var(--text); flex-shrink: 0; text-align: right; }
+.ts-legend {
+  display: flex; gap: 14px; margin-top: 14px;
+  padding-top: 12px; border-top: 1px solid var(--border);
 }
-.cal-nav-btn {
-  width: 30px; height: 30px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--white);
-  color: var(--text2);
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.15s;
-  display: grid;
-  place-items: center;
-}
-.cal-nav-btn:hover { background: var(--bg); color: var(--text); }
+.ts-leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text3); }
+.ts-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
 
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-}
-.cal-day-header {
-  text-align: center;
-  padding: 10px 4px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text3);
-  border-bottom: 1px solid var(--border);
-}
-.cal-day {
-  aspect-ratio: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  cursor: default;
-  transition: background 0.1s;
-  padding: 4px;
-  position: relative;
-  min-height: 52px;
-}
+/* ── Calendar Page ── */
+.page-header { margin-bottom: 22px; }
+.page-title { font-family: 'Instrument Serif', serif; font-size: 26px; color: var(--text); letter-spacing: -0.5px; line-height: 1.1; }
+.page-sub { font-size: 13px; color: var(--text2); margin-top: 3px; }
+
+.summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.summary-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow-sm); }
+.summary-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; font-weight: 500; }
+.summary-val { font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1; letter-spacing: -0.5px; }
+.s-present .summary-val { color: var(--accent); }
+.s-late .summary-val { color: var(--yellow); }
+.s-absent .summary-val { color: var(--red); }
+.s-pending .summary-val { color: var(--orange); }
+
+.calendar-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 20px; }
+.calendar-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.calendar-month { font-family: 'Instrument Serif', serif; font-size: 18px; color: var(--text); }
+.cal-nav { display: flex; gap: 6px; }
+.cal-nav-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border); background: var(--white); color: var(--text2); cursor: pointer; font-size: 14px; transition: all 0.15s; display: grid; place-items: center; }
+.cal-nav-btn:hover { background: var(--bg); color: var(--text); }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.cal-day-header { text-align: center; padding: 10px 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); border-bottom: 1px solid var(--border); }
+.cal-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 4px; min-height: 52px; }
 .cal-day:nth-child(7n) { border-right: none; }
 .cal-day.empty { background: var(--bg); }
 .cal-day.weekend { background: #fafaf8; }
@@ -470,129 +354,39 @@ body {
 .cal-day.status-absent { background: #fdf0f0; }
 .cal-day.status-clocked-out { background: #f0f4fd; }
 .cal-day.status-pending { background: #fdf5f0; }
-
-.cal-day-num {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--text);
-  line-height: 1;
-  margin-bottom: 4px;
-}
+.cal-day-num { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1; margin-bottom: 4px; }
 .cal-day.weekend .cal-day-num { color: var(--text3); }
 .cal-day.today .cal-day-num { color: var(--accent); font-weight: 600; }
 
-.cal-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-}
-.dot-present { background: var(--accent); }
-.dot-late { background: #d4a017; }
-.dot-absent { background: var(--red); }
-.dot-pending { background: var(--orange); }
-.dot-clocked-out { background: var(--blue); }
-.dot-weekend { background: transparent; }
-
-/* ── Summary Cards ── */
-.summary-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
-}
-.summary-card {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  box-shadow: var(--shadow-sm);
-}
-.summary-label { font-size: 11px; color: var(--text2); margin-bottom: 6px; font-weight: 500; }
-.summary-val {
-  font-family: 'Instrument Serif', serif;
-  font-size: 28px;
-  line-height: 1;
-  letter-spacing: -0.5px;
-}
-.s-present .summary-val { color: var(--accent); }
-.s-late .summary-val { color: var(--yellow); }
-.s-absent .summary-val { color: var(--red); }
-.s-pending .summary-val { color: var(--orange); }
-
-/* ── Leave History ── */
-.section-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 12px;
-}
-.leave-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  margin-bottom: 8px;
-  box-shadow: var(--shadow-sm);
-  gap: 12px;
-}
+/* ── Leave History Page ── */
+.leave-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; box-shadow: var(--shadow-sm); gap: 12px; }
 .leave-item-left { flex: 1; }
 .leave-item-date { font-size: 12px; color: var(--text2); margin-bottom: 2px; }
 .leave-item-type { font-size: 13px; font-weight: 500; color: var(--text); }
 .leave-item-reason { font-size: 11px; color: var(--text3); margin-top: 2px; }
-.leave-status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 500;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
+.leave-status-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
 .ls-approved { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-mid); }
-.ls-pending { background: var(--orange-light); color: var(--orange); border: 1px solid #f0d0b8; }
+.ls-pending { background: var(--orange-light); color: var(--orange); border: 1px solid var(--orange-mid); }
 .ls-rejected { background: var(--red-light); color: var(--red); border: 1px solid var(--red-mid); }
 
-/* ── Empty / Loading ── */
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text3);
-  font-size: 13px;
-}
-.loading-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text3);
-  font-size: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-.loading-spinner {
-  width: 24px; height: 24px;
-  border: 2px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
+/* ── States ── */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
+.loading-state { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.loading-spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
 
-/* ── Animations ── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.fade-in { animation: fadeUp 0.35s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeUp 0.3s ease both; }
 
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .page { padding: 16px; }
-  .summary-row { grid-template-columns: repeat(2, 1fr); }
-  .action-btns { grid-template-columns: 1fr 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .hero-card { flex-direction: column; }
+  .hero-right { width: 100%; flex-direction: row; }
+  .btns-secondary { grid-template-columns: 1fr 1fr; }
+  .ts-row { gap: 6px; }
+  .ts-date { width: 64px; }
+  .ts-cin, .ts-cout { display: none; }
 }
 </style>
 </head>
@@ -613,22 +407,15 @@ body {
 
 <!-- App -->
 <div id="app">
+
+  <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-top">
       <div class="wordmark">Ano<span>supo</span></div>
       <div class="tagline">My Attendance</div>
     </div>
-
-    <div class="sidebar-clock">
-      <div class="clock-label">Japan Standard Time</div>
-      <div class="clock-time-sm" id="jst-time">--:--:--</div>
-      <div class="clock-date-sm" id="jst-date">Loading...</div>
-      <div class="clock-label" style="margin-top:8px">Local Time</div>
-      <div class="clock-time-sm" id="local-time" style="font-size:16px">--:--:--</div>
-    </div>
-
     <div class="nav-section">
-      <div class="nav-section-label">Menu</div>
+      <div class="nav-label">Menu</div>
       <div class="nav-item active" onclick="showPage('home', this)">
         <span class="nav-icon">🏠</span> Home
       </div>
@@ -639,7 +426,6 @@ body {
         <span class="nav-icon">🏖️</span> Leave History
       </div>
     </div>
-
     <div class="sidebar-footer">
       <div class="user-row">
         <img class="user-avatar" id="user-avatar" src="" alt="">
@@ -652,287 +438,315 @@ body {
     </div>
   </div>
 
+  <!-- Main -->
   <div class="main">
 
-    <!-- Home Page -->
-    <div class="page active" id="page-home">
-      <div class="page-header fade-in">
-        <div>
-          <div class="page-title" id="welcome-title">Good morning</div>
-          <div class="page-sub" id="today-status">Today's attendance</div>
-        </div>
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="tb-left">
+        <div class="tb-title" id="welcome-title">Good morning</div>
+        <div class="tb-sub" id="topbar-date">Loading...</div>
       </div>
+      <div class="tb-right">
+        <div class="tb-clock" id="jst-time">--:--:--</div>
+        <div class="tb-tz">JST &nbsp;·&nbsp; Local: <span id="local-time">--:--:--</span></div>
+      </div>
+    </div>
 
-      <!-- Clock In Card -->
-      <div class="clockin-card fade-in">
-        <div class="clockin-top">
-          <span class="clockin-label">Clock In / Out</span>
-          <div class="entry-toggle">
-            <button class="tog-btn active" id="tog-auto" onclick="setEntryType('auto')">Auto</button>
-            <button class="tog-btn" id="tog-manual" onclick="setEntryType('manual')">Manual</button>
+    <!-- Pages -->
+    <div class="content-area">
+
+      <!-- Home Page -->
+      <div class="page active fade-in" id="page-home">
+        <div class="home-grid">
+
+          <!-- Hero Card -->
+          <div class="hero-card">
+            <div class="hero-left">
+
+              <!-- Status pills -->
+              <div class="pills-row" id="status-pills">
+                <div class="pill pill-working" id="pill-working" style="display:none">
+                  <div class="pill-dot"></div> Working
+                </div>
+                <div class="pill pill-late" id="pill-late" style="display:none">
+                  <div class="pill-dot"></div> Late
+                </div>
+                <div class="pill pill-pending" id="pill-pending" style="display:none">
+                  <div class="pill-dot"></div> Pending approval
+                </div>
+                <div class="pill pill-out" id="pill-out" style="display:none">
+                  <div class="pill-dot"></div> Clocked out
+                </div>
+              </div>
+
+              <!-- Elapsed / clocked-in time -->
+              <div class="hero-time">
+                <div class="hero-elapsed" id="hero-clockin-time">—</div>
+                <div class="hero-elapsed-sub" id="hero-clockin-sub">Not clocked in yet</div>
+              </div>
+
+              <!-- Approval banner -->
+              <div class="approval-banner hidden" id="approval-banner">
+                ⏳ Waiting for manager to approve your late entry
+              </div>
+
+              <!-- Entry toggle -->
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <div class="entry-toggle">
+                  <button class="tog-btn active" id="tog-auto" onclick="setEntryType('auto')">Auto</button>
+                  <button class="tog-btn" id="tog-manual" onclick="setEntryType('manual')">Manual</button>
+                </div>
+              </div>
+
+              <!-- Manual reason -->
+              <div class="reason-field" id="reason-field">
+                <div class="field-label">Reason for manual entry</div>
+                <input type="text" class="field-input" id="reason-input" placeholder="e.g. Power outage, forgot to clock in" autocomplete="off">
+              </div>
+
+              <!-- Main buttons -->
+              <div class="btns-main">
+                <button class="abtn clockin" onclick="send('clock-in')" id="btn-in">
+                  <span class="abtn-icon">→</span> Clock In
+                </button>
+                <button class="abtn clockout" onclick="send('clock-out')" id="btn-out">
+                  <span class="abtn-icon">←</span> Clock Out
+                </button>
+              </div>
+
+              <!-- Secondary buttons -->
+              <div class="btns-secondary">
+                <button class="abtn lunch" onclick="send('lunch-out')" id="btn-lunch-out">
+                  <span class="abtn-icon">🍱</span> Lunch Out
+                </button>
+                <button class="abtn lunch" onclick="send('lunch-in')" id="btn-lunch-in">
+                  <span class="abtn-icon">🍱</span> Lunch In
+                </button>
+                <button class="abtn brk" onclick="send('break-out')" id="btn-break-out">
+                  <span class="abtn-icon">☕</span> Break Out
+                </button>
+                <button class="abtn brk" onclick="send('break-in')" id="btn-break-in">
+                  <span class="abtn-icon">☕</span> Break In
+                </button>
+                <button class="abtn leave-btn" onclick="toggleLeaveForm()">
+                  <span class="abtn-icon">🏖️</span> Request Leave
+                </button>
+              </div>
+
+              <!-- Status message -->
+              <div class="status-msg" id="status-msg">
+                <span id="status-icon"></span>
+                <span id="status-text"></span>
+              </div>
+
+            </div>
+
+            <!-- Lottie right panel -->
+            <div class="hero-right">
+              <div id="lottie-container"></div>
+              <div id="lottie-label"></div>
+            </div>
           </div>
-        </div>
 
-        <div class="reason-field" id="reason-field">
-          <div class="field-label">Reason for manual entry</div>
-          <input type="text" class="field-input" id="reason-input" placeholder="e.g. Power outage, forgot to clock in" autocomplete="off">
-        </div>
+          <!-- Leave form (hidden by default) -->
+          <div class="leave-form-card" id="leave-form-card">
+            <div class="leave-card-title">Leave Request</div>
+            <div class="field-label">Leave Type</div>
+            <select class="leave-select" id="leave-type">
+              <option value="">— Select type —</option>
+              <option value="Sick Leave">Sick Leave</option>
+              <option value="Personal">Personal</option>
+              <option value="Emergency">Emergency</option>
+              <option value="Vacation">Vacation</option>
+            </select>
+            <div class="field-label">Reason</div>
+            <input type="text" class="field-input" id="leave-reason" placeholder="Briefly describe your reason" autocomplete="off" style="margin-bottom:0">
+            <button class="submit-leave-btn" onclick="send('leave')">Submit Leave Request</button>
+          </div>
 
-        <!-- Lottie Animation -->
+          <!-- Stat cards -->
+          <div class="stats-row" id="today-summary" style="display:none">
+            <div class="stat-card">
+              <div class="stat-label">Clock In</div>
+              <div class="stat-val green" id="today-clockin">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Clock Out</div>
+              <div class="stat-val" id="today-clockout">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Status</div>
+              <div class="stat-val" id="today-status-val">—</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Total Hours</div>
+              <div class="stat-val blue" id="today-hours">—</div>
+            </div>
+          </div>
 
-        <div style="display:flex;align-items:center;gap:16px;">
+          <!-- Timesheet card -->
+          <div class="timesheet-card" id="timesheet-card" style="display:none">
+            <div class="ts-header">
+              <div class="ts-title">My timesheets</div>
+              <div class="ts-subtitle">This week</div>
+            </div>
+            <div id="timesheet-rows"></div>
+            <div class="ts-legend">
+              <div class="ts-leg"><div class="ts-dot" style="background:#1a6b3c"></div> Working</div>
+              <div class="ts-leg"><div class="ts-dot" style="background:#d4a017"></div> Lunch</div>
+              <div class="ts-leg"><div class="ts-dot" style="background:#a8c4e0"></div> Break</div>
+            </div>
+          </div>
 
-  <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;">
-    <div id="lottie-container" style="width:150px;height:150px;"></div>
-    <div id="lottie-label" style="text-align:center;font-size:12px;color:var(--text2);margin-top:4px;font-family:'Instrument Sans',sans-serif;max-width:140px;"></div>
-  </div>
-
-  <div style="flex:1;">
-    <div class="action-btns">
-          <button class="action-btn btn-clockin" onclick="send('clock-in')" id="btn-in">
-            <span class="action-btn-icon">→</span>
-            <span class="action-btn-label">Clock In</span>
-          </button>
-          <button class="action-btn btn-clockout" onclick="send('clock-out')" id="btn-out">
-            <span class="action-btn-icon">←</span>
-            <span class="action-btn-label">Clock Out</span>
-          </button>
-        </div>
-
-        <div class="secondary-btns">
-          <button class="action-btn btn-lunch" onclick="send('lunch-out')" id="btn-lunch-out">
-            <span class="action-btn-icon">🍱</span>
-            <span class="action-btn-label">Lunch Out</span>
-          </button>
-          <button class="action-btn btn-lunch" onclick="send('lunch-in')" id="btn-lunch-in">
-            <span class="action-btn-icon">🍱</span>
-            <span class="action-btn-label">Lunch In</span>
-          </button>
-          <button class="action-btn btn-break" onclick="send('break-out')" id="btn-break-out">
-            <span class="action-btn-icon">☕</span>
-            <span class="action-btn-label">Break Out</span>
-          </button>
-          <button class="action-btn btn-break" onclick="send('break-in')" id="btn-break-in">
-            <span class="action-btn-icon">☕</span>
-            <span class="action-btn-label">Break In</span>
-          </button>
-        </div>
-  </div>
-
-</div>
-
-        <div class="status-msg" id="status-msg">
-          <span id="status-icon"></span>
-          <span id="status-text"></span>
         </div>
       </div>
 
-      <!-- Leave Toggle -->
-      <div style="margin-bottom:12px;">
-        <button onclick="toggleLeaveForm()" style="font-family:'Instrument Sans',sans-serif;font-size:13px;color:var(--orange);background:var(--orange-light);border:1px solid #f0d0b8;border-radius:var(--radius-sm);padding:8px 16px;cursor:pointer;transition:all 0.15s;">
-          🏖️ Request Leave
-        </button>
-      </div>
-
-      <!-- Leave Form -->
-      <div class="leave-card" id="leave-form-card">
-        <div class="leave-card-title">Leave Request</div>
-        <div class="field-label">Leave Type</div>
-        <select class="leave-select" id="leave-type">
-          <option value="">— Select type —</option>
-          <option value="Sick Leave">Sick Leave</option>
-          <option value="Personal">Personal</option>
-          <option value="Emergency">Emergency</option>
-          <option value="Vacation">Vacation</option>
-        </select>
-        <div class="field-label">Reason</div>
-        <input type="text" class="field-input" id="leave-reason" placeholder="Briefly describe your reason" autocomplete="off" style="margin-bottom:0">
-        <button class="submit-leave-btn" onclick="send('leave')">Submit Leave Request</button>
-      </div>
-
-      <!-- Today Summary -->
-      <div class="summary-row fade-in" id="today-summary" style="display:none">
-  <div class="summary-card">
-    <div class="summary-label">Clock In</div>
-    <div style="font-size:15px;font-weight:600;color:var(--accent);margin-top:4px" id="today-clockin">—</div>
-  </div>
-  <div class="summary-card">
-    <div class="summary-label">Clock Out</div>
-    <div style="font-size:15px;font-weight:600;color:var(--text2);margin-top:4px" id="today-clockout">—</div>
-  </div>
-  <div class="summary-card">
-    <div class="summary-label">Status</div>
-    <div style="font-size:14px;font-weight:600;margin-top:4px" id="today-status-val">—</div>
-  </div>
-  <div class="summary-card">
-    <div class="summary-label">Approval</div>
-    <div style="font-size:14px;font-weight:600;margin-top:4px" id="today-approval">—</div>
-  </div>
-  <div class="summary-card">
-    <div class="summary-label">Total Hours</div>
-    <div style="font-size:15px;font-weight:600;color:var(--blue);margin-top:4px" id="today-hours">—</div>
-  </div>
-</div>
-    </div> <!-- END page-home -->
-
-    <!-- Calendar Page -->
-    <div class="page" id="page-calendar">
-      <div class="page-header fade-in">
-        <div>
+      <!-- Calendar Page -->
+      <div class="page" id="page-calendar">
+        <div class="page-header fade-in">
           <div class="page-title">My Calendar</div>
           <div class="page-sub">Monthly attendance overview</div>
         </div>
-      </div>
 
-      <div class="summary-row fade-in">
-        <div class="summary-card s-present">
-          <div class="summary-label">Present</div>
-          <div class="summary-val" id="cal-present">—</div>
-        </div>
-        <div class="summary-card s-late">
-          <div class="summary-label">Late</div>
-          <div class="summary-val" id="cal-late">—</div>
-        </div>
-        <div class="summary-card s-absent">
-          <div class="summary-label">Absent</div>
-          <div class="summary-val" id="cal-absent">—</div>
-        </div>
-        <div class="summary-card s-pending">
-          <div class="summary-label">Pending</div>
-          <div class="summary-val" id="cal-pending">—</div>
-        </div>
-      </div>
-
-      <div class="calendar-card fade-in">
-        <div class="calendar-header">
-          <div class="calendar-month" id="cal-month-label">May 2026</div>
-          <div class="cal-nav">
-            <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
-            <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+        <div class="summary-row fade-in">
+          <div class="summary-card s-present">
+            <div class="summary-label">Present</div>
+            <div class="summary-val" id="cal-present">—</div>
+          </div>
+          <div class="summary-card s-late">
+            <div class="summary-label">Late</div>
+            <div class="summary-val" id="cal-late">—</div>
+          </div>
+          <div class="summary-card s-absent">
+            <div class="summary-label">Absent</div>
+            <div class="summary-val" id="cal-absent">—</div>
+          </div>
+          <div class="summary-card s-pending">
+            <div class="summary-label">Pending</div>
+            <div class="summary-val" id="cal-pending">—</div>
           </div>
         </div>
-        <div class="calendar-grid" id="cal-day-headers">
-          <div class="cal-day-header">Mon</div>
-          <div class="cal-day-header">Tue</div>
-          <div class="cal-day-header">Wed</div>
-          <div class="cal-day-header">Thu</div>
-          <div class="cal-day-header">Fri</div>
-          <div class="cal-day-header">Sat</div>
-          <div class="cal-day-header">Sun</div>
-        </div>
-        <div class="calendar-grid" id="calendar-body">
-          <div class="loading-state" style="grid-column:1/-1">
-            <div class="loading-spinner"></div>
-            <span>Loading calendar...</span>
+
+        <div class="calendar-card fade-in">
+          <div class="calendar-header">
+            <div class="calendar-month" id="cal-month-label">May 2026</div>
+            <div class="cal-nav">
+              <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+              <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+            </div>
+          </div>
+          <div class="calendar-grid">
+            <div class="cal-day-header">Mon</div>
+            <div class="cal-day-header">Tue</div>
+            <div class="cal-day-header">Wed</div>
+            <div class="cal-day-header">Thu</div>
+            <div class="cal-day-header">Fri</div>
+            <div class="cal-day-header">Sat</div>
+            <div class="cal-day-header">Sun</div>
+          </div>
+          <div class="calendar-grid" id="calendar-body">
+            <div class="loading-state" style="grid-column:1/-1">
+              <div class="loading-spinner"></div>
+              <span>Loading calendar...</span>
+            </div>
           </div>
         </div>
+
+        <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--text2);padding:4px 0;">
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block"></span>Present</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#d4a017;display:inline-block"></span>Late</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:var(--blue);display:inline-block"></span>Clocked Out</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#e0d8d0;display:inline-block"></span>Absent</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:var(--orange);display:inline-block"></span>Pending</span>
+        </div>
       </div>
 
-      <!-- Legend -->
-      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--text2);padding:4px 0;">
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block"></span>Present</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#d4a017;display:inline-block"></span>Late</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:var(--blue);display:inline-block"></span>Clocked Out</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:#e0d8d0;display:inline-block"></span>Absent</span>
-        <span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:var(--orange);display:inline-block"></span>Pending</span>
-      </div>
-    </div>
-
-    <!-- Leave History Page -->
-    <div class="page" id="page-leave">
-      <div class="page-header fade-in">
-        <div>
+      <!-- Leave History Page -->
+      <div class="page" id="page-leave">
+        <div class="page-header fade-in">
           <div class="page-title">Leave History</div>
           <div class="page-sub">All your leave requests</div>
         </div>
-      </div>
-      <div id="leave-history-container">
-        <div class="loading-state">
-          <div class="loading-spinner"></div>
-          <span>Loading leave history...</span>
+        <div id="leave-history-container">
+          <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <span>Loading leave history...</span>
+          </div>
         </div>
       </div>
-    </div>
 
+    </div>
   </div>
 </div>
 
 <script>
-  const WEBHOOK      = 'http://localhost:5678/webhook/attendance';
-  const CHECK_ROLE   = 'http://localhost:5678/webhook/check-role';
-  const MEMBER_DATA  = 'http://localhost:5678/webhook/member-data';
-  const CLIENT_ID    = '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com';
+  const WEBHOOK     = 'http://localhost:5678/webhook/attendance';
+  const CHECK_ROLE  = 'http://localhost:5678/webhook/check-role';
+  const MEMBER_DATA = 'http://localhost:5678/webhook/member-data';
+  const CLIENT_ID   = '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com';
 
-  let currentUser = null;
-  let entryType   = 'auto';
-  let calMonth    = new Date().getMonth() + 1;
-  let calYear     = new Date().getFullYear();
-  let memberData  = null;
+  let currentUser   = null;
+  let entryType     = 'auto';
+  let calMonth      = new Date().getMonth() + 1;
+  let calYear       = new Date().getFullYear();
+  let memberData    = null;
   let leaveFormOpen = false;
-  let lottieAnim = null;
+  let lottieAnim    = null;
+  let dataRefreshInterval = null;
 
-function playLottie(file, label, loop = true) {
-  const container = document.getElementById('lottie-container');
-  if (lottieAnim) { lottieAnim.destroy(); lottieAnim = null; }
-  lottieAnim = lottie.loadAnimation({
-    container: container,
-    renderer: 'svg',
-    loop: loop,
-    autoplay: true,
-    path: 'https://sparkies14.github.io/Attendance/' + file
-  });
-  document.getElementById('lottie-label').textContent = label;
-  if (!loop && file !== 'lottie-late.json') {
-    lottieAnim.addEventListener('complete', () => {
-      playLottie('lottie-work.json', 'You\'re working...', true);
+  /* ── Lottie ── */
+  function playLottie(file, label, loop = true) {
+    const container = document.getElementById('lottie-container');
+    if (lottieAnim) { lottieAnim.destroy(); lottieAnim = null; }
+    lottieAnim = lottie.loadAnimation({
+      container, renderer: 'svg', loop, autoplay: true,
+      path: 'https://sparkies14.github.io/Attendance/' + file
     });
+    document.getElementById('lottie-label').textContent = label;
+    if (!loop && file !== 'lottie-late.json') {
+      lottieAnim.addEventListener('complete', () => {
+        playLottie('lottie-work.json', "You're working...", true);
+      });
+    }
   }
-}
 
   /* ── Auth ── */
   function parseJwt(t) {
     return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
   }
 
-  function showAuthMsg(type, msg) {
-    const el = document.getElementById('auth-msg');
-    const ico = document.getElementById('auth-icon');
-    el.className = `auth-msg show ${type}`;
-    document.getElementById('auth-text').textContent = msg;
-    ico.innerHTML = type === 'loading' ? '<span class="spin"></span>' : type === 'error' ? '✕' : '✓';
-  }
-
   window.onload = function() {
-  const saved     = sessionStorage.getItem('anosupo_credential');
-  const savedRole = sessionStorage.getItem('anosupo_role');
-
-  if (saved && (savedRole === 'whitelist' || savedRole === 'goldlist')) {
-    try {
-      const p = parseJwt(saved);
-      bootMember(p, savedRole);
-      return;
-    } catch(e) { sessionStorage.clear(); window.location.href = 'index.html'; return; }
+    const saved     = sessionStorage.getItem('anosupo_credential');
+    const savedRole = sessionStorage.getItem('anosupo_role');
+    if (saved && (savedRole === 'whitelist' || savedRole === 'goldlist')) {
+      try {
+        const p = parseJwt(saved);
+        bootMember(p, savedRole);
+        return;
+      } catch(e) { sessionStorage.clear(); window.location.href = 'index.html'; return; }
+    }
+    sessionStorage.clear();
+    window.location.href = 'index.html';
   }
 
-  sessionStorage.clear();
-  window.location.href = 'index.html';
-}
-
-function bootMember(p, role) {
-  currentUser = { name: p.name, email: p.email, avatar: p.picture };
-  document.getElementById('user-name').textContent     = p.name.split(' ')[0];
-  document.getElementById('user-role').textContent     = role === 'goldlist' ? 'Manager' : 'Member';
-  document.getElementById('user-avatar').src           = p.picture;
-  document.getElementById('welcome-title').textContent = getGreeting() + ', ' + p.name.split(' ')[0];
-  document.getElementById('auth-gate').classList.add('hidden');
-  document.getElementById('app').classList.add('show');
-  loadMemberData();
-}
+  function bootMember(p, role) {
+    currentUser = { name: p.name, email: p.email, avatar: p.picture };
+    document.getElementById('user-name').textContent = p.name.split(' ')[0];
+    document.getElementById('user-role').textContent = role === 'goldlist' ? 'Manager' : 'Member';
+    document.getElementById('user-avatar').src = p.picture;
+    document.getElementById('welcome-title').textContent = getGreeting() + ', ' + p.name.split(' ')[0];
+    document.getElementById('auth-gate').classList.add('hidden');
+    document.getElementById('app').classList.add('show');
+    loadMemberData();
+    dataRefreshInterval = setInterval(() => loadMemberData(), 30000);
+  }
 
   function signOut() {
-  sessionStorage.clear();
-  window.location.href = 'index.html';
-}
+    if (dataRefreshInterval) clearInterval(dataRefreshInterval);
+    sessionStorage.clear();
+    window.location.href = 'index.html';
+  }
 
   function getGreeting() {
     const h = new Date().getHours();
@@ -943,45 +757,39 @@ function bootMember(p, role) {
 
   /* ── Live Clock ── */
   function tick() {
-  const now = new Date();
-  const jst = new Date(now.getTime() + 9 * 3600000);
-  const p = n => String(n).padStart(2,'0');
-  document.getElementById('jst-time').textContent =
-    `${p(jst.getUTCHours())}:${p(jst.getUTCMinutes())}:${p(jst.getUTCSeconds())}`;
-  document.getElementById('local-time').textContent =
-    `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
-  const days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  document.getElementById('jst-date').textContent =
-    `${days[jst.getUTCDay()]}, ${months[jst.getUTCMonth()]} ${jst.getUTCDate()}`;
-}
-setInterval(tick, 1000);
-tick();
+    const now = new Date();
+    const jst = new Date(now.getTime() + 9 * 3600000);
+    const p = n => String(n).padStart(2,'0');
+    document.getElementById('jst-time').textContent =
+      `${p(jst.getUTCHours())}:${p(jst.getUTCMinutes())}:${p(jst.getUTCSeconds())} JST`;
+    document.getElementById('local-time').textContent =
+      `${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`;
+    const days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('topbar-date').textContent =
+      `${days[jst.getUTCDay()]}, ${months[jst.getUTCMonth()]} ${jst.getUTCDate()}`;
+  }
+  setInterval(tick, 1000);
+  tick();
 
   /* ── Navigation ── */
   function showPage(page, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
-  el.classList.add('active');
-  if (page === 'calendar' || page === 'leave') {
-    if (memberData) {
-      renderMemberData();
-    } else if (currentUser) {
-      loadMemberData();
-    } else {
-      setTimeout(() => loadMemberData(), 500);
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(`page-${page}`).classList.add('active');
+    el.classList.add('active');
+    if (page === 'calendar' || page === 'leave') {
+      if (memberData) renderMemberData();
+      else if (currentUser) loadMemberData();
     }
   }
-}
 
   /* ── Entry Type ── */
   function setEntryType(t) {
     entryType = t;
     document.getElementById('tog-auto').classList.toggle('active', t === 'auto');
     document.getElementById('tog-manual').classList.toggle('active', t === 'manual');
-    const rf = document.getElementById('reason-field');
-    rf.classList.toggle('show', t === 'manual');
+    document.getElementById('reason-field').classList.toggle('show', t === 'manual');
     if (t === 'auto') document.getElementById('reason-input').value = '';
   }
 
@@ -999,14 +807,15 @@ tick();
     return 'fp_' + Math.abs(hash).toString(16);
   }
 
-  /* ── Status ── */
+  /* ── Status Message ── */
   function showStatus(type, msg) {
     const box = document.getElementById('status-msg');
-    const ico = document.getElementById('status-icon');
     box.className = `status-msg show ${type}`;
     document.getElementById('status-text').textContent = msg;
-    ico.innerHTML = type === 'loading' ? '<span class="spin"></span>' : type === 'success' ? '✓' : '✕';
+    document.getElementById('status-icon').innerHTML =
+      type === 'loading' ? '<span class="spin"></span>' : type === 'success' ? '✓' : '✕';
   }
+
   function setBtns(off) {
     ['btn-in','btn-out','btn-lunch-out','btn-lunch-in','btn-break-out','btn-break-in'].forEach(id => {
       document.getElementById(id).disabled = off;
@@ -1028,7 +837,7 @@ tick();
     }
 
     if (action === 'leave') {
-      const leaveType = document.getElementById('leave-type').value;
+      const leaveType   = document.getElementById('leave-type').value;
       const leaveReason = document.getElementById('leave-reason').value.trim();
       if (!leaveType) { showStatus('error', 'Please select a leave type.'); return; }
       if (!leaveReason || leaveReason.length < 5) { showStatus('error', 'Please provide a reason (min 5 chars).'); return; }
@@ -1044,7 +853,7 @@ tick();
 
     const now = new Date();
     const jst = new Date(now.getTime() + 9 * 3600000);
-    const p   = n => String(n).padStart(2, '0');
+    const pad = n => String(n).padStart(2, '0');
 
     try {
       const res = await fetch(WEBHOOK, {
@@ -1054,7 +863,7 @@ tick();
           name:        currentUser.name,
           email:       currentUser.email,
           action,
-          entry_type: ['lunch-out','lunch-in','break-out','break-in','leave'].includes(action) ? 'auto' : entryType,
+          entry_type:  ['lunch-out','lunch-in','break-out','break-in','leave'].includes(action) ? 'auto' : entryType,
           local_time:  now.toLocaleTimeString(),
           date:        now.toLocaleDateString(),
           timezone:    Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -1073,8 +882,8 @@ tick();
           showStatus('error', data.error);
         } else {
           const labels = {
-            'clock-in': `Clocked in at ${p(jst.getUTCHours())}:${p(jst.getUTCMinutes())} JST`,
-            'clock-out': `Clocked out at ${p(jst.getUTCHours())}:${p(jst.getUTCMinutes())} JST`,
+            'clock-in':  `Clocked in at ${pad(jst.getUTCHours())}:${pad(jst.getUTCMinutes())} JST`,
+            'clock-out': `Clocked out at ${pad(jst.getUTCHours())}:${pad(jst.getUTCMinutes())} JST`,
             'lunch-out': 'Lunch started — enjoy!',
             'lunch-in':  'Welcome back from lunch',
             'break-out': 'Break started',
@@ -1082,17 +891,23 @@ tick();
             'leave':     'Leave request submitted'
           };
           showStatus('success', labels[action] || 'Done!');
+
           // Lottie on success
-const jstHour = jst.getUTCHours();
-const jstMin  = jst.getUTCMinutes();
-const isLate  = (jstHour > 9) || (jstHour === 9 && jstMin > 10);
-if (action === 'clock-in')  playLottie(isLate ? 'lottie-late.json' : 'lottie-clockin.json', isLate ? "You're late — pending approval..." : 'Welcome! Clocked in! 🎉', isLate ? true : false);
-if (action === 'clock-out') playLottie('lottie-clockout.json', 'Great work today! 👋', false);
-if (action === 'lunch-out') playLottie('lottie-lunch.json', 'Enjoy your lunch! 🍱', true);
-if (action === 'lunch-in')  playLottie('lottie-work.json', 'Back to work!', true);
-if (action === 'break-out') playLottie('lottie-coffee.json', 'Take a breather! ☕', true);
-if (action === 'break-in')  playLottie('lottie-work.json', 'Back to work!', true);
-          if (action === 'leave') { toggleLeaveForm(); document.getElementById('leave-type').value = ''; document.getElementById('leave-reason').value = ''; }
+          const jstHour = jst.getUTCHours();
+          const jstMin  = jst.getUTCMinutes();
+          const isLate  = (jstHour > 9) || (jstHour === 9 && jstMin > 10);
+          if (action === 'clock-in')  playLottie(isLate ? 'lottie-late.json' : 'lottie-clockin.json', isLate ? "You're late — pending approval..." : 'Welcome! Clocked in! 🎉', isLate ? true : false);
+          if (action === 'clock-out') playLottie('lottie-clockout.json', 'Great work today! 👋', false);
+          if (action === 'lunch-out') playLottie('lottie-lunch.json', 'Enjoy your lunch! 🍱', true);
+          if (action === 'lunch-in')  playLottie('lottie-work.json', 'Back to work!', true);
+          if (action === 'break-out') playLottie('lottie-coffee.json', 'Take a breather! ☕', true);
+          if (action === 'break-in')  playLottie('lottie-work.json', 'Back to work!', true);
+
+          if (action === 'leave') {
+            toggleLeaveForm();
+            document.getElementById('leave-type').value = '';
+            document.getElementById('leave-reason').value = '';
+          }
           setTimeout(() => loadMemberData(), 1500);
         }
       } else {
@@ -1119,53 +934,139 @@ if (action === 'break-in')  playLottie('lottie-work.json', 'Back to work!', true
     }
   }
 
+  /* ── Update Today Summary + Hero ── */
   function updateTodaySummary() {
-  if (!memberData) return;
-  const today = new Date().toLocaleDateString('en-US');
-  const todayRecord = memberData.calendar?.find(d => d.date === today);
-  if (todayRecord && todayRecord.clockIn !== '-') {
-    document.getElementById('today-summary').style.display = 'grid';
-    document.getElementById('today-clockin').textContent  = todayRecord.clockIn;
-    document.getElementById('today-clockout').textContent = todayRecord.clockOut !== '-' ? todayRecord.clockOut : '—';
-    document.getElementById('today-hours').textContent    = todayRecord.totalHours !== '-' ? todayRecord.totalHours + ' hrs' : '—';
+    if (!memberData) return;
+    const today       = new Date().toLocaleDateString('en-US');
+    const todayRecord = memberData.calendar?.find(d => d.date === today);
 
-    const statusMap = { present:'On Time ✓', late:'Late ⏰', 'clocked-out':'Clocked Out', pending:'Pending ⏳' };
-    const statusColors = { present:'var(--accent)', late:'var(--yellow)', 'clocked-out':'var(--blue)', pending:'var(--orange)' };
-    const sv = document.getElementById('today-status-val');
-    sv.textContent = statusMap[todayRecord.status] || todayRecord.status;
-    sv.style.color = statusColors[todayRecord.status] || 'var(--text2)';
+    // Reset pills
+    ['pill-working','pill-late','pill-pending','pill-out'].forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
+    document.getElementById('approval-banner').classList.add('hidden');
 
-    // Approval status
-    const approvalEl = document.getElementById('today-approval');
-    if (todayRecord.status === 'pending') {
-      approvalEl.textContent = 'Pending ⏳';
-      approvalEl.style.color = 'var(--orange)';
-    } else if (todayRecord.status === 'present' || todayRecord.status === 'late' || todayRecord.status === 'clocked-out') {
-      approvalEl.textContent = 'Approved ✓';
-      approvalEl.style.color = 'var(--accent)';
+    if (todayRecord && todayRecord.clockIn !== '-') {
+      document.getElementById('today-summary').style.display = 'grid';
+
+      // Stat cards
+      document.getElementById('today-clockin').textContent  = todayRecord.clockIn;
+      document.getElementById('today-clockout').textContent = todayRecord.clockOut !== '-' ? todayRecord.clockOut : '—';
+      document.getElementById('today-hours').textContent    = todayRecord.totalHours !== '-' ? todayRecord.totalHours + ' hrs' : '—';
+
+      const statusMap    = { present:'On Time ✓', late:'Late ⏰', 'clocked-out':'Clocked Out', pending:'Pending ⏳' };
+      const statusColors = { present:'var(--accent)', late:'var(--yellow)', 'clocked-out':'var(--blue)', pending:'var(--orange)' };
+      const sv = document.getElementById('today-status-val');
+      sv.textContent  = statusMap[todayRecord.status] || todayRecord.status;
+      sv.style.color  = statusColors[todayRecord.status] || 'var(--text2)';
+
+      // Hero clock-in display
+      document.getElementById('hero-clockin-time').textContent = todayRecord.clockIn;
+      document.getElementById('hero-clockin-sub').textContent  = `Clocked in · ${todayRecord.date || today}`;
+
+      // Pills
+      if (todayRecord.status === 'pending') {
+        document.getElementById('pill-pending').style.display = 'inline-flex';
+        document.getElementById('approval-banner').classList.remove('hidden');
+      } else if (todayRecord.status === 'late') {
+        document.getElementById('pill-late').style.display = 'inline-flex';
+        document.getElementById('pill-working').style.display = 'inline-flex';
+      } else if (todayRecord.status === 'clocked-out') {
+        document.getElementById('pill-out').style.display = 'inline-flex';
+      } else if (todayRecord.status === 'present') {
+        document.getElementById('pill-working').style.display = 'inline-flex';
+      }
+
+      // Lottie state on load
+      if (todayRecord.clockOut && todayRecord.clockOut !== '—') {
+        playLottie('lottie-clockout.json', 'Shift complete!', false);
+      } else if (todayRecord.status === 'pending') {
+        playLottie('lottie-late.json', "Pending approval...", true);
+      } else {
+        playLottie('lottie-work.json', "You're working...", true);
+      }
+
+      // Timesheet
+      renderTimesheet(todayRecord);
+
     } else {
-      approvalEl.textContent = '—';
-      approvalEl.style.color = 'var(--text2)';
+      document.getElementById('hero-clockin-time').textContent = '—';
+      document.getElementById('hero-clockin-sub').textContent  = 'Not clocked in yet';
+      playLottie('lottie-waiting.json', 'Not clocked in yet...', true);
     }
+  }
 
-    document.getElementById('today-status').textContent = `Today · ${statusMap[todayRecord.status] || ''}`;
-    // Lottie state on load
-if (todayRecord.clockOut && todayRecord.clockOut !== '—') {
-  playLottie('lottie-clockout.json', 'Shift complete!', false);
-} else {
-  playLottie('lottie-work.json', "You're working...", true);
-} 
-  } else {
-  playLottie('lottie-waiting.json', 'Not clocked in yet...', true);
-}
-  
-}
+  /* ── Timesheet ── */
+  function renderTimesheet(todayRecord) {
+    const card = document.getElementById('timesheet-card');
+    const rows = document.getElementById('timesheet-rows');
+    if (!memberData || !memberData.calendar) return;
 
+    // Get last 4 weekdays from calendar
+    const today   = new Date();
+    const allDays = memberData.calendar.filter(d => !d.isWeekend && d.clockIn && d.clockIn !== '-');
+    const recent  = allDays.slice(-4).reverse();
+
+    if (recent.length === 0) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+
+    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const todayStr = today.toLocaleDateString('en-US');
+
+    rows.innerHTML = recent.map(d => {
+      const dateObj  = new Date(d.date);
+      const isToday  = d.date === todayStr;
+      const dayLabel = isToday ? 'Today' : dayNames[dateObj.getDay()];
+      const dateLabel = dateObj.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+
+      // Build bar segments — simple proportional estimate from 9AM shift
+      const shiftStart = 9 * 60;
+      const shiftEnd   = 18 * 60;
+      const shiftTotal = shiftEnd - shiftStart;
+
+      function toMins(timeStr) {
+        if (!timeStr || timeStr === '-' || timeStr === '—') return null;
+        const [time, period] = timeStr.split(' ');
+        let [h, m] = time.split(':').map(Number);
+        if (period === 'PM' && h !== 12) h += 12;
+        if (period === 'AM' && h === 12) h = 0;
+        return h * 60 + m;
+      }
+
+      const cinMin  = toMins(d.clockIn);
+      const coutMin = toMins(d.clockOut) || (isToday ? (new Date().getHours() * 60 + new Date().getMinutes()) : null);
+
+      let segs = '';
+      if (cinMin !== null && coutMin !== null) {
+        const startPct = Math.max(0, ((cinMin - shiftStart) / shiftTotal) * 100);
+        const endPct   = Math.min(100, ((coutMin - shiftStart) / shiftTotal) * 100);
+        const widthPct = Math.max(0, endPct - startPct);
+        segs += `<div class="ts-seg" style="left:${startPct.toFixed(1)}%;width:${widthPct.toFixed(1)}%;background:#1a6b3c;"></div>`;
+      }
+
+      const durationDisplay = d.totalHours && d.totalHours !== '-' ? d.totalHours + 'h' : (isToday ? 'ongoing' : '—');
+      const coutDisplay     = d.clockOut && d.clockOut !== '-' ? d.clockOut : (isToday ? 'ongoing' : '—');
+
+      return `
+        <div class="ts-row">
+          <div class="ts-date">
+            <div class="ts-day">${dayLabel}</div>
+            <div class="ts-datenum">${dateLabel}</div>
+          </div>
+          <div class="ts-cin">${d.clockIn}</div>
+          <div class="ts-bar-wrap">${segs}</div>
+          <div class="ts-cout">${coutDisplay}</div>
+          <div class="ts-dur">${durationDisplay}</div>
+        </div>`;
+    }).join('');
+  }
+
+  /* ── Render All Member Data ── */
   function renderMemberData() {
-  if (!memberData) return;
-  renderCalendar();
-  renderLeaveHistory();
-}
+    if (!memberData) return;
+    renderCalendar();
+    renderLeaveHistory();
+  }
 
   /* ── Calendar ── */
   function changeMonth(dir) {
@@ -1179,41 +1080,35 @@ if (todayRecord.clockOut && todayRecord.clockOut !== '—') {
     if (!memberData) return;
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     document.getElementById('cal-month-label').textContent = `${months[calMonth-1]} ${calYear}`;
-
-    // Summary
     document.getElementById('cal-present').textContent = memberData.summary?.present ?? '—';
     document.getElementById('cal-late').textContent    = memberData.summary?.late    ?? '—';
     document.getElementById('cal-absent').textContent  = memberData.summary?.absent  ?? '—';
     document.getElementById('cal-pending').textContent = memberData.summary?.pending ?? '—';
 
-    const body = document.getElementById('calendar-body');
+    const body     = document.getElementById('calendar-body');
     const firstDay = new Date(calYear, calMonth - 1, 1).getDay();
-    // Convert Sunday=0 to Mon-first grid (Mon=0)
-    const offset = firstDay === 0 ? 6 : firstDay - 1;
+    const offset   = firstDay === 0 ? 6 : firstDay - 1;
+    const today    = new Date();
+    const todayStr = today.toLocaleDateString('en-US');
 
     let html = '';
     for (let i = 0; i < offset; i++) html += `<div class="cal-day empty"></div>`;
 
-    const today = new Date();
-    const todayStr = today.toLocaleDateString('en-US');
-
     memberData.calendar.forEach(d => {
-      const isToday   = d.date === todayStr;
-      const isFuture  = new Date(d.date) > today && d.date !== todayStr;
-      const dotClass  = `dot-${d.status}`;
+      const isToday  = d.date === todayStr;
+      const isFuture = new Date(d.date) > today && d.date !== todayStr;
       const cls = [
-  'cal-day',
-  d.isWeekend ? 'weekend' : '',
-  isToday ? 'today' : '',
-  isToday && d.status ? `status-${d.status}` : '',
-  isFuture ? 'future' : '',
-  !d.isWeekend && !isFuture ? `status-${d.status}` : ''
-].filter(Boolean).join(' ');
+        'cal-day',
+        d.isWeekend ? 'weekend' : '',
+        isToday ? 'today' : '',
+        isToday && d.status ? `status-${d.status}` : '',
+        isFuture ? 'future' : '',
+        !d.isWeekend && !isFuture ? `status-${d.status}` : ''
+      ].filter(Boolean).join(' ');
 
-      html += `
-        <div class="${cls}" title="${d.date} · ${d.status}${d.clockIn !== '-' ? ' · In: ' + d.clockIn : ''}">
-          <span class="cal-day-num">${d.day}</span>
-        </div>`;
+      html += `<div class="${cls}" title="${d.date} · ${d.status}${d.clockIn !== '-' ? ' · In: '+d.clockIn : ''}">
+        <span class="cal-day-num">${d.day}</span>
+      </div>`;
     });
 
     body.innerHTML = html;
@@ -1223,23 +1118,20 @@ if (todayRecord.clockOut && todayRecord.clockOut !== '—') {
   function renderLeaveHistory() {
     const container = document.getElementById('leave-history-container');
     const history   = memberData?.leaveHistory || [];
-
     if (history.length === 0) {
       container.innerHTML = `<div class="empty-state">No leave requests yet.</div>`;
       return;
     }
-
     container.innerHTML = history.map(l => {
-      const statusClass = { Approved: 'ls-approved', Pending: 'ls-pending', Rejected: 'ls-rejected' }[l.status] || 'ls-pending';
-      return `
-        <div class="leave-item">
-          <div class="leave-item-left">
-            <div class="leave-item-date">${l.date || '—'}</div>
-            <div class="leave-item-type">${l.leaveType || '—'}</div>
-            ${l.reason ? `<div class="leave-item-reason">"${l.reason}"</div>` : ''}
-          </div>
-          <span class="leave-status-badge ${statusClass}">${l.status}</span>
-        </div>`;
+      const statusClass = { Approved:'ls-approved', Pending:'ls-pending', Rejected:'ls-rejected' }[l.status] || 'ls-pending';
+      return `<div class="leave-item">
+        <div class="leave-item-left">
+          <div class="leave-item-date">${l.date || '—'}</div>
+          <div class="leave-item-type">${l.leaveType || '—'}</div>
+          ${l.reason ? `<div class="leave-item-reason">"${l.reason}"</div>` : ''}
+        </div>
+        <span class="leave-status-badge ${statusClass}">${l.status}</span>
+      </div>`;
     }).join('');
   }
 </script>
