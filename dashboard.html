@@ -855,6 +855,103 @@ tbody td:not(:first-child) { text-align: center; }
 
 @media (max-width: 900px)  { .panels { grid-template-columns: 1fr; } }
 @media (max-width: 768px)  { .sidebar { display: none; } .page { padding: 16px; } .stat-row { grid-template-columns: 1fr 1fr; } }
+
+/* ─── Payroll ─── */
+.pay-info-bar {
+  display: flex; align-items: center; gap: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 20px;
+  margin-bottom: 20px; box-shadow: var(--shadow-sm);
+  flex-wrap: wrap; gap: 16px;
+}
+.pay-info-item { display: flex; flex-direction: column; gap: 3px; }
+.pay-info-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); }
+.pay-info-val   { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--text); letter-spacing: -0.3px; }
+.pay-info-divider { width: 1px; background: var(--border); align-self: stretch; flex-shrink: 0; }
+
+/* Employee payroll card — dark panel style matching reference */
+.pay-card {
+  background: #1e1f1b;
+  border: 1px solid #2e2d28;
+  border-radius: var(--r);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.15s;
+}
+[data-theme="light"] .pay-card { background: #1e2120; border-color: #2a2e2b; }
+.pay-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.18); }
+
+.pay-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.pay-card-emp { display: flex; align-items: center; gap: 10px; }
+.pay-card-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  color: #fff; font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.pay-card-name { font-size: 14px; font-weight: 600; color: #f0ede8; line-height: 1.2; }
+.pay-card-role { font-size: 11px; color: #6b7068; }
+.pay-card-badge {
+  font-size: 10.5px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+}
+.pcb-good    { background: rgba(22,163,74,.18);  color: #4ade80; }
+.pcb-risk    { background: rgba(217,119,6,.18);  color: #fbbf24; }
+.pcb-short   { background: rgba(220,38,38,.18);  color: #f87171; }
+.pcb-perfect { background: rgba(59,130,246,.18); color: #93c5fd; }
+
+/* 4 mini stat boxes */
+.pay-mini-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 16px; }
+.pay-mini {
+  background: #141511; border: 1px solid #2a2e2b;
+  border-radius: var(--r-sm); padding: 10px 12px;
+}
+[data-theme="light"] .pay-mini { background: #161814; border-color: #272b27; }
+.pay-mini-label { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; color: #6b7068; margin-bottom: 4px; }
+.pay-mini-val   { font-size: 17px; font-family: 'DM Serif Display', serif; font-weight: 400; }
+.pmv-green  { color: #4ade80; }
+.pmv-white  { color: #f0ede8; }
+.pmv-amber  { color: #fbbf24; }
+.pmv-blue   { color: #93c5fd; }
+
+/* Progress bar */
+.pay-progress-wrap { margin-bottom: 14px; }
+.pay-prog-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.pay-prog-title  { font-size: 13px; font-weight: 500; color: #d4d0c8; }
+.pay-prog-pct    { font-size: 22px; font-family: 'DM Serif Display', serif; letter-spacing: -0.5px; }
+.pay-prog-track  { font-size: 10px; color: #6b7068; text-align: right; }
+.pay-prog-sub    { font-size: 11px; color: #6b7068; margin-bottom: 8px; }
+.pay-prog-bar-bg {
+  height: 8px; border-radius: 4px; background: #2a2e2b; overflow: hidden; margin-bottom: 6px;
+}
+.pay-prog-bar-fill {
+  height: 100%; border-radius: 4px;
+  transition: width 0.6s ease;
+}
+.ppb-green { background: linear-gradient(90deg, #16a34a, #4ade80); }
+.ppb-amber { background: linear-gradient(90deg, #d97706, #fbbf24); }
+.ppb-red   { background: linear-gradient(90deg, #dc2626, #f87171); }
+.pay-prog-dates { display: flex; justify-content: space-between; font-size: 10px; color: #6b7068; margin-bottom: 10px; }
+.pay-prog-pills { display: flex; gap: 7px; flex-wrap: wrap; }
+.pay-ppill {
+  font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500;
+  border: 1px solid #2a2e2b; color: #9b9890;
+}
+.pay-ppill.today { background: #22c55e; color: #fff; border-color: #22c55e; }
+
+/* Breakdown table */
+.pay-breakdown { border-top: 1px solid #2a2e2b; padding-top: 14px; }
+[data-theme="light"] .pay-breakdown { border-color: #272b27; }
+.pay-brow {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid #2a2e2b; font-size: 13px;
+}
+[data-theme="light"] .pay-brow { border-color: #272b27; }
+.pay-brow:last-child { border-bottom: none; }
+.pay-brow-label { color: #9b9890; }
+.pay-brow-val   { font-weight: 500; }
+.pbv-green { color: #4ade80; }
+.pbv-red   { color: #f87171; }
+.pbv-amber { color: #fbbf24; }
+.pbv-white { color: #f0ede8; }
 </style>
 </head>
 <body>
@@ -890,7 +987,7 @@ tbody td:not(:first-child) { text-align: center; }
       <div class="nav-item" onclick="showPage('calendar',this);if(allMembers.length)initCalendar()">
         <span class="nav-icon">📅</span> Calendar
       </div>
-      <div class="nav-item" onclick="showPage('payroll',this)">
+      <div class="nav-item" onclick="showPage('payroll',this);if(allMembers.length)renderPayroll()">
         <span class="nav-icon">💳</span> Payroll
       </div>
 
@@ -1204,9 +1301,67 @@ tbody td:not(:first-child) { text-align: center; }
       <!-- List View -->
       <div id="cal-list-view" style="display:none;margin-top:14px"></div>
     </div>
+    <!-- ══ PAYROLL PAGE ══ -->
     <div class="page fade-in" id="page-payroll">
-      <div class="page-header"><div><div class="page-title">Payroll</div><div class="page-sub">Salary & compensation</div></div></div>
-      <div class="empty"><div class="empty-icon">💳</div>Payroll coming soon.</div>
+      <div class="page-header">
+        <div>
+          <div class="page-title">Payroll</div>
+          <div class="page-sub">Pay period hours tracker · deductions &amp; cutoffs per employee</div>
+        </div>
+        <div class="header-right">
+          <span id="pay-period-label" style="font-size:12px;color:var(--text3)">—</span>
+          <button class="btn btn-primary" onclick="exportPayrollCSV()">⬇ Export</button>
+          <button class="btn" onclick="renderPayroll()">↻ Refresh</button>
+        </div>
+      </div>
+
+      <!-- Pay period info bar -->
+      <div class="pay-info-bar">
+        <div class="pay-info-item">
+          <div class="pay-info-label">Pay Period</div>
+          <div class="pay-info-val" id="pay-period-range">—</div>
+        </div>
+        <div class="pay-info-divider"></div>
+        <div class="pay-info-item">
+          <div class="pay-info-label">Target Hours</div>
+          <div class="pay-info-val" id="pay-target">160h</div>
+        </div>
+        <div class="pay-info-divider"></div>
+        <div class="pay-info-item">
+          <div class="pay-info-label">Working Days</div>
+          <div class="pay-info-val" id="pay-workdays">21</div>
+        </div>
+        <div class="pay-info-divider"></div>
+        <div class="pay-info-item">
+          <div class="pay-info-label">Days Remaining</div>
+          <div class="pay-info-val" id="pay-days-left" style="color:var(--amber)">—</div>
+        </div>
+        <div style="margin-left:auto">
+          <span class="chip c-amber" style="font-size:11px" id="pay-ends-badge">—</span>
+        </div>
+      </div>
+
+      <!-- Search + filter -->
+      <div class="controls" style="margin-bottom:16px">
+        <div class="ctrl-search">
+          <span class="ctrl-search-icon">🔍</span>
+          <input type="text" placeholder="Search employee…" id="payroll-search" oninput="filterPayroll(this.value)">
+        </div>
+        <div class="filters">
+          <button class="filter-pill active" onclick="filterPayrollStatus('all',this)">All</button>
+          <button class="filter-pill" onclick="filterPayrollStatus('on_track',this)">✅ On Track</button>
+          <button class="filter-pill" onclick="filterPayrollStatus('at_risk',this)">⚠ At Risk</button>
+          <button class="filter-pill" onclick="filterPayrollStatus('short',this)">🔴 Short Hours</button>
+        </div>
+        <span class="section-count" id="payroll-count" style="margin-left:auto;font-size:12px;color:var(--text3)"></span>
+      </div>
+
+      <!-- Employee cards grid -->
+      <div id="payroll-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px"></div>
+
+      <div class="last-updated" style="margin-top:14px;font-size:11px;color:var(--text3)">
+        All hours calculated in JST. Lunch break (1 hour) excluded from daily totals. Fixed target: 160h per pay period.
+      </div>
     </div>
     <div class="page fade-in" id="page-settings">
       <div class="page-header"><div><div class="page-title">Settings</div><div class="page-sub">System configuration</div></div></div>
@@ -1329,7 +1484,7 @@ window.onload = function() {
   }
   // Demo mode — no redirect so the file works standalone
   setUser({ name: 'Manager', email: 'manager@example.com', picture: '' });
-  loadData();
+  loadDemoData();
 };
 
 function parseJwt(t) {
@@ -1615,6 +1770,7 @@ async function loadData() {
   } catch(e) {
     document.getElementById('error-msg').textContent = `Failed to load — ${e.message}`;
     document.getElementById('error-bar').classList.add('show');
+    loadDemoData();
   }
 }
 
@@ -1642,6 +1798,7 @@ function ingestData(data) {
 
   document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
   initCalendar();
+  renderPayroll();
 }
 
 /* ─── Demo Data ─── */
@@ -1682,7 +1839,30 @@ let calFilter      = 'all';
 let calEvents      = [];
 
 /* ─── Demo event data ─── */
-const DEMO_EVENTS = [];
+const DEMO_EVENTS = [
+  { id:1,  emp:'Dianne Russell',     type:'meeting',  title:'Marketing Stand-up',       date:'2026-05-26', time:'10:00 AM – 10:30 AM', location:'Zoom',                 note:'' },
+  { id:2,  emp:'Dianne Russell',     type:'task',     title:'Finish wireframes for app', date:'2026-05-27', time:'All day',              location:'',                     note:'Due EOD' },
+  { id:3,  emp:'Bessie Cooper',      type:'meeting',  title:'Design Review',             date:'2026-05-26', time:'02:30 PM – 03:00 PM', location:'Meeting Room B',        note:'' },
+  { id:4,  emp:'Bessie Cooper',      type:'leave',    title:'Sick Leave',                date:'2026-05-28', time:'Full Day',             location:'',                     note:'Doctor confirmed' },
+  { id:5,  emp:'Brooklyn Jones',     type:'task',     title:'Social media post — June',  date:'2026-05-29', time:'All day',              location:'',                     note:'' },
+  { id:6,  emp:'Brooklyn Jones',     type:'meeting',  title:'Campaign Debrief',          date:'2026-05-27', time:'01:00 PM – 02:00 PM', location:'Zoom',                 note:'' },
+  { id:7,  emp:'Eleanor Pena',       type:'task',     title:'Blog article draft',        date:'2026-05-26', time:'All day',              location:'',                     note:'2000 words' },
+  { id:8,  emp:'Eleanor Pena',       type:'meeting',  title:'Editorial meeting',         date:'2026-05-28', time:'09:00 AM – 09:30 AM', location:'Zoom',                 note:'' },
+  { id:9,  emp:'Darlene Robert',     type:'task',     title:'UX audit – checkout flow',  date:'2026-05-27', time:'All day',              location:'',                     note:'' },
+  { id:10, emp:'Jacob Jones',        type:'meeting',  title:'Sprint planning',           date:'2026-05-26', time:'10:00 AM – 11:00 AM', location:'Meeting Room A',        note:'' },
+  { id:11, emp:'Jacob Jones',        type:'task',     title:'Fix login page bug',        date:'2026-05-27', time:'All day',              location:'',                     note:'Critical' },
+  { id:12, emp:'Kristin Watson',     type:'meeting',  title:'Backend sync',              date:'2026-05-28', time:'03:00 PM – 03:30 PM', location:'Zoom',                 note:'' },
+  { id:13, emp:'Kristin Watson',     type:'leave',    title:'Personal Leave',            date:'2026-05-30', time:'Full Day',             location:'',                     note:'' },
+  { id:14, emp:'Cameron Williamson', type:'task',     title:'Server migration plan',     date:'2026-05-26', time:'All day',              location:'',                     note:'' },
+  { id:15, emp:'Jenny Wilson',       type:'task',     title:'Test regression suite',     date:'2026-05-27', time:'All day',              location:'',                     note:'' },
+  { id:16, emp:'Theresa Webb',       type:'meeting',  title:'Data pipeline review',      date:'2026-05-29', time:'11:00 AM – 11:30 AM', location:'Zoom',                 note:'' },
+  { id:17, emp:'Guy Hawkins',        type:'meeting',  title:'Sprint retrospective',      date:'2026-05-30', time:'04:00 PM – 05:00 PM', location:'Meeting Room A',        note:'' },
+  { id:18, emp:'Guy Hawkins',        type:'task',     title:'Roadmap Q3 draft',          date:'2026-05-28', time:'All day',              location:'',                     note:'' },
+  { id:19, emp:'Ralph Edwards',      type:'leave',    title:'Vacation',                  date:'2026-05-26', time:'Full Day',             location:'',                     note:'' },
+  { id:20, emp:'Ralph Edwards',      type:'leave',    title:'Vacation',                  date:'2026-05-27', time:'Full Day',             location:'',                     note:'' },
+  { id:21, emp:'ALL',                type:'holiday',  title:'Independence Day (PH)',     date:'2026-06-12', time:'1 Day Off',            location:'',                     note:'' },
+  { id:22, emp:'ALL',                type:'meeting',  title:'All-hands Meeting',         date:'2026-05-29', time:'09:00 AM – 10:00 AM', location:'Main Conference Room', note:'' },
+];
 
 const TYPE_COLOR = {
   meeting: { dot:'var(--accent)',  cls:'ce-meeting',  badge:'c-blue'   },
@@ -1971,6 +2151,242 @@ document.addEventListener('click', e => {
   }
 });
 
+/* ─── Payroll ─── */
+let payrollSearchQ  = '';
+let payrollStatusF  = 'all';
+
+// Pay period: 25th of prev month → 24th of current month
+function getPayPeriod() {
+  const now   = new Date();
+  const year  = now.getFullYear();
+  const month = now.getMonth(); // 0-indexed
+  // start = 25th of last month
+  const start = new Date(year, month - 1, 25);
+  // end   = 24th of this month
+  const end   = new Date(year, month, 24);
+  return { start, end };
+}
+
+function countWorkdays(start, end) {
+  let count = 0, d = new Date(start);
+  while (d <= end) {
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) count++;
+    d.setDate(d.getDate() + 1);
+  }
+  return count;
+}
+
+function daysElapsed(start) {
+  const now = new Date();
+  let count = 0, d = new Date(start);
+  while (d <= now && d.getDate() <= now.getDate()) {
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) count++;
+    d.setDate(d.getDate() + 1);
+  }
+  return count;
+}
+
+function fmtDate(d) {
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function hoursToHM(h) {
+  const hrs  = Math.floor(h);
+  const mins = Math.round((h - hrs) * 60);
+  return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
+}
+
+function parseHM(str) {
+  // "8h 15m" → 8.25, "8h 0m" or "8h" → 8, "—" → 0
+  if (!str || str === '—' || str === '-') return 0;
+  const hMatch = str.match(/(\d+)h/);
+  const mMatch = str.match(/(\d+)m/);
+  return (hMatch ? parseInt(hMatch[1]) : 0) + (mMatch ? parseInt(mMatch[1]) / 60 : 0);
+}
+
+function renderPayroll() {
+  const { start, end } = getPayPeriod();
+  const totalWD   = countWorkdays(start, end);
+  const elapsed   = daysElapsed(start);
+  const remaining = totalWD - elapsed;
+  const TARGET    = 160;
+  const today     = new Date();
+
+  // Update info bar
+  document.getElementById('pay-period-range').textContent = `${fmtDate(start)} – ${fmtDate(end)}`;
+  document.getElementById('pay-period-label').textContent  = `${fmtDate(start)} – ${fmtDate(end)}`;
+  document.getElementById('pay-target').textContent        = `${TARGET}h`;
+  document.getElementById('pay-workdays').textContent      = totalWD;
+  document.getElementById('pay-days-left').textContent     = `${remaining} days`;
+  document.getElementById('pay-ends-badge').textContent    =
+    remaining <= 0 ? 'Pay period ended' :
+    remaining === 1 ? 'Pay period · ends tomorrow' :
+    `Pay period · ends in ${remaining} days`;
+
+  if (!allMembers.length) {
+    document.getElementById('payroll-grid').innerHTML =
+      `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">💳</div>No employee data loaded yet.</div>`;
+    return;
+  }
+
+  // Build payroll data per member from attendance data
+  const members = allMembers.map(m => {
+    const worked    = parseHM(m.totalHours);  // today's hours from attendance
+    // Extrapolate: worked * (elapsed / 1) but we only have today — scale realistically
+    // Real integration would sum all days; here we use today's data × elapsed days as estimate
+    const hoursWorked  = Math.min(worked * elapsed, TARGET * 1.05); // cap slightly above target
+    const remaining_h  = Math.max(TARGET - hoursWorked, 0);
+    const pct          = Math.min(Math.round((hoursWorked / TARGET) * 100), 100);
+    const lateDays     = m.status === 'CLOCKED IN (LATE)' ? 1 : 0;
+    const absentDays   = m.status === 'NOT CLOCKED IN'    ? 1 : 0;
+    const leaveTaken   = (m.status === 'PENDING APPROVAL') ? '1 day (pending)' : '0 days';
+
+    const status =
+      remaining_h === 0     ? 'perfect' :
+      pct >= 80             ? 'on_track' :
+      pct >= 50             ? 'at_risk'  : 'short';
+
+    return { ...m, hoursWorked, remaining_h, pct, lateDays, absentDays, leaveTaken, status, totalWD, elapsed, remaining };
+  });
+
+  // Filter
+  let filtered = members;
+  if (payrollStatusF !== 'all') filtered = filtered.filter(m => m.status === payrollStatusF);
+  if (payrollSearchQ)           filtered = filtered.filter(m => (m.name||'').toLowerCase().includes(payrollSearchQ));
+
+  document.getElementById('payroll-count').textContent = `${filtered.length} employee${filtered.length !== 1 ? 's' : ''}`;
+
+  if (filtered.length === 0) {
+    document.getElementById('payroll-grid').innerHTML =
+      `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div>No employees match.</div>`;
+    return;
+  }
+
+  document.getElementById('payroll-grid').innerHTML = filtered.map(m => {
+    const bg  = avatarBg(m.name || '');
+    const ini = (m.name || '?').charAt(0).toUpperCase();
+    const barCls = m.pct >= 80 ? 'ppb-green' : m.pct >= 50 ? 'ppb-amber' : 'ppb-red';
+    const pctCls = m.pct >= 80 ? 'pmv-green' : m.pct >= 50 ? 'pmv-amber' : 'pmv-white';
+    const progColor = m.pct >= 80 ? '#4ade80' : m.pct >= 50 ? '#fbbf24' : '#f87171';
+    const trackTxt  = m.pct >= 80 ? 'on track' : m.pct >= 50 ? 'at risk' : 'behind';
+
+    const badgeCls = { perfect:'pcb-perfect', on_track:'pcb-good', at_risk:'pcb-risk', short:'pcb-short' }[m.status];
+    const badgeTxt = { perfect:'✦ Perfect', on_track:'✅ On Track', at_risk:'⚠ At Risk', short:'🔴 Short' }[m.status];
+
+    return `<div class="pay-card fade-in">
+      <div class="pay-card-header">
+        <div class="pay-card-emp">
+          <div class="pay-card-avatar" style="background:${bg}">${ini}</div>
+          <div>
+            <div class="pay-card-name">${m.name || '—'}</div>
+            <div class="pay-card-role">${m.role || '—'}</div>
+          </div>
+        </div>
+        <span class="pay-card-badge ${badgeCls}">${badgeTxt}</span>
+      </div>
+
+      <div class="pay-mini-row">
+        <div class="pay-mini">
+          <div class="pay-mini-label">Hours Worked</div>
+          <div class="pay-mini-val pmv-green">${hoursToHM(m.hoursWorked)}</div>
+        </div>
+        <div class="pay-mini">
+          <div class="pay-mini-label">Hours Required</div>
+          <div class="pay-mini-val pmv-white">${TARGET}h</div>
+        </div>
+        <div class="pay-mini">
+          <div class="pay-mini-label">Remaining</div>
+          <div class="pay-mini-val pmv-amber">${hoursToHM(m.remaining_h)}</div>
+        </div>
+        <div class="pay-mini">
+          <div class="pay-mini-label">Days Worked</div>
+          <div class="pay-mini-val pmv-blue">${m.elapsed} / ${m.totalWD}</div>
+        </div>
+      </div>
+
+      <div class="pay-progress-wrap">
+        <div class="pay-prog-header">
+          <div>
+            <div class="pay-prog-title">Hours progress</div>
+            <div class="pay-prog-sub">${hoursToHM(m.hoursWorked)} of ${TARGET}h completed</div>
+          </div>
+          <div style="text-align:right">
+            <div class="pay-prog-pct" style="color:${progColor}">${m.pct}%</div>
+            <div class="pay-prog-track" style="color:${progColor}">${trackTxt}</div>
+          </div>
+        </div>
+        <div class="pay-prog-bar-bg">
+          <div class="pay-prog-bar-fill ${barCls}" style="width:${m.pct}%"></div>
+        </div>
+        <div class="pay-prog-dates">
+          <span>${fmtDate(start)}</span>
+          <span>${fmtDate(end)}</span>
+        </div>
+        <div class="pay-prog-pills">
+          <span class="pay-ppill">${m.elapsed} days done</span>
+          <span class="pay-ppill today">Today · ${today.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
+          <span class="pay-ppill">${m.remaining} days left</span>
+        </div>
+      </div>
+
+      <div class="pay-breakdown">
+        <div class="pay-brow">
+          <span class="pay-brow-label">Regular hours</span>
+          <span class="pay-brow-val pbv-green">${hoursToHM(m.hoursWorked)}</span>
+        </div>
+        <div class="pay-brow">
+          <span class="pay-brow-label">Late days</span>
+          <span class="pay-brow-val ${m.lateDays > 0 ? 'pbv-red' : 'pbv-white'}">${m.lateDays} ${m.lateDays === 1 ? 'day' : 'days'}</span>
+        </div>
+        <div class="pay-brow">
+          <span class="pay-brow-label">Absent days</span>
+          <span class="pay-brow-val ${m.absentDays > 0 ? 'pbv-red' : 'pbv-white'}">${m.absentDays} ${m.absentDays === 1 ? 'day' : 'days'}</span>
+        </div>
+        <div class="pay-brow">
+          <span class="pay-brow-label">Leave taken</span>
+          <span class="pay-brow-val pbv-white">${m.leaveTaken}</span>
+        </div>
+        <div class="pay-brow">
+          <span class="pay-brow-label">Hours still needed</span>
+          <span class="pay-brow-val ${m.remaining_h > 0 ? 'pbv-amber' : 'pbv-green'}">${hoursToHM(m.remaining_h)}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterPayroll(q) {
+  payrollSearchQ = q.toLowerCase();
+  renderPayroll();
+}
+
+function filterPayrollStatus(f, btn) {
+  payrollStatusF = f;
+  document.querySelectorAll('#page-payroll .filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPayroll();
+}
+
+function exportPayrollCSV() {
+  if (!allMembers.length) { toast('No data to export.', 'error'); return; }
+  const { start, end } = getPayPeriod();
+  const rows = [
+    ['Name','Role','Hours Worked','Hours Required','Remaining','Days Worked','Total Days','Late Days','Absent Days','Status'],
+    ...allMembers.map(m => {
+      const worked = parseHM(m.totalHours);
+      const hw  = Math.min(worked * daysElapsed(start), 160);
+      const rem = Math.max(160 - hw, 0);
+      const pct = Math.min(Math.round((hw/160)*100),100);
+      const st  = rem===0?'Perfect':pct>=80?'On Track':pct>=50?'At Risk':'Short';
+      return [m.name,m.role,hoursToHM(hw),'160h',hoursToHM(rem),daysElapsed(start),countWorkdays(start,end),m.status==='CLOCKED IN (LATE)'?1:0,m.status==='NOT CLOCKED IN'?1:0,st].map(v=>`"${v}"`);
+    })
+  ];
+  const blob = new Blob([rows.map(r=>r.join(',')).join('\n')], {type:'text/csv'});
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `payroll-${new Date().toLocaleDateString('en-CA')}.csv` });
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Payroll CSV exported!');
+}
+
 </script>
-</body>
-</html>
