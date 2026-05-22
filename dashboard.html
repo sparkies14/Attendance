@@ -665,8 +665,194 @@ tbody td:not(:first-child) { text-align: center; }
 @keyframes fadeUp { from { opacity:0; transform:translateY(7px); } to { opacity:1; transform:translateY(0); } }
 .fade-in { animation: fadeUp 0.3s ease both; }
 
-/* ─── Responsive ─── */
-@media (max-width: 1100px) { .stat-row { grid-template-columns: repeat(2,1fr); } }
+/* ─── Calendar Summary Cards ─── */
+.cal-summary-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+.cal-sum-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px 18px;
+  display: flex; gap: 12px; align-items: flex-start;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s, background 0.3s;
+}
+.cal-sum-card:hover { box-shadow: var(--shadow); }
+.csc-icon { font-size: 22px; margin-top: 2px; flex-shrink: 0; }
+.csc-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 4px; }
+.csc-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; line-height: 1.2; }
+.csc-meta  { font-size: 11.5px; color: var(--text2); margin-bottom: 8px; }
+.csc-tag   { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 5px; }
+
+/* ─── Calendar Controls ─── */
+.cal-controls {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 10px 14px;
+  margin-bottom: 0; box-shadow: var(--shadow-sm);
+}
+
+/* Employee Dropdown */
+.cal-emp-select-wrap { position: relative; flex-shrink: 0; }
+.cal-emp-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px 6px 6px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--text);
+  transition: all 0.15s; min-width: 180px;
+}
+.cal-emp-btn:hover { border-color: var(--accent); }
+.cal-emp-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.cal-emp-caret { margin-left: auto; font-size: 10px; color: var(--text3); }
+.cal-emp-dropdown {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 50;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); box-shadow: var(--shadow);
+  min-width: 220px; overflow: hidden;
+}
+.cal-emp-dropdown.hidden { display: none; }
+.cal-emp-search-wrap { padding: 8px; border-bottom: 1px solid var(--border); }
+.cal-emp-search-wrap input {
+  width: 100%; font-family: 'DM Sans', sans-serif; font-size: 12.5px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 6px 10px; color: var(--text); outline: none;
+}
+.cal-emp-search-wrap input:focus { border-color: var(--accent); }
+.cal-emp-option {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 12px; cursor: pointer; transition: background 0.1s;
+  font-size: 13px; color: var(--text2);
+}
+.cal-emp-option:hover { background: var(--surface2); color: var(--text); }
+.cal-emp-option.selected { background: var(--accent-bg); color: var(--accent); font-weight: 500; }
+.cal-emp-option-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  color: #fff; font-size: 11px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+/* Calendar view tabs */
+.cal-view-tabs {
+  display: flex; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 2px; flex-shrink: 0;
+}
+.cal-vtab {
+  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+  padding: 4px 12px; border: none; background: none; border-radius: 16px;
+  cursor: pointer; color: var(--text3); transition: all 0.18s;
+}
+.cal-vtab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+
+/* Tab row */
+.cal-tab-row {
+  display: flex; gap: 0; margin: 14px 0 10px;
+  border-bottom: 2px solid var(--border);
+}
+.cal-tab {
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  padding: 8px 18px; border: none; background: none; cursor: pointer;
+  color: var(--text3); border-bottom: 2px solid transparent;
+  margin-bottom: -2px; transition: all 0.15s;
+}
+.cal-tab:hover { color: var(--text); }
+.cal-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ─── Month Grid ─── */
+.cal-grid-header {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+.cal-grid-header div {
+  padding: 10px 0; text-align: center;
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text3);
+}
+.cal-grid-header div:first-child,
+.cal-grid-header div:last-child { opacity: 0.5; }
+
+.cal-grid-body { display: grid; grid-template-columns: repeat(7,1fr); }
+.cal-cell {
+  min-height: 100px; border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border); padding: 7px 8px;
+  position: relative; transition: background 0.1s;
+}
+.cal-cell:hover { background: var(--surface2); }
+.cal-cell:nth-child(7n) { border-right: none; }
+.cal-cell.other-month { opacity: 0.35; }
+.cal-cell.today .cal-cell-num {
+  background: var(--accent); color: #fff;
+  border-radius: 50%; width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+}
+.cal-cell.weekend { background: repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(0,0,0,.018) 5px, rgba(0,0,0,.018) 6px); }
+[data-theme="dark"] .cal-cell.weekend { background: repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(255,255,255,.03) 5px, rgba(255,255,255,.03) 6px); }
+.cal-cell-num { font-size: 12.5px; font-weight: 500; color: var(--text2); margin-bottom: 4px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+.cal-event {
+  font-size: 11px; font-weight: 500; padding: 2px 6px; border-radius: 4px;
+  margin-bottom: 2px; cursor: pointer; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; transition: opacity 0.1s;
+  display: flex; align-items: center; gap: 4px;
+}
+.cal-event:hover { opacity: 0.8; }
+.ce-meeting  { background: var(--accent-bg);  color: var(--accent); }
+.ce-leave    { background: var(--purple-bg);   color: var(--purple); }
+.ce-task     { background: var(--green-bg);    color: var(--green); }
+.ce-holiday  { background: var(--amber-bg);    color: var(--amber); }
+.cal-more { font-size: 10.5px; color: var(--text3); cursor: pointer; padding: 1px 4px; }
+.cal-more:hover { color: var(--accent); }
+
+/* ─── List View Items ─── */
+.cal-list-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px 18px;
+  display: flex; align-items: flex-start; gap: 14px;
+  margin-bottom: 8px; box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s, background 0.3s;
+}
+.cal-list-item:hover { box-shadow: var(--shadow); }
+.cal-list-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.cal-list-body { flex: 1; }
+.cal-list-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+.cal-list-meta  { font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cal-list-emp   { display: flex; align-items: center; gap: 5px; }
+.cal-list-emp-av { width: 20px; height: 20px; border-radius: 50%; color: #fff; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.cal-list-badge { font-size: 11px; padding: 2px 9px; border-radius: 20px; font-weight: 500; }
+
+/* ─── Add Event Modal ─── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; z-index: 200;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 28px; width: 100%; max-width: 460px;
+  box-shadow: var(--shadow); transform: translateY(12px); transition: transform 0.2s;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-title { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--text); margin-bottom: 20px; }
+.form-row { margin-bottom: 14px; }
+.form-label { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 5px; display: block; }
+.form-input, .form-select {
+  width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 8px 11px; color: var(--text); outline: none;
+  transition: border-color 0.15s;
+}
+.form-input:focus, .form-select:focus { border-color: var(--accent); }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+@media (max-width: 1100px) { .cal-summary-row { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 768px)  { .cal-summary-row { grid-template-columns: 1fr 1fr; } .cal-cell { min-height: 70px; } }
+
 @media (max-width: 900px)  { .panels { grid-template-columns: 1fr; } }
 @media (max-width: 768px)  { .sidebar { display: none; } .page { padding: 16px; } .stat-row { grid-template-columns: 1fr 1fr; } }
 </style>
@@ -701,7 +887,7 @@ tbody td:not(:first-child) { text-align: center; }
       </div>
 
       <div class="nav-label">Company</div>
-      <div class="nav-item" onclick="showPage('calendar',this)">
+      <div class="nav-item" onclick="showPage('calendar',this);if(allMembers.length)initCalendar()">
         <span class="nav-icon">📅</span> Calendar
       </div>
       <div class="nav-item" onclick="showPage('payroll',this)">
@@ -910,10 +1096,113 @@ tbody td:not(:first-child) { text-align: center; }
       </div>
     </div>
 
-    <!-- ══ PLACEHOLDER PAGES ══ -->
+    <!-- ══ CALENDAR PAGE ══ -->
     <div class="page fade-in" id="page-calendar">
-      <div class="page-header"><div><div class="page-title">Calendar</div><div class="page-sub">Team schedule overview</div></div></div>
-      <div class="empty"><div class="empty-icon">📅</div>Calendar coming soon.</div>
+      <div class="page-header">
+        <div>
+          <div class="page-title">Calendar</div>
+          <div class="page-sub">View each employee's schedule, tasks &amp; leave individually</div>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-primary" onclick="openAddEventModal()">＋ Add Event</button>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="cal-summary-row">
+        <div class="cal-sum-card" id="csc-meeting">
+          <div class="csc-icon">🤝</div>
+          <div class="csc-body">
+            <div class="csc-label">Upcoming Meeting</div>
+            <div class="csc-title" id="csc-meeting-title">—</div>
+            <div class="csc-meta" id="csc-meeting-meta">—</div>
+            <div class="csc-tag" id="csc-meeting-tag">—</div>
+          </div>
+        </div>
+        <div class="cal-sum-card" id="csc-holiday">
+          <div class="csc-icon">🎉</div>
+          <div class="csc-body">
+            <div class="csc-label">Upcoming Holiday</div>
+            <div class="csc-title" id="csc-holiday-title">—</div>
+            <div class="csc-meta" id="csc-holiday-meta">—</div>
+            <div class="csc-tag" id="csc-holiday-tag">—</div>
+          </div>
+        </div>
+        <div class="cal-sum-card" id="csc-event">
+          <div class="csc-icon">📌</div>
+          <div class="csc-body">
+            <div class="csc-label">Upcoming Event</div>
+            <div class="csc-title" id="csc-event-title">—</div>
+            <div class="csc-meta" id="csc-event-meta">—</div>
+            <div class="csc-tag" id="csc-event-tag">—</div>
+          </div>
+        </div>
+        <div class="cal-sum-card" id="csc-leave">
+          <div class="csc-icon">🏖️</div>
+          <div class="csc-body">
+            <div class="csc-label">Upcoming Leave</div>
+            <div class="csc-title" id="csc-leave-title">—</div>
+            <div class="csc-meta" id="csc-leave-meta">—</div>
+            <div class="csc-tag" id="csc-leave-tag">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls bar -->
+      <div class="cal-controls">
+        <!-- Employee Dropdown -->
+        <div class="cal-emp-select-wrap">
+          <div class="cal-emp-btn" id="cal-emp-btn" onclick="toggleEmpDropdown()">
+            <div class="cal-emp-avatar" id="cal-emp-avatar">A</div>
+            <span id="cal-emp-name">All Employees</span>
+            <span class="cal-emp-caret">▾</span>
+          </div>
+          <div class="cal-emp-dropdown hidden" id="cal-emp-dropdown">
+            <div class="cal-emp-search-wrap">
+              <input type="text" placeholder="Search member…" id="cal-emp-search" oninput="filterEmpDropdown(this.value)">
+            </div>
+            <div id="cal-emp-list"></div>
+          </div>
+        </div>
+
+        <!-- View tabs -->
+        <div class="cal-view-tabs">
+          <button class="cal-vtab active" onclick="setCalView('month',this)">Monthly</button>
+          <button class="cal-vtab" onclick="setCalView('week',this)">Weekly</button>
+          <button class="cal-vtab" onclick="setCalView('list',this)">List</button>
+        </div>
+
+        <!-- Month nav -->
+        <div class="cal-month-nav">
+          <button class="week-nav" onclick="shiftCalMonth(-1)">‹</button>
+          <span class="week-range" id="cal-month-label">—</span>
+          <button class="week-nav" onclick="shiftCalMonth(1)">›</button>
+        </div>
+
+        <!-- Event type filters -->
+        <div class="filters" style="margin-left:auto">
+          <button class="filter-pill active" onclick="setCalFilter('all',this)">All</button>
+          <button class="filter-pill" onclick="setCalFilter('meeting',this)">Meetings</button>
+          <button class="filter-pill" onclick="setCalFilter('leave',this)">Leave</button>
+          <button class="filter-pill" onclick="setCalFilter('task',this)">Tasks</button>
+          <button class="filter-pill" onclick="setCalFilter('holiday',this)">Holidays</button>
+        </div>
+      </div>
+
+      <!-- Tab row (List / Upcoming / Complete) -->
+      <div class="cal-tab-row">
+        <button class="cal-tab active" onclick="setCalTab('list',this)">☰ List</button>
+        <button class="cal-tab" onclick="setCalTab('upcoming',this)">⏰ Upcoming</button>
+        <button class="cal-tab" onclick="setCalTab('complete',this)">✓ Complete</button>
+      </div>
+
+      <!-- Calendar Grid -->
+      <div class="table-card" id="cal-grid-wrap">
+        <div id="cal-grid"></div>
+      </div>
+
+      <!-- List View -->
+      <div id="cal-list-view" style="display:none;margin-top:14px"></div>
     </div>
     <div class="page fade-in" id="page-payroll">
       <div class="page-header"><div><div class="page-title">Payroll</div><div class="page-sub">Salary & compensation</div></div></div>
@@ -929,6 +1218,54 @@ tbody td:not(:first-child) { text-align: center; }
     </div>
 
   </div>
+<!-- Add Event Modal -->
+<div class="modal-overlay" id="add-event-modal" onclick="if(event.target===this)closeAddEventModal()">
+  <div class="modal">
+    <div class="modal-title">Add Event</div>
+    <div class="form-row">
+      <label class="form-label">Title</label>
+      <input class="form-input" id="evt-title" placeholder="e.g. Sprint Review, Doctor Leave…">
+    </div>
+    <div class="form-row-2">
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">Date</label>
+        <input class="form-input" id="evt-date" type="date">
+      </div>
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">Time / Duration</label>
+        <input class="form-input" id="evt-time" placeholder="e.g. 10:00 AM – 11:00 AM">
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:14px">
+      <label class="form-label">Type</label>
+      <select class="form-select" id="evt-type">
+        <option value="meeting">Meeting</option>
+        <option value="task">Task / To-do</option>
+        <option value="leave">Leave</option>
+        <option value="holiday">Holiday</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Employee</label>
+      <select class="form-select" id="evt-emp"></select>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">Location / Platform</label>
+        <input class="form-input" id="evt-loc" placeholder="Zoom, Room A…">
+      </div>
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">Note</label>
+        <input class="form-input" id="evt-note" placeholder="Optional note…">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeAddEventModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEvent()">Save Event</button>
+    </div>
+  </div>
+</div>
+
 </div>
 
 <script>
@@ -992,7 +1329,7 @@ window.onload = function() {
   }
   // Demo mode — no redirect so the file works standalone
   setUser({ name: 'Manager', email: 'manager@example.com', picture: '' });
-  loadDemoData();
+  loadData();
 };
 
 function parseJwt(t) {
@@ -1278,7 +1615,6 @@ async function loadData() {
   } catch(e) {
     document.getElementById('error-msg').textContent = `Failed to load — ${e.message}`;
     document.getElementById('error-bar').classList.add('show');
-    loadDemoData();
   }
 }
 
@@ -1305,6 +1641,7 @@ function ingestData(data) {
   renderApprovals(pendingLeave,     'leave-container',     'leave');
 
   document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+  initCalendar();
 }
 
 /* ─── Demo Data ─── */
@@ -1336,8 +1673,327 @@ function loadDemoData() {
   ingestData(demo);
 }
 
-/* ─── Init ─── */
-updateWeekRange();
+/* ─── Calendar State ─── */
+let calSelectedEmp = 'all';
+let calMonthOffset = 0;
+let calView        = 'month';
+let calTab         = 'list';
+let calFilter      = 'all';
+let calEvents      = [];
+
+/* ─── Demo event data ─── */
+const DEMO_EVENTS = [
+  { id:1,  emp:'Dianne Russell',     type:'meeting',  title:'Marketing Stand-up',       date:'2026-05-26', time:'10:00 AM – 10:30 AM', location:'Zoom',                 note:'' },
+  { id:2,  emp:'Dianne Russell',     type:'task',     title:'Finish wireframes for app', date:'2026-05-27', time:'All day',              location:'',                     note:'Due EOD' },
+  { id:3,  emp:'Bessie Cooper',      type:'meeting',  title:'Design Review',             date:'2026-05-26', time:'02:30 PM – 03:00 PM', location:'Meeting Room B',        note:'' },
+  { id:4,  emp:'Bessie Cooper',      type:'leave',    title:'Sick Leave',                date:'2026-05-28', time:'Full Day',             location:'',                     note:'Doctor confirmed' },
+  { id:5,  emp:'Brooklyn Jones',     type:'task',     title:'Social media post — June',  date:'2026-05-29', time:'All day',              location:'',                     note:'' },
+  { id:6,  emp:'Brooklyn Jones',     type:'meeting',  title:'Campaign Debrief',          date:'2026-05-27', time:'01:00 PM – 02:00 PM', location:'Zoom',                 note:'' },
+  { id:7,  emp:'Eleanor Pena',       type:'task',     title:'Blog article draft',        date:'2026-05-26', time:'All day',              location:'',                     note:'2000 words' },
+  { id:8,  emp:'Eleanor Pena',       type:'meeting',  title:'Editorial meeting',         date:'2026-05-28', time:'09:00 AM – 09:30 AM', location:'Zoom',                 note:'' },
+  { id:9,  emp:'Darlene Robert',     type:'task',     title:'UX audit – checkout flow',  date:'2026-05-27', time:'All day',              location:'',                     note:'' },
+  { id:10, emp:'Jacob Jones',        type:'meeting',  title:'Sprint planning',           date:'2026-05-26', time:'10:00 AM – 11:00 AM', location:'Meeting Room A',        note:'' },
+  { id:11, emp:'Jacob Jones',        type:'task',     title:'Fix login page bug',        date:'2026-05-27', time:'All day',              location:'',                     note:'Critical' },
+  { id:12, emp:'Kristin Watson',     type:'meeting',  title:'Backend sync',              date:'2026-05-28', time:'03:00 PM – 03:30 PM', location:'Zoom',                 note:'' },
+  { id:13, emp:'Kristin Watson',     type:'leave',    title:'Personal Leave',            date:'2026-05-30', time:'Full Day',             location:'',                     note:'' },
+  { id:14, emp:'Cameron Williamson', type:'task',     title:'Server migration plan',     date:'2026-05-26', time:'All day',              location:'',                     note:'' },
+  { id:15, emp:'Jenny Wilson',       type:'task',     title:'Test regression suite',     date:'2026-05-27', time:'All day',              location:'',                     note:'' },
+  { id:16, emp:'Theresa Webb',       type:'meeting',  title:'Data pipeline review',      date:'2026-05-29', time:'11:00 AM – 11:30 AM', location:'Zoom',                 note:'' },
+  { id:17, emp:'Guy Hawkins',        type:'meeting',  title:'Sprint retrospective',      date:'2026-05-30', time:'04:00 PM – 05:00 PM', location:'Meeting Room A',        note:'' },
+  { id:18, emp:'Guy Hawkins',        type:'task',     title:'Roadmap Q3 draft',          date:'2026-05-28', time:'All day',              location:'',                     note:'' },
+  { id:19, emp:'Ralph Edwards',      type:'leave',    title:'Vacation',                  date:'2026-05-26', time:'Full Day',             location:'',                     note:'' },
+  { id:20, emp:'Ralph Edwards',      type:'leave',    title:'Vacation',                  date:'2026-05-27', time:'Full Day',             location:'',                     note:'' },
+  { id:21, emp:'ALL',                type:'holiday',  title:'Independence Day (PH)',     date:'2026-06-12', time:'1 Day Off',            location:'',                     note:'' },
+  { id:22, emp:'ALL',                type:'meeting',  title:'All-hands Meeting',         date:'2026-05-29', time:'09:00 AM – 10:00 AM', location:'Main Conference Room', note:'' },
+];
+
+const TYPE_COLOR = {
+  meeting: { dot:'var(--accent)',  cls:'ce-meeting',  badge:'c-blue'   },
+  leave:   { dot:'var(--purple)', cls:'ce-leave',    badge:'c-purple' },
+  task:    { dot:'var(--green)',   cls:'ce-task',     badge:'c-green'  },
+  holiday: { dot:'var(--amber)',  cls:'ce-holiday',  badge:'c-amber'  },
+};
+const TYPE_EMOJI = { meeting:'🤝', leave:'🏖️', task:'✅', holiday:'🎉' };
+
+/* ─── Calendar Init ─── */
+function initCalendar() {
+  calEvents = [...DEMO_EVENTS];
+  buildEmpDropdown();
+  renderCalSummary();
+  renderCalendar();
+  updateCalMonthLabel();
+}
+
+function buildEmpDropdown() {
+  const list = document.getElementById('cal-emp-list');
+  const emps = ['all', ...allMembers.map(m => m.name)];
+  list.innerHTML = emps.map(e => {
+    const isAll  = e === 'all';
+    const bg     = isAll ? 'var(--accent)' : avatarBg(e);
+    const init   = isAll ? '★' : e.charAt(0);
+    const label  = isAll ? 'All Employees' : e;
+    const role   = isAll ? '' : (allMembers.find(m=>m.name===e)||{}).role || '';
+    return `<div class="cal-emp-option ${calSelectedEmp===e?'selected':''}" onclick="selectEmp('${e}')">
+      <div class="cal-emp-option-avatar" style="background:${bg}">${init}</div>
+      <div>
+        <div style="font-size:13px;font-weight:500;color:var(--text)">${label}</div>
+        ${role ? `<div style="font-size:11px;color:var(--text3)">${role}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterEmpDropdown(q) {
+  document.querySelectorAll('.cal-emp-option').forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+function toggleEmpDropdown() {
+  document.getElementById('cal-emp-dropdown').classList.toggle('hidden');
+}
+
+function selectEmp(name) {
+  calSelectedEmp = name;
+  document.getElementById('cal-emp-dropdown').classList.add('hidden');
+  const label = name === 'all' ? 'All Employees' : name;
+  const bg    = name === 'all' ? 'var(--accent)' : avatarBg(name);
+  const init  = name === 'all' ? '★' : name.charAt(0);
+  document.getElementById('cal-emp-name').textContent = label;
+  document.getElementById('cal-emp-avatar').textContent   = init;
+  document.getElementById('cal-emp-avatar').style.background = bg;
+  buildEmpDropdown();
+  renderCalendar();
+  renderCalSummary();
+}
+
+/* ─── Filter events by current state ─── */
+function getCalEvents() {
+  const today = new Date();
+  return calEvents.filter(e => {
+    const empMatch    = calSelectedEmp === 'all' || e.emp === calSelectedEmp || e.emp === 'ALL';
+    const typeMatch   = calFilter === 'all' || e.type === calFilter;
+    const ed          = new Date(e.date);
+    let   tabMatch    = true;
+    if (calTab === 'upcoming') tabMatch = ed >= today;
+    if (calTab === 'complete') tabMatch = ed <  today;
+    return empMatch && typeMatch && tabMatch;
+  });
+}
+
+function setCalView(v, btn) {
+  calView = v;
+  document.querySelectorAll('.cal-vtab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCalendar();
+}
+
+function setCalTab(t, btn) {
+  calTab = t;
+  document.querySelectorAll('.cal-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCalendar();
+}
+
+function setCalFilter(f, btn) {
+  calFilter = f;
+  document.querySelectorAll('.cal-controls .filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCalendar();
+  renderCalSummary();
+}
+
+function shiftCalMonth(dir) {
+  calMonthOffset += dir;
+  renderCalendar();
+  updateCalMonthLabel();
+}
+
+function updateCalMonthLabel() {
+  const d = new Date();
+  d.setMonth(d.getMonth() + calMonthOffset);
+  document.getElementById('cal-month-label').textContent =
+    d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+/* ─── Summary Cards ─── */
+function renderCalSummary() {
+  const now    = new Date();
+  const events = calEvents.filter(e => new Date(e.date) >= now && (calSelectedEmp==='all'||e.emp===calSelectedEmp||e.emp==='ALL'));
+  const sorted = [...events].sort((a,b) => new Date(a.date)-new Date(b.date));
+  const nextOf = type => sorted.find(e => e.type === type);
+  const fill = (prefix, ev) => {
+    const fmt = d => new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    document.getElementById(`csc-${prefix}-title`).textContent = ev ? ev.title : 'None upcoming';
+    document.getElementById(`csc-${prefix}-meta`).textContent  = ev ? `${fmt(ev.date)} · ${ev.time}` : '—';
+    document.getElementById(`csc-${prefix}-tag`).innerHTML     = ev ? `${TYPE_EMOJI[ev.type]} ${ev.location || ev.note || ev.type}` : '';
+  };
+  fill('meeting', nextOf('meeting'));
+  fill('holiday', nextOf('holiday'));
+  fill('event',   nextOf('task'));
+  fill('leave',   nextOf('leave'));
+}
+
+/* ─── Main Render ─── */
+function renderCalendar() {
+  const gridWrap  = document.getElementById('cal-grid-wrap');
+  const listWrap  = document.getElementById('cal-list-view');
+  const events    = getCalEvents();
+
+  if (calView === 'list' || calView === 'week') {
+    gridWrap.style.display = 'none';
+    listWrap.style.display = 'block';
+    renderListView(events, listWrap);
+    return;
+  }
+  // Month view
+  gridWrap.style.display = 'block';
+  listWrap.style.display = 'none';
+  renderMonthGrid(events);
+}
+
+/* ─── Month Grid ─── */
+function renderMonthGrid(events) {
+  const now = new Date();
+  const ref = new Date(now.getFullYear(), now.getMonth() + calMonthOffset, 1);
+  const year = ref.getFullYear(), month = ref.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const daysInPrev  = new Date(year, month, 0).getDate();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  // Build event map keyed by YYYY-MM-DD
+  const evMap = {};
+  events.forEach(e => {
+    if (!evMap[e.date]) evMap[e.date] = [];
+    evMap[e.date].push(e);
+  });
+
+  let cells = '';
+  // Prev month spillover
+  for (let i = 0; i < firstDay; i++) {
+    const d = daysInPrev - firstDay + i + 1;
+    cells += `<div class="cal-cell other-month weekend"><div class="cal-cell-num">${d}</div></div>`;
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr  = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow      = (firstDay + d - 1) % 7;
+    const isWknd   = dow === 0 || dow === 6;
+    const isToday  = d === now.getDate() && month === now.getMonth() && year === now.getFullYear();
+    const dayEvs   = evMap[dateStr] || [];
+    const shown    = dayEvs.slice(0, 3);
+    const extra    = dayEvs.length - shown.length;
+    const evHtml   = shown.map(e => {
+      const tc = TYPE_COLOR[e.type] || TYPE_COLOR.task;
+      const empTag = e.emp !== 'ALL' && calSelectedEmp === 'all'
+        ? `<span style="font-size:9px;opacity:.7">${e.emp.split(' ')[0]}</span>` : '';
+      return `<div class="cal-event ${tc.cls}" title="${e.emp}: ${e.title} · ${e.time}">${TYPE_EMOJI[e.type]} ${e.title} ${empTag}</div>`;
+    }).join('');
+    const moreHtml = extra > 0 ? `<div class="cal-more">+${extra} more</div>` : '';
+    cells += `<div class="cal-cell${isWknd?' weekend':''}${isToday?' today':''}">
+      <div class="cal-cell-num">${d}</div>
+      ${evHtml}${moreHtml}
+    </div>`;
+  }
+  // Next month spillover
+  const totalCells = firstDay + daysInMonth;
+  const remain = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+  for (let d = 1; d <= remain; d++) {
+    cells += `<div class="cal-cell other-month weekend"><div class="cal-cell-num">${d}</div></div>`;
+  }
+
+  document.getElementById('cal-grid').innerHTML = `
+    <div class="cal-grid-header">${days.map(d=>`<div>${d}</div>`).join('')}</div>
+    <div class="cal-grid-body">${cells}</div>`;
+}
+
+/* ─── List View ─── */
+function renderListView(events, wrap) {
+  if (events.length === 0) {
+    wrap.innerHTML = `<div class="empty"><div class="empty-icon">📅</div>No events match your filters.</div>`;
+    return;
+  }
+  const sorted = [...events].sort((a,b) => new Date(a.date)-new Date(b.date));
+  // Group by date
+  const groups = {};
+  sorted.forEach(e => {
+    if (!groups[e.date]) groups[e.date] = [];
+    groups[e.date].push(e);
+  });
+  wrap.innerHTML = Object.entries(groups).map(([date, evs]) => {
+    const label = new Date(date).toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    const items = evs.map(e => {
+      const tc   = TYPE_COLOR[e.type] || TYPE_COLOR.task;
+      const bg   = e.emp === 'ALL' ? 'var(--accent)' : avatarBg(e.emp);
+      const init = e.emp === 'ALL' ? '★' : e.emp.charAt(0);
+      const empLabel = e.emp === 'ALL' ? 'All Employees' : e.emp;
+      const role = e.emp !== 'ALL' ? ((allMembers.find(m=>m.name===e.emp)||{}).role||'') : '';
+      return `<div class="cal-list-item fade-in">
+        <div class="cal-list-dot" style="background:${tc.dot}"></div>
+        <div class="cal-list-body">
+          <div class="cal-list-title">${TYPE_EMOJI[e.type]} ${e.title}</div>
+          <div class="cal-list-meta">
+            <span>⏰ ${e.time}</span>
+            ${e.location ? `<span>📍 ${e.location}</span>` : ''}
+            ${e.note     ? `<span>📝 ${e.note}</span>`     : ''}
+            <span class="cal-list-emp">
+              <span class="cal-list-emp-av" style="background:${bg}">${init}</span>
+              ${empLabel}${role ? ` · <span style="color:var(--text3)">${role}</span>` : ''}
+            </span>
+          </div>
+        </div>
+        <span class="chip ${tc.badge === 'c-blue' ? 'c-blue' : tc.badge === 'c-purple' ? 'c-purple' : tc.badge === 'c-green' ? 'c-green' : 'c-amber'}" style="font-size:11px;padding:3px 9px;flex-shrink:0">${e.type}</span>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:18px">
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;padding-left:4px">${label}</div>
+      ${items}
+    </div>`;
+  }).join('');
+}
+
+/* ─── Add Event Modal ─── */
+function openAddEventModal() {
+  document.getElementById('add-event-modal').classList.add('open');
+  // populate employee select
+  const sel = document.getElementById('evt-emp');
+  sel.innerHTML = `<option value="ALL">All Employees</option>` +
+    allMembers.map(m=>`<option value="${m.name}">${m.name}</option>`).join('');
+  if (calSelectedEmp !== 'all') sel.value = calSelectedEmp;
+}
+function closeAddEventModal() {
+  document.getElementById('add-event-modal').classList.remove('open');
+}
+function saveEvent() {
+  const title = document.getElementById('evt-title').value.trim();
+  const date  = document.getElementById('evt-date').value;
+  const time  = document.getElementById('evt-time').value || 'All day';
+  const type  = document.getElementById('evt-type').value;
+  const emp   = document.getElementById('evt-emp').value;
+  const loc   = document.getElementById('evt-loc').value.trim();
+  const note  = document.getElementById('evt-note').value.trim();
+  if (!title || !date) { toast('Please fill in title and date.', 'error'); return; }
+  calEvents.push({ id: Date.now(), emp, type, title, date, time, location: loc, note });
+  closeAddEventModal();
+  renderCalendar();
+  renderCalSummary();
+  toast(`Event "${title}" added!`);
+  document.getElementById('evt-title').value = '';
+  document.getElementById('evt-date').value  = '';
+  document.getElementById('evt-time').value  = '';
+  document.getElementById('evt-loc').value   = '';
+  document.getElementById('evt-note').value  = '';
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('cal-emp-select-wrap') || document.querySelector('.cal-emp-select-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    const dd = document.getElementById('cal-emp-dropdown');
+    if (dd) dd.classList.add('hidden');
+  }
+});
+
 </script>
 </body>
 </html>
