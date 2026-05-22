@@ -1682,30 +1682,7 @@ let calFilter      = 'all';
 let calEvents      = [];
 
 /* ─── Demo event data ─── */
-const DEMO_EVENTS = [
-  { id:1,  emp:'Dianne Russell',     type:'meeting',  title:'Marketing Stand-up',       date:'2026-05-26', time:'10:00 AM – 10:30 AM', location:'Zoom',                 note:'' },
-  { id:2,  emp:'Dianne Russell',     type:'task',     title:'Finish wireframes for app', date:'2026-05-27', time:'All day',              location:'',                     note:'Due EOD' },
-  { id:3,  emp:'Bessie Cooper',      type:'meeting',  title:'Design Review',             date:'2026-05-26', time:'02:30 PM – 03:00 PM', location:'Meeting Room B',        note:'' },
-  { id:4,  emp:'Bessie Cooper',      type:'leave',    title:'Sick Leave',                date:'2026-05-28', time:'Full Day',             location:'',                     note:'Doctor confirmed' },
-  { id:5,  emp:'Brooklyn Jones',     type:'task',     title:'Social media post — June',  date:'2026-05-29', time:'All day',              location:'',                     note:'' },
-  { id:6,  emp:'Brooklyn Jones',     type:'meeting',  title:'Campaign Debrief',          date:'2026-05-27', time:'01:00 PM – 02:00 PM', location:'Zoom',                 note:'' },
-  { id:7,  emp:'Eleanor Pena',       type:'task',     title:'Blog article draft',        date:'2026-05-26', time:'All day',              location:'',                     note:'2000 words' },
-  { id:8,  emp:'Eleanor Pena',       type:'meeting',  title:'Editorial meeting',         date:'2026-05-28', time:'09:00 AM – 09:30 AM', location:'Zoom',                 note:'' },
-  { id:9,  emp:'Darlene Robert',     type:'task',     title:'UX audit – checkout flow',  date:'2026-05-27', time:'All day',              location:'',                     note:'' },
-  { id:10, emp:'Jacob Jones',        type:'meeting',  title:'Sprint planning',           date:'2026-05-26', time:'10:00 AM – 11:00 AM', location:'Meeting Room A',        note:'' },
-  { id:11, emp:'Jacob Jones',        type:'task',     title:'Fix login page bug',        date:'2026-05-27', time:'All day',              location:'',                     note:'Critical' },
-  { id:12, emp:'Kristin Watson',     type:'meeting',  title:'Backend sync',              date:'2026-05-28', time:'03:00 PM – 03:30 PM', location:'Zoom',                 note:'' },
-  { id:13, emp:'Kristin Watson',     type:'leave',    title:'Personal Leave',            date:'2026-05-30', time:'Full Day',             location:'',                     note:'' },
-  { id:14, emp:'Cameron Williamson', type:'task',     title:'Server migration plan',     date:'2026-05-26', time:'All day',              location:'',                     note:'' },
-  { id:15, emp:'Jenny Wilson',       type:'task',     title:'Test regression suite',     date:'2026-05-27', time:'All day',              location:'',                     note:'' },
-  { id:16, emp:'Theresa Webb',       type:'meeting',  title:'Data pipeline review',      date:'2026-05-29', time:'11:00 AM – 11:30 AM', location:'Zoom',                 note:'' },
-  { id:17, emp:'Guy Hawkins',        type:'meeting',  title:'Sprint retrospective',      date:'2026-05-30', time:'04:00 PM – 05:00 PM', location:'Meeting Room A',        note:'' },
-  { id:18, emp:'Guy Hawkins',        type:'task',     title:'Roadmap Q3 draft',          date:'2026-05-28', time:'All day',              location:'',                     note:'' },
-  { id:19, emp:'Ralph Edwards',      type:'leave',    title:'Vacation',                  date:'2026-05-26', time:'Full Day',             location:'',                     note:'' },
-  { id:20, emp:'Ralph Edwards',      type:'leave',    title:'Vacation',                  date:'2026-05-27', time:'Full Day',             location:'',                     note:'' },
-  { id:21, emp:'ALL',                type:'holiday',  title:'Independence Day (PH)',     date:'2026-06-12', time:'1 Day Off',            location:'',                     note:'' },
-  { id:22, emp:'ALL',                type:'meeting',  title:'All-hands Meeting',         date:'2026-05-29', time:'09:00 AM – 10:00 AM', location:'Main Conference Room', note:'' },
-];
+const DEMO_EVENTS = [];
 
 const TYPE_COLOR = {
   meeting: { dot:'var(--accent)',  cls:'ce-meeting',  badge:'c-blue'   },
