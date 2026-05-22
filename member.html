@@ -529,7 +529,8 @@ body {
               <!-- Elapsed / clocked-in time -->
               <div class="hero-time">
                 <div class="hero-elapsed" id="hero-clockin-time">—</div>
-                <div class="hero-elapsed-sub" id="hero-clockin-sub">Not clocked in yet</div>
+<div class="hero-elapsed" id="hero-elapsed-timer" style="font-size:20px;color:var(--text2);display:none;">00:00:00</div>
+<div class="hero-elapsed-sub" id="hero-clockin-sub">Not clocked in yet</div>
               </div>
 
               <!-- Approval banner -->
@@ -826,6 +827,8 @@ body {
   let memberData    = null;
   let leaveFormOpen = false;
   let lottieAnim    = null;
+  let elapsedInterval = null;
+let clockInTime     = null;
   let dataRefreshInterval = null;
 
   /* ── Lottie ── */
@@ -874,6 +877,42 @@ body {
     loadMemberData();
     dataRefreshInterval = setInterval(() => loadMemberData(), 30000);
   }
+
+  /* ── Elapsed Timer ── */
+function startElapsedTimer(clockInStr) {
+  if (elapsedInterval) clearInterval(elapsedInterval);
+  const pad = n => String(n).padStart(2,'0');
+  function parseClockIn(str) {
+    if (!str || str === '—' || str === '-') return null;
+    const [time, period] = str.split(' ');
+    let [h, m] = (time + ':00').split(':').map(Number);
+    if (period === 'PM' && h !== 12) h += 12;
+    if (period === 'AM' && h === 12) h = 0;
+    const now = new Date();
+    const jst = new Date(now.getTime() + 9 * 3600000);
+    return new Date(Date.UTC(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate(), h, m, 0));
+  }
+  const base = parseClockIn(clockInStr);
+  if (!base) return;
+  const timerEl = document.getElementById('hero-elapsed-timer');
+  timerEl.style.display = 'block';
+  elapsedInterval = setInterval(() => {
+    const now    = new Date();
+    const jst    = new Date(now.getTime() + 9 * 3600000);
+    const diffMs = jst - base;
+    if (diffMs < 0) return;
+    const total = Math.floor(diffMs / 1000);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    timerEl.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }, 1000);
+}
+
+function stopElapsedTimer() {
+  if (elapsedInterval) { clearInterval(elapsedInterval); elapsedInterval = null; }
+  document.getElementById('hero-elapsed-timer').style.display = 'none';
+}
 
   function signOut() {
     if (dataRefreshInterval) clearInterval(dataRefreshInterval);
@@ -1117,21 +1156,25 @@ body {
 
       // Lottie state on load
       if (todayRecord.clockOut && todayRecord.clockOut !== '—') {
-        playLottie('lottie-clockout.json', 'Shift complete!', false);
-      } else if (todayRecord.status === 'pending') {
-        playLottie('lottie-late.json', "Pending approval...", true);
-      } else {
-        playLottie('lottie-work.json', "You're working...", true);
-      }
+  playLottie('lottie-clockout.json', 'Shift complete!', false);
+  stopElapsedTimer();
+} else if (todayRecord.status === 'pending') {
+  playLottie('lottie-late.json', "Pending approval...", true);
+  startElapsedTimer(todayRecord.clockIn);
+} else {
+  playLottie('lottie-work.json', "You're working...", true);
+  startElapsedTimer(todayRecord.clockIn);
+}
 
       // Timesheet
       renderTimesheet(todayRecord);
 
     } else {
-      document.getElementById('hero-clockin-time').textContent = '—';
-      document.getElementById('hero-clockin-sub').textContent  = 'Not clocked in yet';
-      playLottie('lottie-waiting.json', 'Not clocked in yet...', true);
-    }
+  document.getElementById('hero-clockin-time').textContent = '—';
+  document.getElementById('hero-clockin-sub').textContent  = 'Not clocked in yet';
+  stopElapsedTimer();
+  playLottie('lottie-waiting.json', 'Not clocked in yet...', true);
+}
   }
 
   /* ── Timesheet ── */
