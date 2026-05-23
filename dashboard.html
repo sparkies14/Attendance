@@ -1985,7 +1985,7 @@ async function handleApproval(type, idx, action, btn) {
   const card = document.getElementById(`appr-${type}-${idx}`);
   card.querySelectorAll('button').forEach(b => b.disabled = true);
   const item   = type === 'manual' ? pendingApprovals[idx] : pendingLeave[idx];
-  const rowNum = item.id || item['row_number'];
+  const rowNum = item.id;
   const name   = item.name || item.Name || 'Entry';
   try {
     const res = await fetch(`${APPROVE_URL}?action=${action}&row=${rowNum}&type=${type}`);
@@ -2658,11 +2658,11 @@ function generateNotifs(data) {
     if (!localStorage.getItem(key)) { pushNotif('🔴','ni-red',`${m.name} has not clocked in`,'Not clocked in today','absent'); localStorage.setItem(key,'1'); }
   });
   approvals.forEach(a => {
-    const name = a.name||a.Name||''; const key = `appr-${name}-${a.row_number}`;
+    const name = a.name||a.Name||''; const key = `appr-${name}-${a.id}`;
     if (!localStorage.getItem(key)) { pushNotif('✅','ni-blue',`Manual clock-in request — ${name}`,a.reason||'Awaiting approval','approval'); localStorage.setItem(key,'1'); }
   });
   leave.forEach(a => {
-    const name = a.name||a.Name||''; const key = `leave-${name}-${a.row_number}`;
+    const name = a.name||a.Name||''; const key = `leave-${name}-${a.id}`;
     if (!localStorage.getItem(key)) { pushNotif('🏖️','ni-purple',`Leave request — ${name}`,a.Reason||a.reason||'Awaiting approval','leave'); localStorage.setItem(key,'1'); }
   });
   renderNotifPanel();
