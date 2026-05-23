@@ -1154,11 +1154,11 @@ body {
           const labels = {
             'clock-in':  `Clocked in at ${pad(jst.getUTCHours())}:${pad(jst.getUTCMinutes())} JST`,
             'clock-out': `Clocked out at ${pad(jst.getUTCHours())}:${pad(jst.getUTCMinutes())} JST`,
-            'lunch-out': 'Lunch started — enjoy!',
-            'lunch-in':  'Welcome back from lunch',
-            'break-out': 'Break started',
-            'break-in':  'Break ended — welcome back',
-            'leave':     'Leave request submitted'
+            'lunch-out': '🍱 Enjoy your lunch! See you back soon.',
+'lunch-in':  '👋 Welcome back! Hope you had a good lunch.',
+'break-out': '☕ Enjoy your break! You deserve it.',
+'break-in':  '✨ Break\'s over — let\'s get back to it!',
+'leave':     '🏖️ Leave request submitted! Manager will review shortly.',
           };
           showStatus('success', data.message || labels[action] || 'Done!');
 
