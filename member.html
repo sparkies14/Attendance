@@ -140,6 +140,37 @@ body {
 .tb-clock { font-size: 22px; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: -0.5px; line-height: 1; }
 .tb-tz { font-size: 10px; color: var(--text3); margin-top: 2px; }
 
+/* ── Refresh Button ── */
+.refresh-btn {
+  font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 500;
+  color: var(--text2); background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 6px 12px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+  white-space: nowrap;
+}
+.refresh-btn:hover { background: var(--bg); color: var(--text); }
+.refresh-btn.pulse {
+  color: var(--accent); border-color: var(--accent-mid);
+  background: var(--accent-light);
+  animation: pulse-border 2s ease-in-out infinite;
+}
+.refresh-btn.spinning .spin-icon { display: inline-block; animation: spin 0.6s linear infinite; }
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(26,107,60,0.3); }
+  50%       { box-shadow: 0 0 0 4px rgba(26,107,60,0.1); }
+}
+
+/* ── Elapsed Timer Pill ── */
+.elapsed-pill {
+  display: none; margin-top: 6px;
+  font-size: 13px; font-weight: 500; color: var(--text2);
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 14px;
+  width: fit-content; font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+.elapsed-pill.show { display: block; }
+
 /* ── Page Content ── */
 .content-area { flex: 1; overflow-y: auto; }
 .page { display: none; padding: 24px 28px; }
@@ -420,6 +451,28 @@ body {
 .bd-val.muted { color: var(--text3); font-weight: 400; }
 .payroll-note { font-size: 11px; color: var(--text2); background: var(--yellow-light); border: 1px solid var(--yellow-mid); border-radius: var(--radius-sm); padding: 10px 14px; line-height: 1.6; }
 
+/* ── Refresh Button ── */
+.refresh-btn {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'Instrument Sans', sans-serif; font-size: 11px; font-weight: 500;
+  color: var(--text3); background: none;
+  border: 1px solid var(--border); border-radius: 20px;
+  padding: 5px 12px; cursor: pointer; transition: all 0.2s;
+  white-space: nowrap;
+}
+.refresh-btn:hover { color: var(--accent); border-color: var(--accent-mid); background: var(--accent-light); }
+.refresh-btn.pulse {
+  color: var(--accent); border-color: var(--accent);
+  background: var(--accent-light);
+  animation: refreshPulse 2s ease-in-out infinite;
+}
+.refresh-btn .spin-icon { display: inline-block; transition: transform 0.4s ease; }
+.refresh-btn.spinning .spin-icon { animation: spin 0.6s linear infinite; }
+@keyframes refreshPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(26,107,60,0.3); }
+  50%       { box-shadow: 0 0 0 4px rgba(26,107,60,0); }
+}
+
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .page { padding: 16px; }
@@ -493,9 +546,15 @@ body {
         <div class="tb-title" id="welcome-title">Good morning</div>
         <div class="tb-sub" id="topbar-date">Loading...</div>
       </div>
-      <div class="tb-right">
-        <div class="tb-clock" id="jst-time">--:--:--</div>
-        <div class="tb-tz">JST &nbsp;·&nbsp; Local: <span id="local-time">--:--:--</span></div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <button class="refresh-btn" id="refresh-btn" onclick="manualRefresh()">
+          <span class="spin-icon">↻</span>
+          <span id="refresh-label">Refresh</span>
+        </button>
+        <div class="tb-right">
+          <div class="tb-clock" id="jst-time">--:--:--</div>
+          <div class="tb-tz">JST &nbsp;·&nbsp; Local: <span id="local-time">--:--:--</span></div>
+        </div>
       </div>
     </div>
 
@@ -529,8 +588,8 @@ body {
               <!-- Elapsed / clocked-in time -->
               <div class="hero-time">
                 <div class="hero-elapsed" id="hero-clockin-time">—</div>
-<div class="hero-elapsed" id="hero-elapsed-timer" style="font-size:20px;color:var(--text2);display:none;">00:00:00</div>
-<div class="hero-elapsed-sub" id="hero-clockin-sub">Not clocked in yet</div>
+                <div class="hero-elapsed-sub" id="hero-clockin-sub">Not clocked in yet</div>
+                <div class="elapsed-pill" id="hero-elapsed-timer">⏱ 00:00:00</div>
               </div>
 
               <!-- Approval banner -->
@@ -819,17 +878,20 @@ body {
   const CHECK_ROLE  = 'http://localhost:5678/webhook/check-role';
   const MEMBER_DATA = 'http://localhost:5678/webhook/member-data';
   const CLIENT_ID   = '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com';
+  const REFRESH_INTERVAL  = 5 * 60 * 1000; // 5 minutes
+  const PULSE_AFTER       = 2 * 60 * 1000; // pulse green after 2 min no refresh
 
-  let currentUser   = null;
-  let entryType     = 'auto';
-  let calMonth      = new Date().getMonth() + 1;
-  let calYear       = new Date().getFullYear();
-  let memberData    = null;
-  let leaveFormOpen = false;
-  let lottieAnim    = null;
-  let elapsedInterval = null;
-let clockInTime     = null;
-  let dataRefreshInterval = null;
+  let currentUser      = null;
+  let entryType        = 'auto';
+  let calMonth         = new Date().getMonth() + 1;
+  let calYear          = new Date().getFullYear();
+  let memberData       = null;
+  let leaveFormOpen    = false;
+  let lottieAnim       = null;
+  let elapsedInterval  = null;
+  let dataRefreshTimer = null;
+  let pulseTimer       = null;
+  let lastRefreshTime  = null;
 
   /* ── Lottie ── */
   function playLottie(file, label, loop = true) {
@@ -875,47 +937,39 @@ let clockInTime     = null;
     document.getElementById('auth-gate').classList.add('hidden');
     document.getElementById('app').classList.add('show');
     loadMemberData();
-    dataRefreshInterval = setInterval(() => loadMemberData(), 30000);
+    dataRefreshTimer = setInterval(() => loadMemberData(), REFRESH_INTERVAL);
   }
 
-  /* ── Elapsed Timer ── */
-function startElapsedTimer(clockInStr) {
-  if (elapsedInterval) clearInterval(elapsedInterval);
-  const pad = n => String(n).padStart(2,'0');
-  function parseClockIn(str) {
-    if (!str || str === '—' || str === '-') return null;
-    const [time, period] = str.split(' ');
-    let [h, m] = (time + ':00').split(':').map(Number);
-    if (period === 'PM' && h !== 12) h += 12;
-    if (period === 'AM' && h === 12) h = 0;
-    const now = new Date();
-    const jst = new Date(now.getTime() + 9 * 3600000);
-    return new Date(Date.UTC(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate(), h, m, 0));
+  /* ── Refresh Button ── */
+  function manualRefresh() {
+    const btn = document.getElementById('refresh-btn');
+    btn.classList.remove('pulse');
+    btn.classList.add('spinning');
+    if (pulseTimer) { clearTimeout(pulseTimer); pulseTimer = null; }
+    loadMemberData().then(() => {
+      btn.classList.remove('spinning');
+      lastRefreshTime = Date.now();
+      pulseTimer = setTimeout(() => {
+        btn.classList.add('pulse');
+      }, PULSE_AFTER);
+    });
   }
-  const base = parseClockIn(clockInStr);
-  if (!base) return;
-  const timerEl = document.getElementById('hero-elapsed-timer');
-  timerEl.style.display = 'block';
-  elapsedInterval = setInterval(() => {
-    const now    = new Date();
-    const jst    = new Date(now.getTime() + 9 * 3600000);
-    const diffMs = jst - base;
-    if (diffMs < 0) return;
-    const total = Math.floor(diffMs / 1000);
-    const h = Math.floor(total / 3600);
-    const m = Math.floor((total % 3600) / 60);
-    const s = total % 60;
-    timerEl.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
-  }, 1000);
-}
 
-function stopElapsedTimer() {
-  if (elapsedInterval) { clearInterval(elapsedInterval); elapsedInterval = null; }
-  document.getElementById('hero-elapsed-timer').style.display = 'none';
-}
+  function resetRefreshPulse() {
+    const btn = document.getElementById('refresh-btn');
+    if (!btn) return;
+    btn.classList.remove('pulse', 'spinning');
+    if (pulseTimer) { clearTimeout(pulseTimer); pulseTimer = null; }
+    lastRefreshTime = Date.now();
+    pulseTimer = setTimeout(() => {
+      btn.classList.add('pulse');
+    }, PULSE_AFTER);
+  }
 
   function signOut() {
-    if (dataRefreshInterval) clearInterval(dataRefreshInterval);
+    if (dataRefreshTimer) clearInterval(dataRefreshTimer);
+    if (elapsedInterval) clearInterval(elapsedInterval);
+    if (pulseTimer) clearTimeout(pulseTimer);
     sessionStorage.clear();
     window.location.href = 'index.html';
   }
@@ -996,6 +1050,46 @@ function stopElapsedTimer() {
     ['btn-in','btn-out','btn-lunch-out','btn-lunch-in','btn-break-out','btn-break-in'].forEach(id => {
       document.getElementById(id).disabled = off;
     });
+  }
+
+  /* ── Elapsed Timer ── */
+  function startElapsedTimer(clockInStr) {
+    // Don't restart if already running for same time
+    if (elapsedInterval) clearInterval(elapsedInterval);
+    const pad = n => String(n).padStart(2,'0');
+    function parseClockIn(str) {
+      if (!str || str === '—' || str === '-') return null;
+      const parts = str.trim().split(' ');
+      if (parts.length < 2) return null;
+      const [time, period] = parts;
+      let [h, m] = (time + ':00').split(':').map(Number);
+      if (period === 'PM' && h !== 12) h += 12;
+      if (period === 'AM' && h === 12) h = 0;
+      const now = new Date();
+      const jst = new Date(now.getTime() + 9 * 3600000);
+      return new Date(Date.UTC(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate(), h, m, 0));
+    }
+    const base = parseClockIn(clockInStr);
+    if (!base) return;
+    const timerEl = document.getElementById('hero-elapsed-timer');
+    timerEl.classList.add('show');
+    elapsedInterval = setInterval(() => {
+      const now    = new Date();
+      const jst    = new Date(now.getTime() + 9 * 3600000);
+      const diffMs = jst - base;
+      if (diffMs < 0) { timerEl.textContent = '⏱ 00:00:00'; return; }
+      const total = Math.floor(diffMs / 1000);
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const s = total % 60;
+      timerEl.textContent = `⏱ ${pad(h)}:${pad(m)}:${pad(s)}`;
+    }, 1000);
+  }
+
+  function stopElapsedTimer() {
+    if (elapsedInterval) { clearInterval(elapsedInterval); elapsedInterval = null; }
+    const timerEl = document.getElementById('hero-elapsed-timer');
+    if (timerEl) timerEl.classList.remove('show');
   }
 
   /* ── Send ── */
@@ -1106,6 +1200,7 @@ function stopElapsedTimer() {
       renderMemberData();
       updateTodaySummary();
       renderPayroll();
+      resetRefreshPulse();
     } catch(e) {
       console.error('Failed to load member data:', e);
     }
@@ -1154,27 +1249,27 @@ function stopElapsedTimer() {
         document.getElementById('pill-working').style.display = 'inline-flex';
       }
 
-      // Lottie state on load
-      if (todayRecord.clockOut && todayRecord.clockOut !== '—') {
-  playLottie('lottie-clockout.json', 'Shift complete!', false);
-  stopElapsedTimer();
-} else if (todayRecord.status === 'pending') {
-  playLottie('lottie-late.json', "Pending approval...", true);
-  startElapsedTimer(todayRecord.clockIn);
-} else {
-  playLottie('lottie-work.json', "You're working...", true);
-  startElapsedTimer(todayRecord.clockIn);
-}
+      // Lottie + timer state on load
+      if (todayRecord.clockOut && todayRecord.clockOut !== '—' && todayRecord.clockOut !== '-') {
+        playLottie('lottie-clockout.json', 'Shift complete!', false);
+        stopElapsedTimer();
+      } else if (todayRecord.status === 'pending') {
+        playLottie('lottie-late.json', "Pending approval...", true);
+        startElapsedTimer(todayRecord.clockIn);
+      } else {
+        playLottie('lottie-work.json', "You're working...", true);
+        startElapsedTimer(todayRecord.clockIn);
+      }
 
       // Timesheet
       renderTimesheet(todayRecord);
 
     } else {
-  document.getElementById('hero-clockin-time').textContent = '—';
-  document.getElementById('hero-clockin-sub').textContent  = 'Not clocked in yet';
-  stopElapsedTimer();
-  playLottie('lottie-waiting.json', 'Not clocked in yet...', true);
-}
+      document.getElementById('hero-clockin-time').textContent = '—';
+      document.getElementById('hero-clockin-sub').textContent  = 'Not clocked in yet';
+      stopElapsedTimer();
+      playLottie('lottie-waiting.json', 'Not clocked in yet...', true);
+    }
   }
 
   /* ── Timesheet ── */
