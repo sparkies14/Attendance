@@ -1160,7 +1160,7 @@ body {
             'break-in':  'Break ended — welcome back',
             'leave':     'Leave request submitted'
           };
-          showStatus('success', labels[action] || 'Done!');
+          showStatus('success', data.message || labels[action] || 'Done!');
 
           // Lottie on success
           const jstHour = jst.getUTCHours();
