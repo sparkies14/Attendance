@@ -1194,7 +1194,7 @@ body {
   async function loadMemberData() {
     if (!currentUser) return;
     try {
-      const res  = await fetch(`${MEMBER_DATA}?email=${encodeURIComponent(currentUser.email)}&month=${calMonth}&year=${calYear}`);
+      const res  = await fetch(`${MEMBER_DATA}?email=${encodeURIComponent(currentUser.email)}&name=${encodeURIComponent(currentUser.name)}&month=${calMonth}&year=${calYear}`)
       const data = await res.json();
       memberData = data;
       renderMemberData();
