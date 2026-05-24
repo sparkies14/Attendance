@@ -611,34 +611,8 @@ body {
                 <input type="text" class="field-input" id="reason-input" placeholder="e.g. Power outage, forgot to clock in" autocomplete="off">
               </div>
 
-              <!-- Main buttons -->
-              <div class="btns-main">
-                <button class="abtn clockin" onclick="send('clock-in')" id="btn-in">
-                  <span class="abtn-icon">→</span> Clock In
-                </button>
-                <button class="abtn clockout" onclick="send('clock-out')" id="btn-out">
-                  <span class="abtn-icon">←</span> Clock Out
-                </button>
-              </div>
-
-              <!-- Secondary buttons -->
-              <div class="btns-secondary">
-                <button class="abtn lunch" onclick="send('lunch-out')" id="btn-lunch-out">
-                  <span class="abtn-icon">🍱</span> Lunch Out
-                </button>
-                <button class="abtn lunch" onclick="send('lunch-in')" id="btn-lunch-in">
-                  <span class="abtn-icon">🍱</span> Lunch In
-                </button>
-                <button class="abtn brk" onclick="send('break-out')" id="btn-break-out">
-                  <span class="abtn-icon">☕</span> Break Out
-                </button>
-                <button class="abtn brk" onclick="send('break-in')" id="btn-break-in">
-                  <span class="abtn-icon">☕</span> Break In
-                </button>
-                <button class="abtn leave-btn" onclick="toggleLeaveForm()">
-                  <span class="abtn-icon">🏖️</span> Request Leave
-                </button>
-              </div>
+              <!-- Smart buttons — controlled by updateButtons() -->
+<div id="action-buttons"></div>
 
               <!-- Status message -->
               <div class="status-msg" id="status-msg">
@@ -1047,10 +1021,92 @@ body {
   }
 
   function setBtns(off) {
-    ['btn-in','btn-out','btn-lunch-out','btn-lunch-in','btn-break-out','btn-break-in'].forEach(id => {
-      document.getElementById(id).disabled = off;
-    });
+  document.querySelectorAll('#action-buttons button').forEach(btn => {
+    btn.disabled = off;
+  });
+}
+
+function updateButtons() {
+  const container = document.getElementById('action-buttons');
+  if (!container) return;
+
+  const today = new Date().toLocaleDateString('en-US');
+  const todayRecord = memberData?.calendar?.find(d => d.date === today);
+
+  const clockedIn  = todayRecord && todayRecord.clockIn !== '-';
+  const clockedOut = todayRecord && todayRecord.clockOut !== '-';
+  const onLunch    = memberData?.onLunch === true;
+  const onBreak    = memberData?.onBreak === true;
+
+  // Clear buttons
+  container.innerHTML = '';
+
+  // Not clocked in yet
+  if (!clockedIn) {
+    container.innerHTML = `
+      <div class="btns-main">
+        <button class="abtn clockin" onclick="send('clock-in')" style="grid-column:1/-1">
+          <span class="abtn-icon">→</span> Clock In
+        </button>
+      </div>
+      <div class="btns-secondary" style="margin-top:8px">
+        <button class="abtn leave-btn" onclick="toggleLeaveForm()" style="grid-column:1/-1">
+          <span class="abtn-icon">🏖️</span> Request Leave
+        </button>
+      </div>`;
+    return;
   }
+
+  // Clocked out — shift done
+  if (clockedOut) {
+    container.innerHTML = `
+      <div style="font-size:13px;color:var(--text2);padding:8px 0;">
+        ✅ Shift complete for today. See you tomorrow!
+      </div>`;
+    return;
+  }
+
+  // Currently on lunch
+  if (onLunch) {
+    container.innerHTML = `
+      <div class="btns-main">
+        <button class="abtn lunch" onclick="send('lunch-in')" style="grid-column:1/-1">
+          <span class="abtn-icon">🍱</span> Lunch In — Back to work
+        </button>
+      </div>`;
+    return;
+  }
+
+  // Currently on break
+  if (onBreak) {
+    container.innerHTML = `
+      <div class="btns-main">
+        <button class="abtn brk" onclick="send('break-in')" style="grid-column:1/-1">
+          <span class="abtn-icon">☕</span> Break In — Back to work
+        </button>
+      </div>`;
+    return;
+  }
+
+  // Clocked in — normal working state
+  container.innerHTML = `
+    <div class="btns-main">
+      <button class="abtn clockout" onclick="send('clock-out')">
+        <span class="abtn-icon">←</span> Clock Out
+      </button>
+      <button class="abtn lunch" onclick="send('lunch-out')">
+        <span class="abtn-icon">🍱</span> Lunch Out
+      </button>
+    </div>
+    <div class="btns-secondary" style="margin-top:8px">
+      <button class="abtn brk" onclick="send('break-out')">
+        <span class="abtn-icon">☕</span> Break Out
+      </button>
+      <button class="abtn leave-btn" onclick="toggleLeaveForm()">
+        <span class="abtn-icon">🏖️</span> Request Leave
+      </button>
+    </div>`;
+}
 
   /* ── Elapsed Timer ── */
   function startElapsedTimer(clockInStr) {
@@ -1209,6 +1265,7 @@ body {
   /* ── Update Today Summary + Hero ── */
   function updateTodaySummary() {
     if (!memberData) return;
+    updateButtons()
     const today       = new Date().toLocaleDateString('en-US');
     const todayRecord = memberData.calendar?.find(d => d.date === today);
 
