@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anosupo · Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f3; --white: #fff; --border: #e8e6e1; --text: #1a1915;
+    --text2: #6b6860; --text3: #a8a59f; --accent: #1a6b3c; --accent-light: #f0f7f3;
+    --red: #9b2626; --amber: #b35900;
+    --radius: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+  body { background: var(--bg); font-family: 'Instrument Sans', sans-serif; color: var(--text); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+  header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+  header h1 { font-family: 'Instrument Serif', serif; font-size: 30px; font-weight: normal; letter-spacing: -0.5px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn { padding: 9px 14px; border: 1px solid var(--border); background: white; color: var(--text); border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; }
+  .btn-primary { background: var(--accent); color: white; border-color: var(--accent); font-weight: 600; }
+  .btn-danger  { color: var(--red); border-color: var(--red); }
+  .btn-amber   { color: var(--amber); border-color: var(--amber); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .card { background: white; border: 1px solid var(--border); border-radius: 14px; padding: 0; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 12px 14px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--border); }
+  th { background: #fafaf8; color: var(--text2); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-owner   { background: #fdf3e7; color: var(--amber); }
+  .badge-admin   { background: var(--accent-light); color: var(--accent); }
+  .badge-member  { background: #f1f1ef; color: var(--text2); }
+  .badge-active   { background: var(--accent-light); color: var(--accent); }
+  .badge-pending  { background: #fff4e0; color: var(--amber); }
+  .badge-inactive { background: #fcecec; color: var(--red); }
+  .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .row-actions .btn { padding: 5px 10px; font-size: 12px; }
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 99; }
+  .modal-bg.show { display: flex; }
+  .modal { background: white; border-radius: 14px; padding: 24px; width: 360px; max-width: 90vw; }
+  .modal h2 { font-family: 'Instrument Serif', serif; font-size: 22px; margin-bottom: 14px; }
+  .modal label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 6px; margin-top: 10px; }
+  .modal input, .modal select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 18px; justify-content: flex-end; }
+  .status-bar { display: none; padding: 11px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 18px; }
+  .status-bar.show { display: block; }
+  .status-bar.error   { background: #fdf0f0; color: var(--red); border: 1px solid #f5d0d0; }
+  .status-bar.success { background: var(--accent-light); color: var(--accent); border: 1px solid #d4eadc; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>User Management</h1>
+    <div class="actions">
+      <button class="btn" onclick="window.location.href='dashboard.html'">← Dashboard</button>
+      <button class="btn btn-primary" onclick="openInvite()">+ Invite User</button>
+      <button class="btn" onclick="signOut()">Sign Out</button>
+    </div>
+  </header>
+
+  <div id="status-bar" class="status-bar"></div>
+
+  <div class="card">
+    <table id="users-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Last login</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="users-tbody">
+        <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text2);">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-bg" id="invite-modal">
+  <div class="modal">
+    <h2>Invite User</h2>
+    <label>Full name</label>
+    <input type="text" id="invite-name" maxlength="80">
+    <label>Email</label>
+    <input type="email" id="invite-email">
+    <label>Role</label>
+    <select id="invite-role">
+      <option value="member">Member</option>
+      <option value="admin" id="invite-role-admin">Admin (owner only)</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeInvite()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitInvite()">Send Invite</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'http://localhost:3000';
+
+let currentUser = null;
+
+function showStatus(type, msg) {
+  const el = document.getElementById('status-bar');
+  el.className = `status-bar show ${type}`;
+  el.textContent = msg;
+  setTimeout(() => el.className = 'status-bar', 4000);
+}
+
+async function apiFetch(url, opts = {}) {
+  const jwt = sessionStorage.getItem('anosupo_jwt');
+  const headers = { ...(opts.headers || {}), Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' };
+  const res = await fetch(url, { ...opts, headers });
+  if (res.status === 401) {
+    sessionStorage.clear();
+    window.location.replace('index.html');
+    throw new Error('Session expired');
+  }
+  return res;
+}
+
+function signOut() {
+  sessionStorage.clear();
+  window.location.replace('index.html');
+}
+
+function loadCurrentUser() {
+  const userStr = sessionStorage.getItem('anosupo_user');
+  if (!userStr) { window.location.replace('index.html'); return; }
+  currentUser = JSON.parse(userStr);
+  if (currentUser.role !== 'owner' && currentUser.role !== 'admin') {
+    window.location.replace('member.html');
+  }
+}
+
+function badge(value, type) {
+  return `<span class="badge badge-${type}">${value}</span>`;
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+async function loadUsers() {
+  try {
+    const res = await apiFetch(`${API_BASE}/users`);
+    const data = await res.json();
+    if (!res.ok) { showStatus('error', data.error || 'Failed to load users.'); return; }
+    renderUsers(data.users || []);
+  } catch (e) {
+    showStatus('error', 'Connection failed.');
+  }
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById('users-tbody');
+  if (!users.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text2);">No users yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = users.map(u => {
+    const isMe = u.id === currentUser.id || u.email === currentUser.email;
+    const lastLogin = u.last_login_at ? new Date(u.last_login_at).toLocaleString() : '—';
+    return `
+      <tr>
+        <td>${escapeHtml(u.name)}</td>
+        <td style="color:var(--text2);">${escapeHtml(u.email)}</td>
+        <td>${badge(u.role, u.role)}</td>
+        <td>${badge(u.status, u.status.toLowerCase())}</td>
+        <td style="color:var(--text2);font-size:12px;">${lastLogin}</td>
+        <td><div class="row-actions">${actionButtons(u, isMe)}</div></td>
+      </tr>`;
+  }).join('');
+}
+
+function actionButtons(u, isMe) {
+  if (isMe) return '<span style="color:var(--text3);font-size:12px;">(you)</span>';
+  const buttons = [];
+  const myRole = currentUser.role;
+
+  if (u.status !== 'Active' && canAct(u, 'activate'))
+    buttons.push(`<button class="btn" onclick="doAction('${u.id}','activate')">Activate</button>`);
+  if (u.status === 'Active' && canAct(u, 'deactivate'))
+    buttons.push(`<button class="btn btn-amber" onclick="doAction('${u.id}','deactivate')">Deactivate</button>`);
+
+  if (myRole === 'owner' && u.role === 'member')
+    buttons.push(`<button class="btn btn-primary" onclick="doAction('${u.id}','promote')">Promote to Admin</button>`);
+  if (myRole === 'owner' && u.role === 'admin')
+    buttons.push(`<button class="btn btn-danger" onclick="doAction('${u.id}','demote')">Demote to Member</button>`);
+
+  return buttons.join('') || '<span style="color:var(--text3);font-size:12px;">—</span>';
+}
+
+function canAct(u, action) {
+  const myRole = currentUser.role;
+  if (action === 'activate' || action === 'deactivate') {
+    if (u.role === 'member') return myRole === 'owner' || myRole === 'admin';
+    if (u.role === 'admin')  return myRole === 'owner';
+  }
+  return false;
+}
+
+async function doAction(userId, action) {
+  try {
+    const res = await apiFetch(`${API_BASE}/users/${userId}/${action}`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) { showStatus('error', data.error || 'Action failed.'); return; }
+    showStatus('success', `Done: ${action}.`);
+    loadUsers();
+  } catch (e) {
+    showStatus('error', 'Connection failed.');
+  }
+}
+
+function openInvite() {
+  document.getElementById('invite-modal').classList.add('show');
+  document.getElementById('invite-role-admin').style.display = (currentUser.role === 'owner') ? 'block' : 'none';
+}
+function closeInvite() {
+  document.getElementById('invite-modal').classList.remove('show');
+  document.getElementById('invite-name').value = '';
+  document.getElementById('invite-email').value = '';
+  document.getElementById('invite-role').value = 'member';
+}
+async function submitInvite() {
+  const name  = document.getElementById('invite-name').value.trim();
+  const email = document.getElementById('invite-email').value.trim();
+  const role  = document.getElementById('invite-role').value;
+  if (!name || !email) { showStatus('error', 'Name and email are required.'); return; }
+  try {
+    const res = await apiFetch(`${API_BASE}/users/invite`, {
+      method: 'POST',
+      body: JSON.stringify({ name, email, role }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showStatus('error', data.error || 'Invite failed.'); return; }
+    showStatus('success', `Invited ${name}.`);
+    closeInvite();
+    loadUsers();
+  } catch (e) {
+    showStatus('error', 'Connection failed.');
+  }
+}
+
+loadCurrentUser();
+loadUsers();
+</script>
+</body>
+</html>
