@@ -297,7 +297,7 @@ body {
 </div>
 
 <script>
-  const CHECK_ROLE = 'http://localhost:5678/webhook/check-role';
+  const CHECK_ROLE = 'http://localhost:3000/webhook/check-role';
   const CLIENT_ID  = '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com';
 
   function parseJwt(t) {
@@ -374,7 +374,7 @@ body {
         google.accounts.id.disableAutoSelect();
       }
     } catch(e) {
-      showStatus('error', 'Connection failed. Check n8n is running.');
+      showStatus('error', 'Connection failed. Check the server is running.');
     }
   }
   // Initialize Lottie animation

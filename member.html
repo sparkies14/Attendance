@@ -639,6 +639,7 @@ body {
               <option value="Personal">Personal</option>
               <option value="Emergency">Emergency</option>
               <option value="Vacation">Vacation</option>
+              <option value="Family Care">Family Care</option>
             </select>
             <div class="field-label">Reason</div>
             <input type="text" class="field-input" id="leave-reason" placeholder="Briefly describe your reason" autocomplete="off" style="margin-bottom:0">
@@ -848,9 +849,9 @@ body {
 </div>
 
 <script>
-  const WEBHOOK     = 'http://localhost:5678/webhook/attendance';
-  const CHECK_ROLE  = 'http://localhost:5678/webhook/check-role';
-  const MEMBER_DATA = 'http://localhost:5678/webhook/member-data';
+  const WEBHOOK     = 'http://localhost:3000/webhook/attendance';
+  const CHECK_ROLE  = 'http://localhost:3000/webhook/check-role';
+  const MEMBER_DATA = 'http://localhost:3000/webhook/member-data';
   const CLIENT_ID   = '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com';
   const REFRESH_INTERVAL  = 5 * 60 * 1000; // 5 minutes
   const PULSE_AFTER       = 2 * 60 * 1000; // pulse green after 2 min no refresh
@@ -1237,7 +1238,7 @@ function updateButtons() {
           setTimeout(() => loadMemberData(), 1500);
         }
       } else {
-        showStatus('error', `Server error ${res.status}. Check n8n workflow is active.`);
+        showStatus('error', `Server error ${res.status}. Check the server is running.`);
       }
     } catch(e) {
       showStatus('error', 'Connection failed. Please try again.');

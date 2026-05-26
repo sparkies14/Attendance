@@ -1591,8 +1591,8 @@ tbody td:not(:first-child) { text-align: center; }
             </select>
           </div>
           <div class="form-row">
-            <label class="form-label">Webhook Base URL (n8n)</label>
-            <input class="form-input" id="set-webhook" type="text" value="http://localhost:5678">
+            <label class="form-label">Webhook Base URL</label>
+            <input class="form-input" id="set-webhook" type="text" value="http://localhost:3000">
           </div>
           <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">
             <label class="settings-toggle">
@@ -1620,7 +1620,7 @@ tbody td:not(:first-child) { text-align: center; }
             </div>
           </div>
           <div id="goldlist-emails" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
-          <div style="margin-top:12px;font-size:11.5px;color:var(--text3)">⚠ Changes to the goldlist take effect on the next login. Actual enforcement is handled by your n8n check-role webhook.</div>
+          <div style="margin-top:12px;font-size:11.5px;color:var(--text3)">⚠ Changes to the goldlist take effect on the next login. Actual enforcement is handled by the check-role endpoint.</div>
         </div>
 
       </div>
@@ -1683,8 +1683,8 @@ tbody td:not(:first-child) { text-align: center; }
 
 <script>
 /* ─── Config ─── */
-const DASHBOARD_URL = 'http://localhost:5678/webhook/dashboard';
-const APPROVE_URL   = 'http://localhost:5678/webhook/approve';
+const DASHBOARD_URL = 'http://localhost:3000/webhook/dashboard';
+const APPROVE_URL   = 'http://localhost:3000/webhook/approve';
 
 /* ─── State ─── */
 let allMembers       = [];
