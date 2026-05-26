@@ -54,32 +54,116 @@
 <div class="container">
 
   <header>
-    <h1>User Management</h1>
+    <h1 id="page-h1">User Management</h1>
     <div class="actions">
       <button class="btn" onclick="window.location.href='dashboard.html'">← Dashboard</button>
-      <button class="btn btn-primary" onclick="openInvite()">+ Invite User</button>
+      <button class="btn btn-primary" id="btn-invite" onclick="openInvite()">+ Invite User</button>
       <button class="btn" onclick="signOut()">Sign Out</button>
     </div>
   </header>
 
+  <div style="display:flex;gap:6px;margin-bottom:18px;background:#f5f5f3;padding:4px;border-radius:10px;width:fit-content;">
+    <button type="button" id="tab-users" onclick="switchPage('users')" style="padding:8px 16px;border:none;background:white;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.06);">Users</button>
+    <button type="button" id="tab-audit" onclick="switchPage('audit')" style="padding:8px 16px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);">Audit Log</button>
+  </div>
+
   <div id="status-bar" class="status-bar"></div>
 
-  <div class="card">
-    <table id="users-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Status</th>
-          <th>Last login</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="users-tbody">
-        <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text2);">Loading…</td></tr>
-      </tbody>
-    </table>
+  <!-- ═════ USERS PAGE ═════ -->
+  <div id="page-users">
+    <div class="card">
+      <table id="users-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Last login</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody">
+          <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text2);">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═════ AUDIT LOG PAGE ═════ -->
+  <div id="page-audit" style="display:none;">
+    <div class="card" style="padding:16px;margin-bottom:14px;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+        <div>
+          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px;">From</label>
+          <input type="date" id="audit-from" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px;">To</label>
+          <input type="date" id="audit-to" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
+        </div>
+        <div style="flex:1;min-width:160px;">
+          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px;">Actor (email)</label>
+          <input type="text" id="audit-actor" placeholder="any" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
+        </div>
+        <div style="flex:1;min-width:180px;">
+          <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px;">Action</label>
+          <select id="audit-action" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-family:inherit;background:white;">
+            <option value="">Any action</option>
+            <option value="login">login</option>
+            <option value="login_failed">login_failed</option>
+            <option value="login_google">login_google</option>
+            <option value="login_google_failed">login_google_failed</option>
+            <option value="register">register</option>
+            <option value="password_changed">password_changed</option>
+            <option value="google_linked">google_linked</option>
+            <option value="user_invited">user_invited</option>
+            <option value="user_promoted">user_promoted</option>
+            <option value="user_demoted">user_demoted</option>
+            <option value="user_activated">user_activated</option>
+            <option value="user_deactivated">user_deactivated</option>
+            <option value="attendance_approved">attendance_approved</option>
+            <option value="attendance_rejected">attendance_rejected</option>
+            <option value="leave_approved">leave_approved</option>
+            <option value="leave_rejected">leave_rejected</option>
+            <option value="audit_cleanup">audit_cleanup</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="applyAuditFilters()">Apply</button>
+        <button class="btn" onclick="resetAuditFilters()">Reset</button>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap;">
+        <button class="btn" onclick="exportAuditCsv()" id="btn-export">⬇ Export CSV</button>
+        <button class="btn btn-amber" onclick="openCleanModal()" id="btn-clean" disabled>🧹 Clean up old records</button>
+        <a href="#" onclick="skipExportGate(event)" id="link-skip-export" style="font-size:12px;color:var(--text3);text-decoration:underline;">I already have a backup, skip</a>
+        <span id="export-status" style="font-size:12px;color:var(--text3);margin-left:auto;">No export this session — please export first.</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <table id="audit-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Actor</th>
+            <th>Action</th>
+            <th>Target</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody id="audit-tbody">
+          <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text2);">Click "Audit Log" to load.</td></tr>
+        </tbody>
+      </table>
+      <div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text2);border-top:1px solid var(--border);">
+        <span id="audit-meta">—</span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" onclick="auditPagePrev()">← Prev</button>
+          <button class="btn" onclick="auditPageNext()">Next →</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -248,6 +332,157 @@ async function submitInvite() {
     showStatus('error', 'Connection failed.');
   }
 }
+
+let auditState = { page: 1, page_size: 50, total: 0, filters: {}, loaded: false };
+
+function switchPage(name) {
+  const isUsers = name === 'users';
+  document.getElementById('page-users').style.display = isUsers ? 'block' : 'none';
+  document.getElementById('page-audit').style.display = isUsers ? 'none' : 'block';
+  document.getElementById('page-h1').textContent = isUsers ? 'User Management' : 'Audit Log';
+  document.getElementById('btn-invite').style.display = isUsers ? '' : 'none';
+
+  const a = document.getElementById('tab-users');
+  const b = document.getElementById('tab-audit');
+  if (isUsers) {
+    a.style.background='white'; a.style.fontWeight='600'; a.style.color='var(--text)';
+    b.style.background='transparent'; b.style.fontWeight='500'; b.style.color='var(--text2)';
+  } else {
+    b.style.background='white'; b.style.fontWeight='600'; b.style.color='var(--text)';
+    a.style.background='transparent'; a.style.fontWeight='500'; a.style.color='var(--text2)';
+    if (!auditState.loaded) loadAudit();
+    refreshCleanButton();
+    refreshExportStatus();
+    document.getElementById('btn-clean').style.display = currentUser.role === 'owner' ? '' : 'none';
+    document.getElementById('link-skip-export').style.display = currentUser.role === 'owner' ? '' : 'none';
+  }
+}
+
+function applyAuditFilters() {
+  auditState.filters = {
+    actor:  document.getElementById('audit-actor').value.trim() || undefined,
+    action: document.getElementById('audit-action').value || undefined,
+    from:   document.getElementById('audit-from').value || undefined,
+    to:     document.getElementById('audit-to').value || undefined,
+  };
+  auditState.page = 1;
+  loadAudit();
+}
+function resetAuditFilters() {
+  document.getElementById('audit-actor').value = '';
+  document.getElementById('audit-action').value = '';
+  document.getElementById('audit-from').value = '';
+  document.getElementById('audit-to').value = '';
+  auditState.filters = {};
+  auditState.page = 1;
+  loadAudit();
+}
+function auditPagePrev() {
+  if (auditState.page > 1) { auditState.page--; loadAudit(); }
+}
+function auditPageNext() {
+  const maxPage = Math.max(1, Math.ceil(auditState.total / auditState.page_size));
+  if (auditState.page < maxPage) { auditState.page++; loadAudit(); }
+}
+
+async function loadAudit() {
+  const tbody = document.getElementById('audit-tbody');
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text2);">Loading…</td></tr>`;
+  const params = new URLSearchParams({
+    page: auditState.page,
+    page_size: auditState.page_size,
+    ...Object.fromEntries(Object.entries(auditState.filters).filter(([_,v]) => v != null && v !== '')),
+  });
+  try {
+    const res = await apiFetch(`${API_BASE}/audit?${params}`);
+    const data = await res.json();
+    if (!res.ok) { showStatus('error', data.error || 'Failed to load audit log.'); return; }
+    auditState.total = data.total;
+    auditState.loaded = true;
+    renderAudit(data.items);
+    const maxPage = Math.max(1, Math.ceil(data.total / data.page_size));
+    document.getElementById('audit-meta').textContent =
+      `${data.total} record${data.total === 1 ? '' : 's'} — Page ${data.page} of ${maxPage}`;
+  } catch (e) {
+    showStatus('error', 'Connection failed.');
+  }
+}
+
+function relativeTime(iso) {
+  const t = new Date(iso).getTime();
+  const diff = (Date.now() - t) / 1000;
+  if (diff < 60) return `${Math.floor(diff)}s ago`;
+  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return `${Math.floor(diff/86400)}d ago`;
+}
+
+function actionBadge(action) {
+  let bg = '#f1f1ef', color = 'var(--text2)';
+  if (action.startsWith('login'))      { bg = 'var(--accent-light)'; color = 'var(--accent)'; }
+  if (action.endsWith('_failed'))      { bg = '#fcecec'; color = 'var(--red)'; }
+  if (action.startsWith('user_'))      { bg = '#fff4e0'; color = 'var(--amber)'; }
+  if (action.includes('approved') || action.includes('rejected')) { bg = '#eef3fa'; color = '#3a5d8c'; }
+  if (action === 'audit_cleanup')      { bg = '#f1f1ef'; color = 'var(--text2)'; }
+  return `<span class="badge" style="background:${bg};color:${color};">${action}</span>`;
+}
+
+function renderAudit(items) {
+  const tbody = document.getElementById('audit-tbody');
+  if (!items.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text2);">No records.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = items.map(it => {
+    const failed = String(it.action).endsWith('_failed');
+    const borderLeft = failed ? 'border-left:3px solid var(--red);' : '';
+    const detailsShort = it.details ? escapeHtml(JSON.stringify(it.details)).slice(0, 80) : '—';
+    const detailsFull = it.details ? escapeHtml(JSON.stringify(it.details, null, 2)) : '';
+    return `
+      <tr style="${borderLeft}">
+        <td title="${escapeHtml(it.occurred_at)}">${relativeTime(it.occurred_at)}</td>
+        <td style="color:var(--text2);">${escapeHtml(it.actor_email || '(anon)')}</td>
+        <td>${actionBadge(it.action)}</td>
+        <td style="color:var(--text2);font-size:12px;">${escapeHtml(it.target_table || '')}${it.target_id ? '#' + escapeHtml(it.target_id) : ''}</td>
+        <td style="color:var(--text2);font-size:12px;font-family:monospace;cursor:pointer;" onclick="showDetailsModal(this)" data-full="${detailsFull}">${detailsShort}${it.details && JSON.stringify(it.details).length > 80 ? '…' : ''}</td>
+      </tr>`;
+  }).join('');
+}
+
+function showDetailsModal(td) {
+  const full = td.getAttribute('data-full');
+  if (!full) return;
+  alert(full);
+}
+
+function refreshCleanButton() {
+  const btn = document.getElementById('btn-clean');
+  if (!btn) return;
+  const exported = sessionStorage.getItem('anosupo_audit_exported_at') ||
+                   sessionStorage.getItem('anosupo_audit_backup_skipped');
+  btn.disabled = !exported;
+}
+
+function refreshExportStatus() {
+  const el = document.getElementById('export-status');
+  if (!el) return;
+  const exportedAt = sessionStorage.getItem('anosupo_audit_exported_at');
+  const skipped    = sessionStorage.getItem('anosupo_audit_backup_skipped');
+  if (exportedAt) {
+    el.textContent = `Last export: ${relativeTime(exportedAt)}`;
+    el.style.color = 'var(--accent)';
+  } else if (skipped) {
+    el.textContent = 'Backup confirmed outside this system.';
+    el.style.color = 'var(--amber)';
+  } else {
+    el.textContent = 'No export this session — please export first.';
+    el.style.color = 'var(--text3)';
+  }
+}
+
+function exportAuditCsv()   { /* implemented in T9 */ }
+function openCleanModal()   { /* implemented in T10 */ }
+function skipExportGate(ev) { ev.preventDefault(); }
 
 loadCurrentUser();
 loadUsers();
