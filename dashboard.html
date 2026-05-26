@@ -1157,6 +1157,7 @@ tbody td:not(:first-child) { text-align: center; }
             </div>
           </div>
         </div>
+        <a href="admin.html" style="text-decoration:none;color:var(--accent);font-weight:600;font-size:13px;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;margin-right:12px;">⚙️ Admin Panel</a>
         <div class="topbar-profile">
           <div class="topbar-avatar" id="topbar-avatar">M</div>
           <span class="topbar-uname" id="topbar-name">Manager</span>
@@ -1728,25 +1729,40 @@ function setTheme(t) {
 })();
 
 /* ─── Auth check ─── */
-window.onload = function() {
-  const cred = sessionStorage.getItem('anosupo_credential');
-  const role = sessionStorage.getItem('anosupo_role');
-  if (cred && role === 'goldlist') {
-    try {
-      const p = parseJwt(cred);
-      setUser(p);
-      loadData();
-      setInterval(loadData, 30000);
-      return;
-    } catch(e) {}
+async function apiFetch(url, opts = {}) {
+  const jwt = sessionStorage.getItem('anosupo_jwt');
+  const headers = { ...(opts.headers || {}), Authorization: `Bearer ${jwt}` };
+  const res = await fetch(url, { ...opts, headers });
+  if (res.status === 401) {
+    sessionStorage.clear();
+    window.location.replace('index.html');
+    throw new Error('Session expired');
   }
-  sessionStorage.clear();
-  window.location.href = 'index.html';
-};
-
-function parseJwt(t) {
-  return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+  return res;
 }
+
+window.onload = function() {
+  const jwt = sessionStorage.getItem('anosupo_jwt');
+  const userStr = sessionStorage.getItem('anosupo_user');
+  if (!jwt || !userStr) {
+    sessionStorage.clear();
+    window.location.href = 'index.html';
+    return;
+  }
+  try {
+    const user = JSON.parse(userStr);
+    if (user.role !== 'owner' && user.role !== 'admin') {
+      window.location.href = 'member.html';
+      return;
+    }
+    setUser(user);
+    loadData();
+    setInterval(loadData, 30000);
+  } catch (e) {
+    sessionStorage.clear();
+    window.location.href = 'index.html';
+  }
+};
 
 function setUser(p) {
   const first = (p.name || 'M').charAt(0).toUpperCase();
@@ -1754,11 +1770,6 @@ function setUser(p) {
   document.getElementById('sidebar-name').textContent    = (p.name || 'Manager').split(' ')[0];
   document.getElementById('topbar-name').textContent     = p.name || 'Manager';
   document.getElementById('topbar-avatar').textContent   = first;
-  if (p.picture) {
-    const img = `<img src="${p.picture}" alt="">`;
-    document.getElementById('sidebar-avatar-wrap').innerHTML = img;
-    document.getElementById('topbar-avatar').innerHTML = img;
-  }
 }
 
 function signOut() {
@@ -1988,7 +1999,7 @@ async function handleApproval(type, idx, action, btn) {
   const rowNum = item.id;
   const name   = item.name || item.Name || 'Entry';
   try {
-    const res = await fetch(`${APPROVE_URL}?action=${action}&row=${rowNum}&type=${type}`);
+    const res = await apiFetch(`${APPROVE_URL}?action=${action}&row=${rowNum}&type=${type}`);
     if (res.ok) {
       card.style.transition = 'opacity 0.2s, transform 0.2s';
       card.style.opacity = '0'; card.style.transform = 'translateX(12px)';
@@ -2020,7 +2031,7 @@ function exportCSV() {
 async function loadData() {
   document.getElementById('error-bar').classList.remove('show');
   try {
-    const res  = await fetch(DASHBOARD_URL);
+    const res  = await apiFetch(DASHBOARD_URL);
     if (!res.ok) throw new Error(`Server ${res.status}`);
     const data = await res.json();
     ingestData(data);
