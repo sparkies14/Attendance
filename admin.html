@@ -480,9 +480,77 @@ function refreshExportStatus() {
   }
 }
 
-function exportAuditCsv()   { /* implemented in T9 */ }
+function csvEscape(v) {
+  if (v == null) return '';
+  const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+  if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+async function exportAuditCsv() {
+  const btn = document.getElementById('btn-export');
+  btn.disabled = true;
+  const origText = btn.textContent;
+  btn.textContent = 'Exporting…';
+
+  try {
+    const pageSize = 200;
+    let page = 1, rows = [], total = Infinity;
+    const baseParams = new URLSearchParams({
+      page_size: pageSize,
+      ...Object.fromEntries(Object.entries(auditState.filters).filter(([_,v]) => v != null && v !== '')),
+    });
+    while (rows.length < total) {
+      const params = new URLSearchParams(baseParams);
+      params.set('page', page);
+      const res = await apiFetch(`${API_BASE}/audit?${params}`);
+      const data = await res.json();
+      if (!res.ok) { showStatus('error', data.error || 'Export failed.'); return; }
+      total = data.total;
+      rows = rows.concat(data.items);
+      if (!data.items.length) break;
+      page++;
+      if (page > 1000) break;
+    }
+
+    const headers = ['occurred_at','actor_email','actor_role','action','target_table','target_id','details','ip_address','user_agent'];
+    const csv = [
+      headers.join(','),
+      ...rows.map(r => headers.map(h => csvEscape(r[h])).join(',')),
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit_log_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    sessionStorage.setItem('anosupo_audit_exported_at', new Date().toISOString());
+    refreshCleanButton();
+    refreshExportStatus();
+    showStatus('success', `Exported ${rows.length} records.`);
+  } catch (e) {
+    showStatus('error', 'Export failed.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = origText;
+  }
+}
+
+function skipExportGate(ev) {
+  ev.preventDefault();
+  if (confirm('I confirm I have a recent backup of the audit log outside this system. Proceed?')) {
+    sessionStorage.setItem('anosupo_audit_backup_skipped', new Date().toISOString());
+    refreshCleanButton();
+    refreshExportStatus();
+  }
+}
+
 function openCleanModal()   { /* implemented in T10 */ }
-function skipExportGate(ev) { ev.preventDefault(); }
 
 loadCurrentUser();
 loadUsers();
