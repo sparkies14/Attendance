@@ -19,6 +19,9 @@ create table if not exists users (
 create unique index if not exists users_one_owner
   on users (role) where role = 'owner';
 
-alter table users drop constraint if exists users_has_credential;
-alter table users add constraint users_has_credential
-  check (status <> 'Active' or password_hash is not null or google_sub is not null);
+-- NOTE: an earlier draft of this migration included a users_has_credential
+-- check constraint requiring Active rows to have a password_hash or google_sub.
+-- It was removed because it blocks the data migration from legacy
+-- managers/members tables (those rows have neither field — google_sub is
+-- populated on first Google login). See 002_drop_credential_check.sql for the
+-- corresponding cleanup if you ran the earlier version.
