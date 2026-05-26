@@ -2,6 +2,7 @@ const router = require('express').Router();
 const supabase = require('../lib/supabase');
 const { hashPassword, verifyPassword, signToken } = require('../lib/auth');
 const requireAuth = require('../middleware/requireAuth');
+const audit = require('../lib/audit');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -37,10 +38,18 @@ router.post('/register', async (req, res) => {
   const password_hash = await hashPassword(password);
 
   if (!existing) {
-    const { error } = await supabase.from('users').insert({
+    const { data: inserted, error } = await supabase.from('users').insert({
       email, name: name.trim(), password_hash, role: 'member', status: 'Pending',
-    });
+    }).select('id').single();
     if (error) return res.status(500).json({ error: error.message });
+
+    await audit.log(req, audit.ACTIONS.REGISTER, {
+      actor: { user_id: inserted.id, email, role: 'member' },
+      target_user_id: inserted.id,
+      target_table: 'users',
+      target_id: inserted.id,
+      details: { path: 'fresh_signup' },
+    });
 
     try {
       const { sendMessage, CHANNELS } = require('../lib/discord');
@@ -60,27 +69,72 @@ router.post('/register', async (req, res) => {
     .eq('id', existing.id);
   if (e2) return res.status(500).json({ error: e2.message });
 
+  await audit.log(req, audit.ACTIONS.REGISTER, {
+    actor: { user_id: existing.id, email, role: existing.role },
+    target_user_id: existing.id,
+    target_table: 'users',
+    target_id: existing.id,
+    details: { path: 'invite_claim' },
+  });
+
   return res.json({ success: true, message: 'Account ready. Waiting for admin approval.' });
 });
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body || {};
   if (!validateEmail(email) || typeof password !== 'string') {
+    await audit.log(req, audit.ACTIONS.LOGIN_FAILED, {
+      actor: { user_id: null, email: typeof email === 'string' ? email : null, role: null },
+      details: { reason: 'invalid_input' },
+    });
     return res.status(401).json({ error: 'Invalid credentials.' });
   }
 
   const { data: user, error } = await supabase
     .from('users').select('id, email, name, role, status, password_hash').eq('email', email).maybeSingle();
   if (error) return res.status(500).json({ error: 'Database error.' });
-  if (!user) return res.status(401).json({ error: 'Invalid credentials.' });
 
-  if (user.status === 'Pending')  return res.status(403).json({ error: 'Your account is awaiting approval.' });
-  if (user.status === 'Inactive') return res.status(403).json({ error: 'Your account has been deactivated.' });
+  if (!user) {
+    await audit.log(req, audit.ACTIONS.LOGIN_FAILED, {
+      actor: { user_id: null, email, role: null },
+      details: { reason: 'no_such_user' },
+    });
+    return res.status(401).json({ error: 'Invalid credentials.' });
+  }
+
+  if (user.status === 'Pending') {
+    await audit.log(req, audit.ACTIONS.LOGIN_FAILED, {
+      actor: { user_id: user.id, email, role: user.role },
+      target_user_id: user.id, target_table: 'users', target_id: user.id,
+      details: { reason: 'pending' },
+    });
+    return res.status(403).json({ error: 'Your account is awaiting approval.' });
+  }
+  if (user.status === 'Inactive') {
+    await audit.log(req, audit.ACTIONS.LOGIN_FAILED, {
+      actor: { user_id: user.id, email, role: user.role },
+      target_user_id: user.id, target_table: 'users', target_id: user.id,
+      details: { reason: 'inactive' },
+    });
+    return res.status(403).json({ error: 'Your account has been deactivated.' });
+  }
 
   const ok = await verifyPassword(password, user.password_hash);
-  if (!ok) return res.status(401).json({ error: 'Invalid credentials.' });
+  if (!ok) {
+    await audit.log(req, audit.ACTIONS.LOGIN_FAILED, {
+      actor: { user_id: user.id, email, role: user.role },
+      target_user_id: user.id, target_table: 'users', target_id: user.id,
+      details: { reason: 'bad_password' },
+    });
+    return res.status(401).json({ error: 'Invalid credentials.' });
+  }
 
   await supabase.from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id);
+
+  await audit.log(req, audit.ACTIONS.LOGIN, {
+    actor: { user_id: user.id, email: user.email, role: user.role },
+    target_user_id: user.id, target_table: 'users', target_id: user.id,
+  });
 
   return res.json(issueLoginResponse(user));
 });
@@ -90,7 +144,13 @@ router.post('/google', async (req, res) => {
   if (!credential) return res.status(400).json({ error: 'Missing credential.' });
 
   const profile = await verifyGoogleCredential(credential);
-  if (!profile) return res.status(401).json({ error: 'Invalid Google credential.' });
+  if (!profile) {
+    await audit.log(req, audit.ACTIONS.LOGIN_GOOGLE_FAILED, {
+      actor: { user_id: null, email: null, role: null },
+      details: { reason: 'invalid_credential' },
+    });
+    return res.status(401).json({ error: 'Invalid Google credential.' });
+  }
 
   let { data: user } = await supabase
     .from('users').select('id, email, name, role, status, google_sub').eq('google_sub', profile.sub).maybeSingle();
@@ -101,15 +161,38 @@ router.post('/google', async (req, res) => {
   }
 
   if (!user) {
+    await audit.log(req, audit.ACTIONS.LOGIN_GOOGLE_FAILED, {
+      actor: { user_id: null, email: profile.email, role: null },
+      details: { reason: 'no_account' },
+    });
     return res.status(403).json({ error: 'No account found. Please register first.' });
   }
-  if (user.status === 'Pending')  return res.status(403).json({ error: 'Your account is awaiting approval.' });
-  if (user.status === 'Inactive') return res.status(403).json({ error: 'Your account has been deactivated.' });
+  if (user.status === 'Pending') {
+    await audit.log(req, audit.ACTIONS.LOGIN_GOOGLE_FAILED, {
+      actor: { user_id: user.id, email: user.email, role: user.role },
+      target_user_id: user.id, target_table: 'users', target_id: user.id,
+      details: { reason: 'pending' },
+    });
+    return res.status(403).json({ error: 'Your account is awaiting approval.' });
+  }
+  if (user.status === 'Inactive') {
+    await audit.log(req, audit.ACTIONS.LOGIN_GOOGLE_FAILED, {
+      actor: { user_id: user.id, email: user.email, role: user.role },
+      target_user_id: user.id, target_table: 'users', target_id: user.id,
+      details: { reason: 'inactive' },
+    });
+    return res.status(403).json({ error: 'Your account has been deactivated.' });
+  }
 
   if (!user.google_sub) {
     await supabase.from('users').update({ google_sub: profile.sub }).eq('id', user.id);
   }
   await supabase.from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id);
+
+  await audit.log(req, audit.ACTIONS.LOGIN_GOOGLE, {
+    actor: { user_id: user.id, email: user.email, role: user.role },
+    target_user_id: user.id, target_table: 'users', target_id: user.id,
+  });
 
   return res.json(issueLoginResponse(user));
 });
@@ -144,6 +227,12 @@ router.post('/link-google', requireAuth, async (req, res) => {
     .eq('id', req.user.user_id);
   if (error) return res.status(500).json({ error: error.message });
 
+  await audit.log(req, audit.ACTIONS.GOOGLE_LINKED, {
+    target_user_id: req.user.user_id,
+    target_table: 'users',
+    target_id: req.user.user_id,
+  });
+
   return res.json({ success: true, message: 'Google account linked.' });
 });
 
@@ -166,6 +255,13 @@ router.post('/change-password', requireAuth, async (req, res) => {
   const new_hash = await hashPassword(new_password);
   const { error: e2 } = await supabase.from('users').update({ password_hash: new_hash }).eq('id', req.user.user_id);
   if (e2) return res.status(500).json({ error: e2.message });
+
+  await audit.log(req, audit.ACTIONS.PASSWORD_CHANGED, {
+    target_user_id: req.user.user_id,
+    target_table: 'users',
+    target_id: req.user.user_id,
+    details: { had_previous: !!user.password_hash },
+  });
 
   return res.json({ success: true, message: 'Password updated.' });
 });
