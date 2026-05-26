@@ -3,6 +3,7 @@ const supabase = require('../lib/supabase');
 const requireAuth = require('../middleware/requireAuth');
 const requireRole = require('../middleware/requireRole');
 const { canPerformRoleAction } = require('../lib/auth');
+const audit = require('../lib/audit');
 
 router.use(requireAuth);
 
@@ -32,6 +33,13 @@ router.post('/invite', async (req, res) => {
   }).select('id, email, name, role, status').single();
   if (error) return res.status(500).json({ error: error.message });
 
+  await audit.log(req, audit.ACTIONS.USER_INVITED, {
+    target_user_id: data.id,
+    target_table: 'users',
+    target_id: data.id,
+    details: { invited_role: role, invited_email: email },
+  });
+
   try {
     const { sendMessage, CHANNELS } = require('../lib/discord');
     sendMessage(CHANNELS.approvals,
@@ -49,7 +57,7 @@ async function performRoleAction(req, res, action, newFields) {
   }
 
   const { data: target, error: e1 } = await supabase
-    .from('users').select('id, role, status').eq('id', id).maybeSingle();
+    .from('users').select('id, email, role, status').eq('id', id).maybeSingle();
   if (e1) return res.status(500).json({ error: 'Database error.' });
   if (!target) return res.status(404).json({ error: 'User not found.' });
 
@@ -59,6 +67,27 @@ async function performRoleAction(req, res, action, newFields) {
 
   const { data, error } = await supabase.from('users').update(newFields).eq('id', id).select('id, email, name, role, status').single();
   if (error) return res.status(500).json({ error: error.message });
+
+  const auditAction = {
+    promote:    audit.ACTIONS.USER_PROMOTED,
+    demote:     audit.ACTIONS.USER_DEMOTED,
+    activate:   audit.ACTIONS.USER_ACTIVATED,
+    deactivate: audit.ACTIONS.USER_DEACTIVATED,
+  }[action];
+
+  await audit.log(req, auditAction, {
+    target_user_id: target.id,
+    target_table: 'users',
+    target_id: target.id,
+    details: {
+      target_email: target.email,
+      previous_role:   target.role,
+      previous_status: target.status,
+      new_role:   data.role,
+      new_status: data.status,
+    },
+  });
+
   return res.json({ success: true, user: data });
 }
 
