@@ -270,25 +270,50 @@ body {
 
     <div class="login-card fade-in-d1">
       <div class="login-title">Welcome back 👋</div>
-      <div class="login-sub">Sign in with your Google account to access your attendance dashboard.</div>
+      <div class="login-sub" id="login-sub">Sign in with your email and password.</div>
 
       <div class="status-msg" id="status-msg">
         <span id="status-icon"></span>
         <span id="status-text"></span>
       </div>
 
+      <div style="display:flex;gap:6px;margin-bottom:18px;background:#f5f5f3;padding:4px;border-radius:10px;">
+        <button type="button" id="tab-signin"   onclick="switchTab('signin')"   style="flex:1;padding:8px 12px;border:none;background:white;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.06);">Sign In</button>
+        <button type="button" id="tab-register" onclick="switchTab('register')" style="flex:1;padding:8px 12px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);">Create Account</button>
+      </div>
+
+      <form id="form-signin" onsubmit="handleSignIn(event)">
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:6px;">Email</label>
+        <input type="email" id="signin-email" required style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:12px;font-family:inherit;">
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:6px;">Password</label>
+        <input type="password" id="signin-password" required minlength="8" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:16px;font-family:inherit;">
+        <button type="submit" id="signin-submit" style="width:100%;padding:11px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Sign In</button>
+      </form>
+
+      <form id="form-register" onsubmit="handleRegister(event)" style="display:none;">
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:6px;">Full name</label>
+        <input type="text" id="register-name" required minlength="1" maxlength="80" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:12px;font-family:inherit;">
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:6px;">Email</label>
+        <input type="email" id="register-email" required style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:12px;font-family:inherit;">
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:6px;">Password (8+ characters)</label>
+        <input type="password" id="register-password" required minlength="8" maxlength="128" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:12px;font-family:inherit;">
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:6px;">Confirm password</label>
+        <input type="password" id="register-confirm" required minlength="8" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:16px;font-family:inherit;">
+        <button type="submit" id="register-submit" style="width:100%;padding:11px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Create Account</button>
+      </form>
+
+      <div class="divider" style="margin-top:18px;">
+        <div class="divider-line"></div>
+        <div class="divider-text">or</div>
+        <div class="divider-line"></div>
+      </div>
+
       <div class="google-btn-wrap">
         <div id="auth-google-btn"></div>
       </div>
 
-      <div class="divider">
-        <div class="divider-line"></div>
-        <div class="divider-text">Company accounts only</div>
-        <div class="divider-line"></div>
-      </div>
-
-      <div class="login-note">
-        Only authorized Anosupo team members can access this system. Contact your manager if you need access.
+      <div class="login-note" id="forgot-note">
+        Forgot your password? Contact your admin.
       </div>
     </div>
 
@@ -297,12 +322,8 @@ body {
 </div>
 
 <script>
-  const CHECK_ROLE = 'http://localhost:3000/webhook/check-role';
-  const CLIENT_ID  = '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com';
-
-  function parseJwt(t) {
-    return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-  }
+  const API_BASE  = 'http://localhost:3000';
+  const CLIENT_ID = '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com';
 
   function showStatus(type, msg) {
     const el = document.getElementById('status-msg');
@@ -312,79 +333,151 @@ body {
       type === 'loading' ? '<span class="spin"></span>' : type === 'error' ? '✕' : '✓';
   }
 
-  window.onload = function() {
-    // Clear any stale session so no loop happens
-    // Only auto-redirect if session is valid AND not already on index
-    const saved     = sessionStorage.getItem('anosupo_credential');
-    const savedRole = sessionStorage.getItem('anosupo_role');
+  function hideStatus() {
+    document.getElementById('status-msg').className = 'status-msg';
+  }
 
-    if (saved && savedRole) {
+  function switchTab(which) {
+    const signinBtn = document.getElementById('tab-signin');
+    const registerBtn = document.getElementById('tab-register');
+    const signinForm = document.getElementById('form-signin');
+    const registerForm = document.getElementById('form-register');
+    const sub = document.getElementById('login-sub');
+    const forgot = document.getElementById('forgot-note');
+
+    if (which === 'signin') {
+      signinBtn.style.background = 'white';
+      signinBtn.style.fontWeight = '600';
+      signinBtn.style.color = 'var(--text)';
+      registerBtn.style.background = 'transparent';
+      registerBtn.style.fontWeight = '500';
+      registerBtn.style.color = 'var(--text2)';
+      signinForm.style.display = 'block';
+      registerForm.style.display = 'none';
+      sub.textContent = 'Sign in with your email and password.';
+      forgot.style.display = 'block';
+    } else {
+      registerBtn.style.background = 'white';
+      registerBtn.style.fontWeight = '600';
+      registerBtn.style.color = 'var(--text)';
+      signinBtn.style.background = 'transparent';
+      signinBtn.style.fontWeight = '500';
+      signinBtn.style.color = 'var(--text2)';
+      registerForm.style.display = 'block';
+      signinForm.style.display = 'none';
+      sub.textContent = 'Create a new account. An admin will activate it before you can sign in.';
+      forgot.style.display = 'none';
+    }
+    hideStatus();
+  }
+
+  function redirectByRole(role) {
+    if (role === 'owner' || role === 'admin') window.location.replace('dashboard.html');
+    else if (role === 'member') window.location.replace('member.html');
+  }
+
+  function persistSession(token, user) {
+    sessionStorage.setItem('anosupo_jwt', token);
+    sessionStorage.setItem('anosupo_user', JSON.stringify(user));
+    sessionStorage.removeItem('anosupo_credential');
+    sessionStorage.removeItem('anosupo_role');
+  }
+
+  async function handleSignIn(ev) {
+    ev.preventDefault();
+    const email    = document.getElementById('signin-email').value.trim();
+    const password = document.getElementById('signin-password').value;
+    showStatus('loading', 'Signing in…');
+    try {
+      const r = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await r.json();
+      if (!r.ok) { showStatus('error', data.error || 'Sign-in failed.'); return; }
+      persistSession(data.token, data.user);
+      showStatus('success', `Welcome, ${data.user.name.split(' ')[0]}! Redirecting…`);
+      setTimeout(() => redirectByRole(data.user.role), 600);
+    } catch (e) {
+      showStatus('error', 'Connection failed. Check the server is running.');
+    }
+  }
+
+  async function handleRegister(ev) {
+    ev.preventDefault();
+    const name     = document.getElementById('register-name').value.trim();
+    const email    = document.getElementById('register-email').value.trim();
+    const password = document.getElementById('register-password').value;
+    const confirm  = document.getElementById('register-confirm').value;
+    if (password !== confirm) {
+      showStatus('error', 'Passwords do not match.');
+      return;
+    }
+    showStatus('loading', 'Creating account…');
+    try {
+      const r = await fetch(`${API_BASE}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, password }),
+      });
+      const data = await r.json();
+      if (!r.ok) { showStatus('error', data.error || 'Registration failed.'); return; }
+      showStatus('success', data.message || 'Account created. Waiting for admin approval.');
+    } catch (e) {
+      showStatus('error', 'Connection failed. Check the server is running.');
+    }
+  }
+
+  async function handleGoogleAuth(response) {
+    showStatus('loading', 'Signing in with Google…');
+    try {
+      const r = await fetch(`${API_BASE}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential }),
+      });
+      const data = await r.json();
+      if (!r.ok) { showStatus('error', data.error || 'Google sign-in failed.'); return; }
+      persistSession(data.token, data.user);
+      showStatus('success', `Welcome, ${data.user.name.split(' ')[0]}! Redirecting…`);
+      setTimeout(() => redirectByRole(data.user.role), 600);
+    } catch (e) {
+      showStatus('error', 'Connection failed. Check the server is running.');
+    }
+  }
+
+  window.onload = function () {
+    const jwt = sessionStorage.getItem('anosupo_jwt');
+    const userStr = sessionStorage.getItem('anosupo_user');
+    if (jwt && userStr) {
       try {
-        parseJwt(saved); // if this throws, session is bad
-        if (savedRole === 'goldlist') {
-          window.location.replace('dashboard.html');
-          return;
-        }
-        if (savedRole === 'whitelist') {
-          window.location.replace('member.html');
-          return;
-        }
-      } catch(e) {
+        const user = JSON.parse(userStr);
+        redirectByRole(user.role);
+        return;
+      } catch (e) {
         sessionStorage.clear();
       }
     }
 
-    // No valid session — show Google login button
     google.accounts.id.initialize({
       client_id: CLIENT_ID,
-      callback: handleAuth,
-      auto_select: false
+      callback: handleGoogleAuth,
+      auto_select: false,
     });
     google.accounts.id.renderButton(
       document.getElementById('auth-google-btn'),
-      { theme: 'outline', size: 'large', width: 288, text: 'signin_with' }
+      { theme: 'outline', size: 'large', width: 288, text: 'continue_with' }
     );
-  }
+  };
 
-  async function handleAuth(response) {
-    const p = parseJwt(response.credential);
-    showStatus('loading', `Checking access for ${p.email}...`);
-    try {
-      const res  = await fetch(CHECK_ROLE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: p.email, name: p.name })
-      });
-      const data = await res.json();
-
-      if (data.role === 'goldlist') {
-        sessionStorage.setItem('anosupo_credential', response.credential);
-        sessionStorage.setItem('anosupo_role', 'goldlist');
-        showStatus('success', `Welcome, ${p.name.split(' ')[0]}! Redirecting...`);
-        setTimeout(() => window.location.replace('dashboard.html'), 800);
-
-      } else if (data.role === 'whitelist') {
-        sessionStorage.setItem('anosupo_credential', response.credential);
-        sessionStorage.setItem('anosupo_role', 'whitelist');
-        showStatus('success', `Welcome, ${p.name.split(' ')[0]}! Redirecting...`);
-        setTimeout(() => window.location.replace('member.html'), 800);
-
-      } else {
-        showStatus('error', 'Access denied. Contact your manager.');
-        google.accounts.id.disableAutoSelect();
-      }
-    } catch(e) {
-      showStatus('error', 'Connection failed. Check the server is running.');
-    }
-  }
-  // Initialize Lottie animation
-lottie.loadAnimation({
-  container: document.getElementById('lottie-wrap'),
-  renderer: 'svg',
-  loop: true,
-  autoplay: true,
-  path: 'animations/office.json'
-});
+  lottie.loadAnimation({
+    container: document.getElementById('lottie-wrap'),
+    renderer: 'svg',
+    loop: true,
+    autoplay: true,
+    path: 'animations/office.json',
+  });
 </script>
 </body>
 </html>
