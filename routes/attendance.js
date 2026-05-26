@@ -2,33 +2,34 @@ const router = require('express').Router();
 const supabase = require('../lib/supabase');
 const { sendMessage, CHANNELS } = require('../lib/discord');
 const { classifyLateStatus, timeToMinutes, calcNetHours } = require('../lib/rules');
+const requireAuth = require('../middleware/requireAuth');
+
+router.use(requireAuth);
 
 router.post('/', async (req, res) => {
+  const email = req.user.email; // trust the JWT, ignore body.email
   const {
-    email, action, entry_type, local_time, date,
-    jst_hour, jst_minute, fingerprint, reason, leave_type
-  } = req.body;
+    action, entry_type, local_time, date,
+    jst_hour, jst_minute, fingerprint, reason, leave_type,
+  } = req.body || {};
 
-  // Verify member — use official name from DB, not browser input
-  const { data: member } = await supabase
-    .from('members').select('name, role').eq('email', email).maybeSingle();
-  if (!member) {
-    return res.status(400).json({ error: 'Your name is not registered. Please contact your manager.' });
+  const { data: user } = await supabase
+    .from('users').select('name, job_role, status').eq('email', email).maybeSingle();
+  if (!user || user.status !== 'Active') {
+    return res.status(403).json({ error: 'Your account is not active.' });
   }
-  const officialName = member.name;
-  const role = member.role;
+  const officialName = user.name;
+  const role = user.job_role;
 
-  // Late classification only applies to clock-in
   const late_status = action === 'clock-in'
     ? classifyLateStatus(Number(jst_hour), Number(jst_minute))
     : '';
 
-  // Manual entry — any action except leave goes to pending approval
   if (entry_type === 'manual' && action === 'clock-in') {
     const { error } = await supabase.from('attendance').insert({
       email, name: officialName, date,
       clock_in: local_time, clock_out: '', total_hours: 0,
-      entry_type, status: 'Pending', late_status, reason, fingerprint, role
+      entry_type, status: 'Pending', late_status, reason, fingerprint, role,
     });
     if (error) return res.status(500).json({ error: error.message });
     await sendMessage(CHANNELS.approvals,
@@ -36,7 +37,6 @@ router.post('/', async (req, res) => {
     return res.json({ success: true, message: 'Manual entry submitted! Waiting for manager approval.' });
   }
 
-  // Auto entry — branch on action
   if (action === 'clock-in') {
     const { data: dup } = await supabase
       .from('attendance').select('id').eq('email', email).eq('date', date).maybeSingle();
@@ -45,7 +45,7 @@ router.post('/', async (req, res) => {
     const { error } = await supabase.from('attendance').insert({
       email, name: officialName, date,
       clock_in: local_time, clock_out: '', total_hours: 0,
-      entry_type, status: 'Approved', late_status, reason: '', fingerprint, role
+      entry_type, status: 'Approved', late_status, reason: '', fingerprint, role,
     });
     if (error) return res.status(500).json({ error: error.message });
     await sendMessage(CHANNELS.clockLogs,
@@ -58,7 +58,6 @@ router.post('/', async (req, res) => {
       .from('attendance').select('id, clock_in').eq('email', email).eq('date', date).maybeSingle();
     if (!row) return res.status(400).json({ error: 'No clock-in record found for today.' });
 
-    // Policy §3: subtract 1h unpaid lunch from net hours; minimum 0
     const total_hours = calcNetHours(row.clock_in, local_time);
     const { error } = await supabase.from('attendance')
       .update({ clock_out: local_time, total_hours, status: 'Approved' })
@@ -71,7 +70,7 @@ router.post('/', async (req, res) => {
 
   if (action === 'leave') {
     const { error } = await supabase.from('leave_log').insert({
-      email, name: officialName, date, leave_type, reason, status: 'Pending'
+      email, name: officialName, date, leave_type, reason, status: 'Pending',
     });
     if (error) return res.status(500).json({ error: error.message });
     return res.json({ success: true, message: '🏖️ Leave request submitted! Manager will review shortly.' });
@@ -79,7 +78,7 @@ router.post('/', async (req, res) => {
 
   if (action === 'lunch-out') {
     const { error } = await supabase.from('lunch_log').insert({
-      name: officialName, date, lunch_out: local_time, lunch_in: '', duration_mins: 0
+      name: officialName, date, lunch_out: local_time, lunch_in: '', duration_mins: 0,
     });
     if (error) return res.status(500).json({ error: error.message });
     return res.json({ success: true, message: 'Lunch out recorded!' });
@@ -98,7 +97,7 @@ router.post('/', async (req, res) => {
 
   if (action === 'break-out') {
     const { error } = await supabase.from('break_log').insert({
-      name: officialName, date, break_out: local_time, break_in: '', duration_mins: 0
+      name: officialName, date, break_out: local_time, break_in: '', duration_mins: 0,
     });
     if (error) return res.status(500).json({ error: error.message });
     return res.json({ success: true, message: 'Break out recorded!' });

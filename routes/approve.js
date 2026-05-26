@@ -1,6 +1,11 @@
 const router = require('express').Router();
 const supabase = require('../lib/supabase');
 const { sendMessage, CHANNELS } = require('../lib/discord');
+const requireAuth = require('../middleware/requireAuth');
+const requireRole = require('../middleware/requireRole');
+
+router.use(requireAuth);
+router.use(requireRole('owner', 'admin'));
 
 router.get('/', async (req, res) => {
   const { action, row, type } = req.query;
