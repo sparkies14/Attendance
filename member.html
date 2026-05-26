@@ -850,9 +850,7 @@ body {
 
 <script>
   const WEBHOOK     = 'http://localhost:3000/webhook/attendance';
-  const CHECK_ROLE  = 'http://localhost:3000/webhook/check-role';
   const MEMBER_DATA = 'http://localhost:3000/webhook/member-data';
-  const CLIENT_ID   = '235069172609-3fjjse85jeuj815o3rrtrtd8i21s12f3.apps.googleusercontent.com';
   const REFRESH_INTERVAL  = 5 * 60 * 1000; // 5 minutes
   const PULSE_AFTER       = 2 * 60 * 1000; // pulse green after 2 min no refresh
 
@@ -885,30 +883,45 @@ body {
   }
 
   /* ── Auth ── */
-  function parseJwt(t) {
-    return JSON.parse(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+  async function apiFetch(url, opts = {}) {
+    const jwt = sessionStorage.getItem('anosupo_jwt');
+    const headers = { ...(opts.headers || {}), Authorization: `Bearer ${jwt}` };
+    const res = await fetch(url, { ...opts, headers });
+    if (res.status === 401) {
+      sessionStorage.clear();
+      window.location.replace('index.html');
+      throw new Error('Session expired');
+    }
+    return res;
+  }
+
+  function defaultAvatar(name) {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || '?')}&background=1a6b3c&color=fff&bold=true`;
   }
 
   window.onload = function() {
-    const saved     = sessionStorage.getItem('anosupo_credential');
-    const savedRole = sessionStorage.getItem('anosupo_role');
-    if (saved && (savedRole === 'whitelist' || savedRole === 'goldlist')) {
-      try {
-        const p = parseJwt(saved);
-        bootMember(p, savedRole);
-        return;
-      } catch(e) { sessionStorage.clear(); window.location.href = 'index.html'; return; }
+    const jwt = sessionStorage.getItem('anosupo_jwt');
+    const userStr = sessionStorage.getItem('anosupo_user');
+    if (!jwt || !userStr) {
+      sessionStorage.clear();
+      window.location.href = 'index.html';
+      return;
     }
-    sessionStorage.clear();
-    window.location.href = 'index.html';
+    try {
+      const user = JSON.parse(userStr);
+      bootMember(user);
+    } catch (e) {
+      sessionStorage.clear();
+      window.location.href = 'index.html';
+    }
   }
 
-  function bootMember(p, role) {
-    currentUser = { name: p.name, email: p.email, avatar: p.picture };
-    document.getElementById('user-name').textContent = p.name.split(' ')[0];
-    document.getElementById('user-role').textContent = role === 'goldlist' ? 'Manager' : 'Member';
-    document.getElementById('user-avatar').src = p.picture;
-    document.getElementById('welcome-title').textContent = getGreeting() + ', ' + p.name.split(' ')[0];
+  function bootMember(user) {
+    currentUser = { name: user.name, email: user.email, avatar: defaultAvatar(user.name), role: user.role };
+    document.getElementById('user-name').textContent = user.name.split(' ')[0];
+    document.getElementById('user-role').textContent = (user.role === 'owner' || user.role === 'admin') ? 'Manager' : 'Member';
+    document.getElementById('user-avatar').src = currentUser.avatar;
+    document.getElementById('welcome-title').textContent = getGreeting() + ', ' + user.name.split(' ')[0];
     document.getElementById('auth-gate').classList.add('hidden');
     document.getElementById('app').classList.add('show');
     loadMemberData();
@@ -1183,7 +1196,7 @@ function updateButtons() {
     const pad = n => String(n).padStart(2, '0');
 
     try {
-      const res = await fetch(WEBHOOK, {
+      const res = await apiFetch(WEBHOOK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1251,7 +1264,7 @@ function updateButtons() {
   async function loadMemberData() {
     if (!currentUser) return;
     try {
-      const res  = await fetch(`${MEMBER_DATA}?email=${encodeURIComponent(currentUser.email)}&name=${encodeURIComponent(currentUser.name)}&month=${calMonth}&year=${calYear}`)
+      const res  = await apiFetch(`${MEMBER_DATA}?email=${encodeURIComponent(currentUser.email)}&name=${encodeURIComponent(currentUser.name)}&month=${calMonth}&year=${calYear}`)
       const data = await res.json();
       memberData = data;
       renderMemberData();
