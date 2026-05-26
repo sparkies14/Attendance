@@ -3,6 +3,7 @@ const supabase = require('../lib/supabase');
 const { sendMessage, CHANNELS } = require('../lib/discord');
 const requireAuth = require('../middleware/requireAuth');
 const requireRole = require('../middleware/requireRole');
+const audit = require('../lib/audit');
 
 router.use(requireAuth);
 router.use(requireRole('owner', 'admin'));
@@ -21,6 +22,17 @@ router.get('/', async (req, res) => {
 
   const { error } = await supabase.from(table).update({ status: new_status }).eq('id', id);
   if (error) return res.status(500).json({ error: error.message });
+
+  const auditAction =
+    type === 'leave'
+      ? (action === 'approve' ? audit.ACTIONS.LEAVE_APPROVED      : audit.ACTIONS.LEAVE_REJECTED)
+      : (action === 'approve' ? audit.ACTIONS.ATTENDANCE_APPROVED : audit.ACTIONS.ATTENDANCE_REJECTED);
+
+  await audit.log(req, auditAction, {
+    target_table: table,
+    target_id: id,
+    details: { type, new_status },
+  });
 
   await sendMessage(CHANNELS.approvals,
     `${action === 'approve' ? '✅' : '❌'} Entry #${id} (${type}) has been **${new_status}**.`);
