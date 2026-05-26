@@ -1192,7 +1192,7 @@ function updateButtons() {
           action,
           entry_type:  ['lunch-out','lunch-in','break-out','break-in','leave'].includes(action) ? 'auto' : entryType,
           local_time:  now.toLocaleTimeString(),
-          date:        now.toLocaleDateString(),
+          date:        now.toLocaleDateString('en-US'),
           timezone:    Intl.DateTimeFormat().resolvedOptions().timeZone,
           jst_time:    jst.toUTCString(),
           jst_hour:    jst.getUTCHours(),

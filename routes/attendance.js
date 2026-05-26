@@ -24,7 +24,7 @@ router.post('/', async (req, res) => {
     : '';
 
   // Manual entry — any action except leave goes to pending approval
-  if (entry_type === 'manual' && action !== 'leave') {
+  if (entry_type === 'manual' && action === 'clock-in') {
     const { error } = await supabase.from('attendance').insert({
       email, name: officialName, date,
       clock_in: local_time, clock_out: '', total_hours: 0,
