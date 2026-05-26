@@ -8,6 +8,10 @@ router.get('/', async (req, res) => {
   const yearNum = parseInt(year);
   const today = todayJST();
 
+  if (isNaN(monthNum) || isNaN(yearNum)) {
+    return res.status(400).json({ error: 'Invalid month or year.' });
+  }
+
   const { data: member } = await supabase
     .from('members').select('name').eq('email', email).maybeSingle();
   if (!member) return res.status(400).json({ error: 'Member not found.' });
