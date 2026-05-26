@@ -874,7 +874,7 @@ body {
     if (lottieAnim) { lottieAnim.destroy(); lottieAnim = null; }
     lottieAnim = lottie.loadAnimation({
       container, renderer: 'svg', loop, autoplay: true,
-      path: 'https://sparkies14.github.io/Attendance/' + file
+      path: 'https://sparkies14.github.io/Attendance/animations/' + file
     });
     document.getElementById('lottie-label').textContent = label;
     if (!loop && file !== 'lottie-late.json') {
@@ -1227,7 +1227,7 @@ function updateButtons() {
           if (action === 'clock-out') playLottie('lottie-clockout.json', 'Great work today! 👋', false);
           if (action === 'lunch-out') playLottie('lottie-lunch.json', 'Enjoy your lunch! 🍱', true);
           if (action === 'lunch-in')  playLottie('lottie-work.json', 'Back to work!', true);
-          if (action === 'break-out') playLottie('lottie-coffee.json', 'Take a breather! ☕', true);
+          if (action === 'break-out') playLottie('lottie-break.json', 'Take a breather! ☕', true);
           if (action === 'break-in')  playLottie('lottie-work.json', 'Back to work!', true);
 
           if (action === 'leave') {
