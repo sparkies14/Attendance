@@ -167,6 +167,20 @@
   </div>
 </div>
 
+<div class="modal-bg" id="clean-modal">
+  <div class="modal">
+    <h2>Clean up old audit records</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:10px;">This permanently deletes audit log entries older than the chosen date. The action itself is recorded.</p>
+    <label>Delete records older than</label>
+    <input type="date" id="clean-before">
+    <div id="clean-preview" style="margin-top:10px;font-size:13px;color:var(--text2);">—</div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeCleanModal()">Cancel</button>
+      <button class="btn btn-danger" id="btn-clean-confirm" onclick="confirmClean()" disabled>Delete records</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="invite-modal">
   <div class="modal">
     <h2>Invite User</h2>
@@ -550,7 +564,70 @@ function skipExportGate(ev) {
   }
 }
 
-function openCleanModal()   { /* implemented in T10 */ }
+let cleanPreviewCount = 0;
+
+function openCleanModal() {
+  if (currentUser.role !== 'owner') return;
+  document.getElementById('clean-modal').classList.add('show');
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 1);
+  document.getElementById('clean-before').value = d.toISOString().slice(0, 10);
+  document.getElementById('btn-clean-confirm').disabled = true;
+  document.getElementById('clean-preview').textContent = '—';
+  updateCleanPreview();
+  const input = document.getElementById('clean-before');
+  input.removeEventListener('input', updateCleanPreview);
+  input.addEventListener('input', updateCleanPreview);
+}
+
+function closeCleanModal() {
+  document.getElementById('clean-modal').classList.remove('show');
+}
+
+async function updateCleanPreview() {
+  const before = document.getElementById('clean-before').value;
+  if (!before) {
+    document.getElementById('clean-preview').textContent = 'Select a date.';
+    document.getElementById('btn-clean-confirm').disabled = true;
+    return;
+  }
+  try {
+    const res = await apiFetch(`${API_BASE}/audit?page=1&page_size=1&to=${encodeURIComponent(before)}`);
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById('clean-preview').textContent = data.error || 'Could not preview.';
+      document.getElementById('btn-clean-confirm').disabled = true;
+      return;
+    }
+    cleanPreviewCount = data.total;
+    document.getElementById('clean-preview').textContent =
+      `Will delete ${cleanPreviewCount} record${cleanPreviewCount === 1 ? '' : 's'} older than ${before}.`;
+    document.getElementById('btn-clean-confirm').disabled = cleanPreviewCount === 0;
+  } catch (e) {
+    document.getElementById('clean-preview').textContent = 'Connection failed.';
+  }
+}
+
+async function confirmClean() {
+  const before = document.getElementById('clean-before').value;
+  if (!before) return;
+  if (!confirm(`Permanently delete ${cleanPreviewCount} records older than ${before}? This cannot be undone.`)) return;
+  try {
+    const res = await apiFetch(`${API_BASE}/audit?before=${encodeURIComponent(before)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { showStatus('error', data.error || 'Delete failed.'); return; }
+    showStatus('success', `Deleted ${data.rows_deleted} record${data.rows_deleted === 1 ? '' : 's'}.`);
+    closeCleanModal();
+    auditState.page = 1;
+    loadAudit();
+    sessionStorage.removeItem('anosupo_audit_exported_at');
+    sessionStorage.removeItem('anosupo_audit_backup_skipped');
+    refreshCleanButton();
+    refreshExportStatus();
+  } catch (e) {
+    showStatus('error', 'Connection failed.');
+  }
+}
 
 loadCurrentUser();
 loadUsers();
