@@ -23,8 +23,8 @@ app.use(express.json());
 
 app.use('/auth',  require('./routes/auth'));
 app.use('/users', require('./routes/users'));
+app.use('/audit', require('./routes/audit'));
 
-app.use('/webhook/check-role',  require('./routes/checkRole'));
 app.use('/webhook/attendance',  require('./routes/attendance'));
 app.use('/webhook/member-data', require('./routes/memberData'));
 app.use('/webhook/dashboard',   require('./routes/dashboard'));
