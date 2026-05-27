@@ -188,7 +188,8 @@ describe('DELETE /leave/:id/evidence/:eid', () => {
     supabase.from.mockReturnValueOnce(c(LEAVE_MINE));
     supabase.from.mockReturnValueOnce(c(evWithFile));
     supabase.from.mockReturnValueOnce(c(null));
-    await request(makeApp('member', 'ana@test.com')).delete('/leave/leave-1/evidence/ev-5');
+    const res = await request(makeApp('member', 'ana@test.com')).delete('/leave/leave-1/evidence/ev-5');
+    expect(res.status).toBe(200);
     expect(mockStorageRemove).toHaveBeenCalledWith(['leave-1/123-cert.pdf']);
   });
 
