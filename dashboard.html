@@ -1972,24 +1972,50 @@ function renderApprovals(items, containerId, type) {
     el.innerHTML = `<div class="empty"><div class="empty-icon">✅</div>No pending ${type === 'manual' ? 'approval' : 'leave'} requests.</div>`;
     return;
   }
-  el.innerHTML = items.map((item, idx) => `
+  el.innerHTML = items.map((item, idx) => {
+    const name    = item.name   || item.Name   || '—';
+    const date    = item.date   || item.Date   || '—';
+    const time    = item.time   || item.clockIn || item['Clock In'] || '—';
+    const chip    = item.entryType || item['Entry Type'] || item['Leave Type'] || 'Manual';
+    const reason  = item.reason || item.Reason || '';
+    const leaveId = type === 'leave' ? item.id : null;
+    return `
     <div class="approval-card fade-in" id="appr-${type}-${idx}" style="animation-delay:${idx * 0.05}s">
       <div style="flex:1">
-        <div class="appr-name">${item.name || item.Name || '—'}</div>
+        <div class="appr-name">${name}</div>
         <div class="appr-meta">
-          <span>📅 ${item.date || item.Date || '—'}</span>
+          <span>📅 ${date}</span>
           <span class="appr-sep">·</span>
-          <span>⏰ ${item.time || item.clockIn || item['Clock In'] || '—'}</span>
+          <span>⏰ ${time}</span>
           <span class="appr-sep">·</span>
-          <span class="chip c-purple" style="font-size:10px;padding:2px 8px">${item.entryType || item['Entry Type'] || item['Leave Type'] || 'Manual'}</span>
+          <span class="chip c-purple" style="font-size:10px;padding:2px 8px">${chip}</span>
+          ${leaveId ? `<span class="appr-sep">·</span><button class="btn" onclick="dashToggleEvidence('${leaveId}')" style="font-size:11px;padding:3px 8px;">📎 Evidence</button>` : ''}
         </div>
-        ${(item.reason||item.Reason) ? `<div class="appr-reason">${item.reason||item.Reason}</div>` : ''}
+        ${reason ? `<div class="appr-reason">${reason}</div>` : ''}
+        ${leaveId ? `
+        <div id="dash-ev-panel-${leaveId}" style="display:none;margin-top:10px;padding:10px;border:1px solid var(--border);border-radius:8px;background:#f9f9f8;">
+          <div id="dash-ev-list-${leaveId}"><em style="font-size:12px;color:var(--text3);">Loading…</em></div>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+            <label class="btn" style="font-size:12px;cursor:pointer;">
+              📁 Add file
+              <input type="file" accept=".jpg,.jpeg,.png,.pdf" style="display:none;" onchange="dashUploadFile('${leaveId}', this)">
+            </label>
+            <button class="btn" style="font-size:12px;" onclick="dashShowLinkForm('${leaveId}')">🔗 Add link</button>
+          </div>
+          <div id="dash-ev-link-form-${leaveId}" style="display:none;margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+            <input type="url" id="dash-ev-url-${leaveId}" placeholder="https://drive.google.com/…" style="flex:1;min-width:180px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;">
+            <input type="text" id="dash-ev-note-${leaveId}" placeholder="Note (optional)" style="width:110px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;">
+            <button class="btn btn-primary" style="font-size:12px;" onclick="dashSubmitLink('${leaveId}')">Add</button>
+            <button class="btn" style="font-size:12px;" onclick="dashHideLinkForm('${leaveId}')">Cancel</button>
+          </div>
+        </div>` : ''}
       </div>
       <div class="appr-actions">
         <button class="btn-approve" onclick="handleApproval('${type}',${idx},'approve',this)">✓ Approve</button>
         <button class="btn-reject"  onclick="handleApproval('${type}',${idx},'reject',this)">✕ Reject</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 async function handleApproval(type, idx, action, btn) {
@@ -2734,6 +2760,114 @@ function renderGoldlist() {
   if (!el) return;
   if (!goldlistEmails.length) { el.innerHTML=`<span style="font-size:12px;color:var(--text3)">No emails added yet</span>`; return; }
   el.innerHTML = goldlistEmails.map(e=>`<span class="goldlist-tag">${e}<button onclick="removeGoldlistEmail('${e}')">×</button></span>`).join('');
+}
+
+/* ── Leave Evidence (dashboard) ── */
+const _dashEvLoaded = {};
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function dashToggleEvidence(leaveId) {
+  const panel = document.getElementById(`dash-ev-panel-${leaveId}`);
+  const open  = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'block';
+  if (!open && !_dashEvLoaded[leaveId]) await dashLoadEvidence(leaveId);
+}
+
+async function dashLoadEvidence(leaveId) {
+  const listEl = document.getElementById(`dash-ev-list-${leaveId}`);
+  try {
+    const res  = await apiFetch(`http://localhost:3000/leave/${leaveId}/evidence`);
+    const data = await res.json();
+    if (!res.ok) { listEl.innerHTML = `<em style="font-size:12px;color:#c00;">${escapeHtml(data.error)}</em>`; return; }
+    _dashEvLoaded[leaveId] = true;
+    dashRenderEvidence(leaveId, data.evidence);
+  } catch { listEl.innerHTML = `<em style="font-size:12px;color:var(--text3);">Failed to load.</em>`; }
+}
+
+function dashRenderEvidence(leaveId, items) {
+  const listEl = document.getElementById(`dash-ev-list-${leaveId}`);
+  if (!items.length) { listEl.innerHTML = `<em style="font-size:12px;color:var(--text3);">No evidence attached.</em>`; return; }
+  listEl.innerHTML = items.map(ev => {
+    const label   = ev.file_name || ev.external_url || 'Evidence';
+    const viewBtn = ev.file_name
+      ? `<button class="btn" style="font-size:11px;padding:3px 8px;" onclick="dashViewFile('${leaveId}','${ev.id}')">View</button>`
+      : `<a href="${escapeHtml(ev.external_url)}" target="_blank" rel="noopener" class="btn" style="font-size:11px;padding:3px 8px;">Open</a>`;
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px;">
+      <span>📄 ${escapeHtml(label)}</span>
+      ${ev.note ? `<span style="color:var(--text3);">(${escapeHtml(ev.note)})</span>` : ''}
+      ${viewBtn}
+      <button class="btn" style="font-size:11px;padding:3px 8px;color:#c00;border-color:#c00;" onclick="dashDeleteEvidence('${leaveId}','${ev.id}')">Delete</button>
+    </div>`;
+  }).join('');
+}
+
+async function dashUploadFile(leaveId, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const jwt = sessionStorage.getItem('anosupo_jwt');
+    const res = await fetch(`http://localhost:3000/leave/${leaveId}/evidence`, {
+      method: 'POST', headers: { Authorization: `Bearer ${jwt}` }, body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Upload failed.'); return; }
+    toast('Evidence uploaded.');
+    _dashEvLoaded[leaveId] = false;
+    await dashLoadEvidence(leaveId);
+  } catch { toast('Upload failed.'); }
+  input.value = '';
+}
+
+function dashShowLinkForm(leaveId) {
+  document.getElementById(`dash-ev-link-form-${leaveId}`).style.display = 'flex';
+}
+function dashHideLinkForm(leaveId) {
+  document.getElementById(`dash-ev-link-form-${leaveId}`).style.display = 'none';
+  document.getElementById(`dash-ev-url-${leaveId}`).value  = '';
+  document.getElementById(`dash-ev-note-${leaveId}`).value = '';
+}
+
+async function dashSubmitLink(leaveId) {
+  const url  = document.getElementById(`dash-ev-url-${leaveId}`).value.trim();
+  const note = document.getElementById(`dash-ev-note-${leaveId}`).value.trim();
+  if (!url) { toast('Please enter a URL.'); return; }
+  try {
+    const res  = await apiFetch(`http://localhost:3000/leave/${leaveId}/evidence`, {
+      method: 'POST', body: JSON.stringify({ external_url: url, note: note || undefined }),
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Failed to add link.'); return; }
+    toast('Link added.');
+    dashHideLinkForm(leaveId);
+    _dashEvLoaded[leaveId] = false;
+    await dashLoadEvidence(leaveId);
+  } catch { toast('Connection failed.'); }
+}
+
+async function dashViewFile(leaveId, evidenceId) {
+  try {
+    const res  = await apiFetch(`http://localhost:3000/leave/${leaveId}/evidence/${evidenceId}/url`);
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Failed to get file.'); return; }
+    window.open(data.url, '_blank');
+  } catch { toast('Connection failed.'); }
+}
+
+async function dashDeleteEvidence(leaveId, evidenceId) {
+  if (!confirm('Delete this evidence?')) return;
+  try {
+    const res  = await apiFetch(`http://localhost:3000/leave/${leaveId}/evidence/${evidenceId}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) { toast(data.error || 'Delete failed.'); return; }
+    toast('Evidence removed.');
+    _dashEvLoaded[leaveId] = false;
+    await dashLoadEvidence(leaveId);
+  } catch { toast('Connection failed.'); }
 }
 
 </script>
