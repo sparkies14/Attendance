@@ -64,6 +64,8 @@ describe('POST /auth/login — cookie', () => {
     expect(cookies[0]).toMatch(/att_token=/);
     expect(cookies[0]).toMatch(/HttpOnly/i);
     expect(cookies[0]).toMatch(/SameSite=Lax/i);
+    const cookieValue = cookies[0].split(';')[0].split('=').slice(1).join('=');
+    expect(cookieValue).toBe(res.body.token);
   });
 
   test('does not set cookie on failed login', async () => {
@@ -102,6 +104,9 @@ describe('POST /auth/google — cookie', () => {
     expect(cookies).toBeDefined();
     expect(cookies[0]).toMatch(/att_token=/);
     expect(cookies[0]).toMatch(/HttpOnly/i);
+    expect(cookies[0]).toMatch(/SameSite=Lax/i);
+    const cookieValue = cookies[0].split(';')[0].split('=').slice(1).join('=');
+    expect(cookieValue).toBe(res.body.token);
   });
 });
 
@@ -120,6 +125,9 @@ describe('POST /auth/set-cookie', () => {
     expect(cookies).toBeDefined();
     expect(cookies[0]).toMatch(/att_token=/);
     expect(cookies[0]).toMatch(/HttpOnly/i);
+    expect(cookies[0]).toMatch(/SameSite=Lax/i);
+    const cookieValue = cookies[0].split(';')[0].split('=').slice(1).join('=');
+    expect(cookieValue).toBe(token);
   });
 
   test('returns 401 with an invalid JWT', async () => {
