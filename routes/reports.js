@@ -2,6 +2,43 @@ const router      = require('express').Router();
 const requireAuth = require('../middleware/requireAuth');
 const requireRole = require('../middleware/requireRole');
 const { parseDateRange, validateDateRange, fetchTardyData, fetchLeaveData, fetchDisciplineData, fetchAttentionData } = require('../lib/reportData');
+const PDFDocument = require('pdfkit');
+
+function buildPDF(title, subtitle, headers, rows) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: 40 });
+    const chunks = [];
+    doc.on('data',  chunk => chunks.push(chunk));
+    doc.on('end',   ()    => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+
+    doc.fontSize(18).text(title, { underline: true });
+    doc.fontSize(12).text(subtitle);
+    doc.moveDown();
+
+    const colWidth = (doc.page.width - 80) / headers.length;
+    let x = 40;
+    doc.fontSize(10).font('Helvetica-Bold');
+    for (const h of headers) {
+      doc.text(h, x, doc.y, { width: colWidth, continued: true });
+      x += colWidth;
+    }
+    doc.text('', { continued: false });
+    doc.moveDown(0.5);
+
+    doc.font('Helvetica');
+    for (const row of rows) {
+      x = 40;
+      for (const cell of row) {
+        doc.text(String(cell ?? ''), x, doc.y, { width: colWidth, continued: true });
+        x += colWidth;
+      }
+      doc.text('', { continued: false });
+    }
+
+    doc.end();
+  });
+}
 
 function escapeCSV(val) {
   const s = val == null ? '' : String(val);
@@ -113,6 +150,60 @@ router.get('/export/discipline.csv', requireRole('owner', 'admin'), async (req, 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="discipline-${from}-to-${to}.csv"`);
     return res.send(toCSV(headers, rows));
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/export/tardy.pdf', requireRole('owner', 'admin'), async (req, res) => {
+  const { from, to } = parseDateRange(req.query);
+  if (!validateDateRange(from, to)) {
+    return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+  }
+  try {
+    const data = await fetchTardyData(from, to);
+    const headers = ['Name', 'Email', 'Country', 'Minor', 'Major', 'AWOL Half', 'AWOL Full', 'Total'];
+    const rows = data.members.map(m => [m.name, m.email, m.country, m.minor, m.major, m.awolHalf, m.awolFull, m.total]);
+    const pdf = await buildPDF('Tardy Report', `${from} to ${to}`, headers, rows);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="tardy-${from}-to-${to}.pdf"`);
+    return res.send(pdf);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/export/leave.pdf', requireRole('owner', 'admin'), async (req, res) => {
+  const { from, to } = parseDateRange(req.query);
+  if (!validateDateRange(from, to)) {
+    return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+  }
+  try {
+    const data = await fetchLeaveData(from, to);
+    const headers = ['Name', 'Email', 'Entitled', 'Used', 'Remaining', 'Used In Range'];
+    const rows = data.members.map(m => [m.name, m.email, m.entitled, m.used, m.remaining, m.usedInRange]);
+    const pdf = await buildPDF('Leave Report', `${from} to ${to}`, headers, rows);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="leave-${from}-to-${to}.pdf"`);
+    return res.send(pdf);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/export/discipline.pdf', requireRole('owner', 'admin'), async (req, res) => {
+  const { from, to } = parseDateRange(req.query);
+  if (!validateDateRange(from, to)) {
+    return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+  }
+  try {
+    const data = await fetchDisciplineData(from, to);
+    const headers = ['Name', 'Email', 'Total Warnings', 'Active', 'Voided', 'Issued In Range'];
+    const rows = data.members.map(m => [m.name, m.email, m.total, m.active, m.voided, m.issuedInRange]);
+    const pdf = await buildPDF('Discipline Report', `${from} to ${to}`, headers, rows);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="discipline-${from}-to-${to}.pdf"`);
+    return res.send(pdf);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

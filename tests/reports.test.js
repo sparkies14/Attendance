@@ -446,3 +446,47 @@ describe('CSV exports', () => {
     expect(res.text).toContain('"John ""JD"" Doe"');
   });
 });
+
+/* ─── PDF exports ─── */
+describe('PDF exports', () => {
+  const app = makeApp('admin', 'admin@test.com');
+  const memberApp = makeApp('member', 'ana@test.com');
+
+  test('403 for member on tardy.pdf', async () => {
+    const res = await request(memberApp).get('/export/tardy.pdf?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(403);
+  });
+
+  test('400 for bad date on tardy.pdf', async () => {
+    const res = await request(app).get('/export/tardy.pdf?from=bad&to=2026-05-27');
+    expect(res.status).toBe(400);
+  });
+
+  test('200 tardy.pdf — correct Content-Type and Content-Disposition', async () => {
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c([ATT_ROW]));
+    const res = await request(app).get('/export/tardy.pdf?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/application\/pdf/);
+    expect(res.headers['content-disposition']).toContain('tardy-2026-05-01-to-2026-05-27.pdf');
+  });
+
+  test('200 leave.pdf — correct Content-Type', async () => {
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c([LEAVE_ROW]));
+    supabase.from.mockReturnValueOnce(c([]));
+    const res = await request(app).get('/export/leave.pdf?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/application\/pdf/);
+    expect(res.headers['content-disposition']).toContain('leave-2026-05-01-to-2026-05-27.pdf');
+  });
+
+  test('200 discipline.pdf — correct Content-Type', async () => {
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c([DISC_REC]));
+    const res = await request(app).get('/export/discipline.pdf?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/application\/pdf/);
+    expect(res.headers['content-disposition']).toContain('discipline-2026-05-01-to-2026-05-27.pdf');
+  });
+});
