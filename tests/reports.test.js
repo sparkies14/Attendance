@@ -158,3 +158,57 @@ describe('GET /tardy', () => {
     expect(res.body.error).toBe('DB error');
   });
 });
+
+/* ─── GET /leave ─── */
+describe('GET /leave', () => {
+  const app = makeApp('admin', 'admin@test.com');
+  const memberApp = makeApp('member', 'ana@test.com');
+
+  test('403 for member role', async () => {
+    const res = await request(memberApp).get('/leave?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(403);
+  });
+
+  test('400 when date range is invalid', async () => {
+    const res = await request(app).get('/leave?from=bad&to=2026-05-27');
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/YYYY-MM-DD/i);
+  });
+
+  test('200 — returns balance fields and usedInRange', async () => {
+    // users, leave_log, leave_adjustments
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c([LEAVE_ROW]));   // 1 approved leave in range
+    supabase.from.mockReturnValueOnce(c([]));            // no adjustments
+    const res = await request(app).get('/leave?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(200);
+    expect(res.body.from).toBe('2026-05-01');
+    expect(res.body.to).toBe('2026-05-27');
+    expect(res.body.members).toHaveLength(1);
+    const m = res.body.members[0];
+    expect(m.email).toBe('ana@test.com');
+    expect(m.used).toBe(1);
+    expect(m.usedInRange).toBe(1);
+    expect(typeof m.entitled).toBe('number');
+    expect(typeof m.remaining).toBe('number');
+  });
+
+  test('200 — usedInRange is 0 when leave is outside range', async () => {
+    const oldLeave = { email: 'ana@test.com', status: 'Approved', created_at: '2026-03-01T00:00:00Z' };
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c([oldLeave]));
+    supabase.from.mockReturnValueOnce(c([]));
+    const res = await request(app).get('/leave?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(200);
+    const m = res.body.members[0];
+    expect(m.used).toBe(1);       // full-year used = 1
+    expect(m.usedInRange).toBe(0); // not in May range
+  });
+
+  test('500 when DB error on users query', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB fail' }));
+    const res = await request(app).get('/leave?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB fail');
+  });
+});
