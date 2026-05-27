@@ -74,6 +74,9 @@ router.get('/all', requireRole('owner', 'admin'), async (req, res) => {
   })).sort((a, b) => {
     if (a.status === 'Pending' && b.status !== 'Pending') return -1;
     if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+    if (a.status !== 'Pending' && b.status !== 'Pending') {
+      return new Date(b.resolved_at) - new Date(a.resolved_at);
+    }
     return new Date(b.created_at) - new Date(a.created_at);
   });
 

@@ -237,4 +237,24 @@ describe('GET /all', () => {
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('DB error');
   });
+
+  test('200 — resolved appeals sorted by resolved_at descending', async () => {
+    const RESOLVED_OLDER = { ...APPEAL, id: 2, status: 'Approved', resolved_at: '2026-05-27T01:00:00Z' };
+    const RESOLVED_NEWER = { ...APPEAL, id: 3, status: 'Rejected', resolved_at: '2026-05-27T02:00:00Z' };
+    supabase.from.mockReturnValueOnce(c([RESOLVED_OLDER, RESOLVED_NEWER]));
+    supabase.from.mockReturnValueOnce(c([{ id: 'user-1', email: 'ana@test.com', name: 'Ana Reyes' }]));
+    const res = await request(makeApp('admin', 'admin@test.com')).get('/all');
+    expect(res.status).toBe(200);
+    expect(res.body.appeals).toHaveLength(2);
+    expect(res.body.appeals[0].id).toBe(3); // newer resolved_at first
+    expect(res.body.appeals[1].id).toBe(2);
+  });
+
+  test('500 when DB error on users query', async () => {
+    supabase.from.mockReturnValueOnce(c([APPEAL]));                        // appeals succeeds
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));   // users fails
+    const res = await request(makeApp('admin', 'admin@test.com')).get('/all');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
 });
