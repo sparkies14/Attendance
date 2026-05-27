@@ -211,4 +211,21 @@ describe('GET /leave', () => {
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('DB fail');
   });
+
+  test('500 when DB error on leave_log query', async () => {
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c(null, { message: 'leave DB fail' }));
+    const res = await request(app).get('/leave?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('leave DB fail');
+  });
+
+  test('500 when DB error on adjustments query', async () => {
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c([LEAVE_ROW]));
+    supabase.from.mockReturnValueOnce(c(null, { message: 'adj DB fail' }));
+    const res = await request(app).get('/leave?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('adj DB fail');
+  });
 });
