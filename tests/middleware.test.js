@@ -6,7 +6,7 @@ const requireRole = require('../middleware/requireRole');
 const requireSelfOrRole = require('../middleware/requireSelfOrRole');
 
 function mockReq(headers = {}, query = {}, params = {}) {
-  return { headers, query, params, user: undefined };
+  return { headers, query, params, user: undefined, cookies: {} };
 }
 function mockRes() {
   const res = {};
@@ -52,6 +52,38 @@ describe('requireAuth', () => {
     expect(req.user.user_id).toBe('u1');
     expect(req.user.email).toBe('a@b.com');
     expect(req.user.role).toBe('admin');
+  });
+
+  test('authenticates via att_token cookie when no Bearer header', () => {
+    const token = signToken({ user_id: 'u2', email: 'b@c.com', role: 'admin' });
+    const req = mockReq();
+    req.cookies = { att_token: token };
+    const res = mockRes();
+    const next = jest.fn();
+    requireAuth(req, res, next);
+    expect(next).toHaveBeenCalled();
+    expect(req.user.user_id).toBe('u2');
+    expect(req.user.email).toBe('b@c.com');
+  });
+
+  test('401 when cookie token is invalid', () => {
+    const req = mockReq();
+    req.cookies = { att_token: 'not-a-valid-jwt' };
+    const res = mockRes();
+    const next = jest.fn();
+    requireAuth(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('401 when no Bearer header and no att_token cookie', () => {
+    const req = mockReq();
+    req.cookies = {};
+    const res = mockRes();
+    const next = jest.fn();
+    requireAuth(req, res, next);
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
   });
 });
 

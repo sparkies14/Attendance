@@ -26,6 +26,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(require('cookie-parser')());
 app.use(express.static(__dirname));
 
 app.use('/auth',  require('./routes/auth'));
