@@ -1,8 +1,10 @@
 'use client';
 
+import type { CSSProperties } from 'react';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
-const btnStyle: React.CSSProperties = {
+const btnStyle: CSSProperties = {
   fontSize: '0.75rem',
   padding: '0.25rem 0.5rem',
   background: '#e5e7eb',
