@@ -356,5 +356,6 @@ describe('GET /attention', () => {
     supabase.from.mockReturnValueOnce(c(null, { message: 'fail' }));
     const res = await request(app).get('/attention');
     expect(res.status).toBe(500);
+    expect(res.body.error).toBe('fail');
   });
 });
