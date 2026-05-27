@@ -1,4 +1,7 @@
 {
+  "LocaleToggle": {
+    "label": "日本語"
+  },
   "InsightsPage": {
     "title": "Insights",
     "welcome": "Welcome, {name}",
@@ -25,5 +28,23 @@
     "legendUsed": "Used",
     "legendRemaining": "Remaining",
     "legendActive": "Active Warnings"
+  },
+  "HelpPage": {
+    "title": "Help",
+    "welcome": "Welcome, {name}",
+    "role": "Role: {role}",
+    "tardyTitle": "Tardiness",
+    "tardyIntro": "There are four tardiness levels recorded in the system:",
+    "tardyMinor": "Minor Tardy — arrived late but within the minor threshold",
+    "tardyMajor": "Major Tardy — arrived significantly late",
+    "tardyAwolHalf": "AWOL Half Day — absent for half the workday without notice",
+    "tardyAwolFull": "AWOL Full Day — absent for the full workday without notice",
+    "tardyNote": "Thresholds are set by your administrator and may vary. If you accumulate 2 or more tardies in a calendar month, you will appear in the Needs Attention list.",
+    "leaveTitle": "Leave",
+    "leaveText": "Leave entitlement accrues at 10 days per year of service (year 1 = 10 days, year 2 = 20 days total earned, etc.). Your balance is total earned days minus days used, plus any manual adjustments made by your administrator. Leave requests require admin/owner approval.",
+    "disciplineTitle": "Discipline",
+    "disciplineText": "Admins and owners may issue written warnings. You will be notified and can acknowledge the warning. Warnings remain active unless voided by an admin. Active warnings also place you in the Needs Attention list.",
+    "appealsTitle": "Appeals",
+    "appealsText": "You can file an appeal against a discipline warning, a leave decision, or an attendance record. Appeals require a written reason. Admins and owners review all appeals."
   }
 }
