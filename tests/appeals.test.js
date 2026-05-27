@@ -207,3 +207,34 @@ describe('GET /', () => {
     expect(res.body.error).toBe('DB error');
   });
 });
+
+/* ─── GET /all ─── */
+describe('GET /all', () => {
+  test('403 for member role', async () => {
+    const res = await request(makeApp('member', 'ana@test.com')).get('/all');
+    expect(res.status).toBe(403);
+  });
+
+  test('200 — returns all appeals with member info, Pending first', async () => {
+    const RESOLVED = { ...APPEAL, id: 2, status: 'Approved', resolved_at: '2026-05-27T01:00:00Z' };
+    supabase.from.mockReturnValueOnce(c([RESOLVED, APPEAL])); // appeals (resolved first in raw data)
+    supabase.from.mockReturnValueOnce(c([                     // users
+      { id: 'user-1', email: 'ana@test.com', name: 'Ana Reyes' },
+    ]));
+    const res = await request(makeApp('admin', 'admin@test.com')).get('/all');
+    expect(res.status).toBe(200);
+    expect(res.body.appeals).toHaveLength(2);
+    // Pending appeal should be first after sort
+    expect(res.body.appeals[0].status).toBe('Pending');
+    expect(res.body.appeals[0].email).toBe('ana@test.com');
+    expect(res.body.appeals[0].name).toBe('Ana Reyes');
+    expect(res.body.appeals[1].status).toBe('Approved');
+  });
+
+  test('500 when DB error on appeals query', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('admin', 'admin@test.com')).get('/all');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
+});

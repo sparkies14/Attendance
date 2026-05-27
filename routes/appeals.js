@@ -54,6 +54,32 @@ router.post('/', async (req, res) => {
   return res.status(201).json({ appeal: data });
 });
 
+router.get('/all', requireRole('owner', 'admin'), async (req, res) => {
+  const { data: appeals, error: appealErr } = await supabase
+    .from('appeals')
+    .select('id, user_id, target_type, target_id, reason, status, resolution_note, resolved_by, resolved_at, created_at');
+  if (appealErr) return res.status(500).json({ error: appealErr.message });
+
+  const { data: users, error: userErr } = await supabase
+    .from('users').select('id, email, name');
+  if (userErr) return res.status(500).json({ error: userErr.message });
+
+  const userMap = {};
+  for (const u of (users || [])) userMap[u.id] = u;
+
+  const result = (appeals || []).map(a => ({
+    ...a,
+    email: (userMap[a.user_id] || {}).email || null,
+    name:  (userMap[a.user_id] || {}).name  || null,
+  })).sort((a, b) => {
+    if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+    if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+
+  return res.json({ appeals: result });
+});
+
 router.get('/', async (req, res) => {
   const { data, error } = await supabase
     .from('appeals')
