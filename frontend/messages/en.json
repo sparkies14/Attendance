@@ -33,6 +33,7 @@
     "title": "Help",
     "welcome": "Welcome, {name}",
     "role": "Role: {role}",
+    "backToInsights": "← Insights",
     "tardyTitle": "Tardiness",
     "tardyIntro": "There are four tardiness levels recorded in the system:",
     "tardyMinor": "Minor Tardy — arrived late but within the minor threshold",

@@ -15,7 +15,7 @@ export default async function HelpPage() {
         {t('welcome', { name })} &mdash; {t('role', { role })}
       </p>
       <p>
-        <Link href="/insights">← Insights</Link>
+        <Link href="/insights">{t('backToInsights')}</Link>
       </p>
 
       <section style={{ marginTop: '2rem' }}>

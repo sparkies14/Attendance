@@ -33,6 +33,7 @@
     "title": "ヘルプ",
     "welcome": "ようこそ、{name}",
     "role": "役割: {role}",
+    "backToInsights": "← インサイトに戻る",
     "tardyTitle": "遅刻について",
     "tardyIntro": "システムには4つの遅刻レベルが記録されています：",
     "tardyMinor": "軽度遅刻 — 軽度の基準内での遅刻",
