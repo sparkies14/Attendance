@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
 if (!process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET is not set. Add it to .env (use `openssl rand -hex 32`).');
@@ -26,7 +27,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use(require('cookie-parser')());
+app.use(cookieParser());
 app.use(express.static(__dirname));
 
 app.use('/auth',  require('./routes/auth'));

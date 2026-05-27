@@ -64,6 +64,7 @@ describe('requireAuth', () => {
     expect(next).toHaveBeenCalled();
     expect(req.user.user_id).toBe('u2');
     expect(req.user.email).toBe('b@c.com');
+    expect(req.user.role).toBe('admin');
   });
 
   test('401 when cookie token is invalid', () => {
