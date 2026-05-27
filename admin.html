@@ -733,16 +733,19 @@ function renderTardy(data) {
   for (const m of members) {
     const tr = document.createElement('tr');
     if (m.exceeded) tr.style.backgroundColor = '#fff3cd';
+    const escapedReasons = Array.isArray(m.reasons)
+      ? m.reasons.map(r => escapeHtml(r)).join(', ')
+      : '';
     const statusText = m.exceeded
-      ? '⚠️ Exceeded<br><small style="color:#856404;">' + m.reasons.join(', ') + '</small>'
+      ? '⚠️ Exceeded<br><small style="color:#856404;">' + escapedReasons + '</small>'
       : '✅ OK';
     tr.innerHTML =
-      '<td style="padding:8px;border-bottom:1px solid #eee;">' + (m.name || '') + '</td>' +
-      '<td style="padding:8px;border-bottom:1px solid #eee;">' + (m.country || '—') + '</td>' +
-      '<td style="text-align:center;padding:8px;border-bottom:1px solid #eee;">' + m.counts.minor + '</td>' +
-      '<td style="text-align:center;padding:8px;border-bottom:1px solid #eee;">' + m.counts.major + '</td>' +
-      '<td style="text-align:center;padding:8px;border-bottom:1px solid #eee;">' + m.counts.awolHalf + '</td>' +
-      '<td style="text-align:center;padding:8px;border-bottom:1px solid #eee;">' + m.counts.awolFull + '</td>' +
+      '<td style="padding:8px;border-bottom:1px solid #eee;">' + escapeHtml(m.name || '') + '</td>' +
+      '<td style="padding:8px;border-bottom:1px solid #eee;">' + escapeHtml(m.country || '—') + '</td>' +
+      '<td style="text-align:center;padding:8px;border-bottom:1px solid #eee;">' + parseInt(m.counts.minor, 10) + '</td>' +
+      '<td style="text-align:center;padding:8px;border-bottom:1px solid #eee;">' + parseInt(m.counts.major, 10) + '</td>' +
+      '<td style="text-align:center;padding:8px;border-bottom:1px solid #eee;">' + parseInt(m.counts.awolHalf, 10) + '</td>' +
+      '<td style="text-align:center;padding:8px;border-bottom:1px solid #eee;">' + parseInt(m.counts.awolFull, 10) + '</td>' +
       '<td style="padding:8px;border-bottom:1px solid #eee;">' + statusText + '</td>';
     tbody.appendChild(tr);
   }
