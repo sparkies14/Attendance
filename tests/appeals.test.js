@@ -179,3 +179,29 @@ describe('POST /', () => {
     expect(res.body.appeal.status).toBe('Pending');
   });
 });
+
+/* ─── GET / ─── */
+describe('GET /', () => {
+  test('200 — returns own appeals sorted newest first', async () => {
+    supabase.from.mockReturnValueOnce(c([APPEAL]));
+    const res = await request(makeApp('member', 'ana@test.com')).get('/');
+    expect(res.status).toBe(200);
+    expect(res.body.appeals).toHaveLength(1);
+    expect(res.body.appeals[0].target_type).toBe('discipline');
+    expect(res.body.appeals[0].status).toBe('Pending');
+  });
+
+  test('200 — returns empty array when member has no appeals', async () => {
+    supabase.from.mockReturnValueOnce(c([]));
+    const res = await request(makeApp('member', 'ana@test.com')).get('/');
+    expect(res.status).toBe(200);
+    expect(res.body.appeals).toHaveLength(0);
+  });
+
+  test('500 when DB error', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('member', 'ana@test.com')).get('/');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
+});

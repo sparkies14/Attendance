@@ -54,4 +54,14 @@ router.post('/', async (req, res) => {
   return res.status(201).json({ appeal: data });
 });
 
+router.get('/', async (req, res) => {
+  const { data, error } = await supabase
+    .from('appeals')
+    .select('id, target_type, target_id, reason, status, resolution_note, resolved_by, resolved_at, created_at')
+    .eq('user_id', req.user.user_id)
+    .order('created_at', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  return res.json({ appeals: data || [] });
+});
+
 module.exports = router;
