@@ -1,7 +1,7 @@
 const router      = require('express').Router();
 const requireAuth = require('../middleware/requireAuth');
 const requireRole = require('../middleware/requireRole');
-const { parseDateRange, validateDateRange, fetchTardyData, fetchLeaveData, fetchDisciplineData } = require('../lib/reportData');
+const { parseDateRange, validateDateRange, fetchTardyData, fetchLeaveData, fetchDisciplineData, fetchAttentionData } = require('../lib/reportData');
 
 router.use(requireAuth);
 
@@ -36,6 +36,14 @@ router.get('/discipline', requireRole('owner', 'admin'), async (req, res) => {
   }
   try {
     return res.json(await fetchDisciplineData(from, to));
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/attention', requireRole('owner', 'admin'), async (req, res) => {
+  try {
+    return res.json(await fetchAttentionData());
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

@@ -291,3 +291,70 @@ describe('GET /discipline', () => {
     expect(res.body.error).toBe('disc DB fail');
   });
 });
+
+/* ─── GET /attention ─── */
+describe('GET /attention', () => {
+  const app = makeApp('admin', 'admin@test.com');
+  const memberApp = makeApp('member', 'ana@test.com');
+
+  test('403 for member role', async () => {
+    const res = await request(memberApp).get('/attention');
+    expect(res.status).toBe(403);
+  });
+
+  test('200 — member with 2+ tardies appears with correct reason', async () => {
+    const rows = [
+      { email: 'ana@test.com', late_status: 'MINOR TARDY' },
+      { email: 'ana@test.com', late_status: 'MAJOR TARDY' },
+    ];
+    supabase.from.mockReturnValueOnce(c([MEMBER]));   // users
+    supabase.from.mockReturnValueOnce(c(rows));        // attendance
+    supabase.from.mockReturnValueOnce(c([]));          // discipline_records (no active warnings)
+    const res = await request(app).get('/attention');
+    expect(res.status).toBe(200);
+    expect(res.body.members).toHaveLength(1);
+    expect(res.body.members[0].email).toBe('ana@test.com');
+    expect(res.body.members[0].reasons).toContain('2+ tardies this month');
+    expect(res.body.members[0].reasons).not.toContain('Active warning');
+  });
+
+  test('200 — member with active warning appears with correct reason', async () => {
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c([]));           // no tardies
+    supabase.from.mockReturnValueOnce(c([DISC_REC]));   // active warning
+    const res = await request(app).get('/attention');
+    expect(res.status).toBe(200);
+    expect(res.body.members).toHaveLength(1);
+    expect(res.body.members[0].reasons).toContain('Active warning');
+    expect(res.body.members[0].reasons).not.toContain('2+ tardies this month');
+  });
+
+  test('200 — member with both triggers shows both reasons', async () => {
+    const rows = [
+      { email: 'ana@test.com', late_status: 'MINOR TARDY' },
+      { email: 'ana@test.com', late_status: 'MINOR TARDY' },
+    ];
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c(rows));
+    supabase.from.mockReturnValueOnce(c([DISC_REC]));
+    const res = await request(app).get('/attention');
+    expect(res.status).toBe(200);
+    expect(res.body.members[0].reasons).toContain('2+ tardies this month');
+    expect(res.body.members[0].reasons).toContain('Active warning');
+  });
+
+  test('200 — returns empty list when nobody needs attention', async () => {
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c([]));   // no tardies
+    supabase.from.mockReturnValueOnce(c([]));   // no warnings
+    const res = await request(app).get('/attention');
+    expect(res.status).toBe(200);
+    expect(res.body.members).toHaveLength(0);
+  });
+
+  test('500 when DB error on users query', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'fail' }));
+    const res = await request(app).get('/attention');
+    expect(res.status).toBe(500);
+  });
+});
