@@ -1060,8 +1060,13 @@ async function loadLeaveBalances() {
   const body = document.getElementById('leave-balances-body');
   body.innerHTML = '<p style="color:#888;">Loading...</p>';
   try {
-    const res     = await apiFetch(`${API_BASE}/leave-balance/all`);
-    const { members } = await res.json();
+    const res  = await apiFetch(`${API_BASE}/leave-balance/all`);
+    const data = await res.json();
+    if (!res.ok) {
+      body.innerHTML = `<p style="color:red;">${escapeHtml(data.error || 'Failed to load balances.')}</p>`;
+      return;
+    }
+    const { members } = data;
     if (!members || members.length === 0) {
       body.innerHTML = '<p style="color:#888;">No members found.</p>';
       return;
@@ -1087,7 +1092,7 @@ async function loadLeaveBalances() {
               <td style="padding:8px;border-bottom:1px solid #eee;">${m.grantsEarned}</td>
               <td style="padding:8px;border-bottom:1px solid #eee;">${m.adjustments >= 0 ? '+' : ''}${m.adjustments}</td>
               <td style="padding:8px;border-bottom:1px solid #eee;">
-                <button onclick="openAdjustLeaveModal(${JSON.stringify(m.email)}, ${JSON.stringify(m.name)})">Adjust</button>
+                <button data-email="${escapeHtml(m.email)}" data-name="${escapeHtml(m.name)}" onclick="openAdjustLeaveModal(this.dataset.email, this.dataset.name)">Adjust</button>
               </td>
             </tr>
           `).join('')}
@@ -1114,12 +1119,13 @@ function closeAdjustLeaveModal() {
 }
 
 async function submitLeaveAdjustment() {
-  const amount = parseInt(document.getElementById('adjust-leave-amount').value, 10);
+  const raw    = document.getElementById('adjust-leave-amount').value;
+  const amount = Number(raw);
   const note   = document.getElementById('adjust-leave-note').value.trim();
   const errEl  = document.getElementById('adjust-leave-error');
   errEl.textContent = '';
 
-  if (!amount || amount === 0) { errEl.textContent = 'Amount must be a non-zero integer.'; return; }
+  if (!Number.isInteger(amount) || amount === 0) { errEl.textContent = 'Amount must be a non-zero integer.'; return; }
   if (!note)                   { errEl.textContent = 'Reason is required.'; return; }
 
   try {
