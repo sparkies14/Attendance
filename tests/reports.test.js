@@ -397,7 +397,7 @@ describe('CSV exports', () => {
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/text\/csv/);
     expect(res.headers['content-disposition']).toContain('tardy-2026-05-01-to-2026-05-27.csv');
-    const lines = res.text.split('\n');
+    const lines = res.text.split('\r\n');
     expect(lines[0]).toBe('Name,Email,Country,Minor,Major,AWOL Half,AWOL Full,Total');
     expect(lines[1]).toContain('Ana Reyes');
   });
@@ -410,7 +410,7 @@ describe('CSV exports', () => {
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/text\/csv/);
     expect(res.headers['content-disposition']).toContain('leave-2026-05-01-to-2026-05-27.csv');
-    const lines = res.text.split('\n');
+    const lines = res.text.split('\r\n');
     expect(lines[0]).toBe('Name,Email,Entitled,Used,Remaining,Used In Range');
     expect(lines[1]).toContain('Ana Reyes');
   });
@@ -422,7 +422,7 @@ describe('CSV exports', () => {
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/text\/csv/);
     expect(res.headers['content-disposition']).toContain('discipline-2026-05-01-to-2026-05-27.csv');
-    const lines = res.text.split('\n');
+    const lines = res.text.split('\r\n');
     expect(lines[0]).toBe('Name,Email,Total Warnings,Active,Voided,Issued In Range');
     expect(lines[1]).toContain('Ana Reyes');
   });
@@ -434,5 +434,15 @@ describe('CSV exports', () => {
     const res = await request(app).get('/export/tardy.csv?from=2026-05-01&to=2026-05-27');
     expect(res.status).toBe(200);
     expect(res.text).toContain('"Reyes, Ana"');
+  });
+
+  test('200 tardy.csv — escapes double-quotes in values', async () => {
+    const memberWithQuote = { ...MEMBER, name: 'John "JD" Doe' };
+    supabase.from.mockReturnValueOnce(c([memberWithQuote]));
+    supabase.from.mockReturnValueOnce(c([]));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .get('/export/tardy.csv?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('"John ""JD"" Doe"');
   });
 });

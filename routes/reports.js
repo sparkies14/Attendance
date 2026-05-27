@@ -5,7 +5,7 @@ const { parseDateRange, validateDateRange, fetchTardyData, fetchLeaveData, fetch
 
 function escapeCSV(val) {
   const s = val == null ? '' : String(val);
-  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+  if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
     return '"' + s.replace(/"/g, '""') + '"';
   }
   return s;
@@ -14,7 +14,7 @@ function escapeCSV(val) {
 function toCSV(headers, rows) {
   const headerLine = headers.join(',');
   const dataLines  = rows.map(r => r.map(escapeCSV).join(','));
-  return [headerLine, ...dataLines].join('\n');
+  return [headerLine, ...dataLines].join('\r\n');
 }
 
 router.use(requireAuth);
