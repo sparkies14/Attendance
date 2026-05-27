@@ -939,6 +939,10 @@ body {
     return res;
   }
 
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
   function defaultAvatar(name) {
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || '?')}&background=1a6b3c&color=fff&bold=true`;
   }
@@ -1757,15 +1761,141 @@ function updateButtons() {
     }
     container.innerHTML = history.map(l => {
       const statusClass = { Approved:'ls-approved', Pending:'ls-pending', Rejected:'ls-rejected' }[l.status] || 'ls-pending';
-      return `<div class="leave-item">
-        <div class="leave-item-left">
-          <div class="leave-item-date">${l.date || '—'}</div>
-          <div class="leave-item-type">${l.leaveType || '—'}</div>
-          ${l.reason ? `<div class="leave-item-reason">"${l.reason}"</div>` : ''}
+      return `<div style="margin-bottom:8px;">
+        <div class="leave-item">
+          <div class="leave-item-left">
+            <div class="leave-item-date">${escapeHtml(l.date || '—')}</div>
+            <div class="leave-item-type">${escapeHtml(l.leaveType || '—')}</div>
+            ${l.reason ? `<div class="leave-item-reason">"${escapeHtml(l.reason)}"</div>` : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${l.id ? `<button class="btn" onclick="toggleMemberEvidence('${escapeHtml(l.id)}')" style="font-size:11px;padding:4px 8px;">📎 Evidence</button>` : ''}
+            <span class="leave-status-badge ${statusClass}">${escapeHtml(l.status)}</span>
+          </div>
         </div>
-        <span class="leave-status-badge ${statusClass}">${l.status}</span>
+        ${l.id ? `
+        <div id="ev-panel-${escapeHtml(l.id)}" style="display:none;padding:10px 14px;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;background:#f9f9f8;">
+          <div id="ev-list-${escapeHtml(l.id)}"><em style="font-size:12px;color:var(--text3);">Loading…</em></div>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+            <label class="btn" style="font-size:12px;cursor:pointer;">
+              📁 Add file
+              <input type="file" accept=".jpg,.jpeg,.png,.pdf" style="display:none;" onchange="memberUploadFile('${escapeHtml(l.id)}', this)">
+            </label>
+            <button class="btn" style="font-size:12px;" onclick="memberShowLinkForm('${escapeHtml(l.id)}')">🔗 Add link</button>
+          </div>
+          <div id="ev-link-form-${escapeHtml(l.id)}" style="display:none;margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+            <input type="url" id="ev-link-url-${escapeHtml(l.id)}" placeholder="https://drive.google.com/…" style="flex:1;min-width:180px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;">
+            <input type="text" id="ev-link-note-${escapeHtml(l.id)}" placeholder="Note (optional)" style="width:110px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;">
+            <button class="btn btn-primary" style="font-size:12px;" onclick="memberSubmitLink('${escapeHtml(l.id)}')">Add</button>
+            <button class="btn" style="font-size:12px;" onclick="memberHideLinkForm('${escapeHtml(l.id)}')">Cancel</button>
+          </div>
+        </div>` : ''}
       </div>`;
     }).join('');
+  }
+
+  /* ── Leave Evidence (member) ── */
+  const _evLoaded = {};
+
+  async function toggleMemberEvidence(leaveId) {
+    const panel = document.getElementById(`ev-panel-${leaveId}`);
+    const open  = panel.style.display !== 'none';
+    panel.style.display = open ? 'none' : 'block';
+    if (!open && !_evLoaded[leaveId]) await memberLoadEvidence(leaveId);
+  }
+
+  async function memberLoadEvidence(leaveId) {
+    const listEl = document.getElementById(`ev-list-${leaveId}`);
+    try {
+      const res  = await apiFetch(`http://localhost:3000/leave/${leaveId}/evidence`);
+      const data = await res.json();
+      if (!res.ok) { listEl.innerHTML = `<em style="font-size:12px;color:#c00;">${escapeHtml(data.error)}</em>`; return; }
+      _evLoaded[leaveId] = true;
+      memberRenderEvidence(leaveId, data.evidence);
+    } catch { listEl.innerHTML = `<em style="font-size:12px;color:var(--text3);">Failed to load.</em>`; }
+  }
+
+  function memberRenderEvidence(leaveId, items) {
+    const listEl = document.getElementById(`ev-list-${leaveId}`);
+    if (!items.length) { listEl.innerHTML = `<em style="font-size:12px;color:var(--text3);">No evidence attached yet.</em>`; return; }
+    listEl.innerHTML = items.map(ev => {
+      const label   = ev.file_name || ev.external_url || 'Evidence';
+      const viewBtn = ev.file_name
+        ? `<button class="btn" style="font-size:11px;padding:3px 8px;" onclick="memberViewFile('${leaveId}','${ev.id}')">View</button>`
+        : `<a href="${escapeHtml(ev.external_url)}" target="_blank" rel="noopener" class="btn" style="font-size:11px;padding:3px 8px;">Open</a>`;
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px;">
+        <span>📄 ${escapeHtml(label)}</span>
+        ${ev.note ? `<span style="color:var(--text3);">(${escapeHtml(ev.note)})</span>` : ''}
+        ${viewBtn}
+        <button class="btn" style="font-size:11px;padding:3px 8px;color:#c00;border-color:#c00;" onclick="memberDeleteEvidence('${leaveId}','${ev.id}')">Delete</button>
+      </div>`;
+    }).join('');
+  }
+
+  async function memberUploadFile(leaveId, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const jwt = sessionStorage.getItem('anosupo_jwt');
+      const res = await fetch(`http://localhost:3000/leave/${leaveId}/evidence`, {
+        method: 'POST', headers: { Authorization: `Bearer ${jwt}` }, body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) { showStatus('error', data.error || 'Upload failed.'); return; }
+      showStatus('success', 'Evidence uploaded.');
+      _evLoaded[leaveId] = false;
+      await memberLoadEvidence(leaveId);
+    } catch { showStatus('error', 'Upload failed.'); }
+    input.value = '';
+  }
+
+  function memberShowLinkForm(leaveId) {
+    document.getElementById(`ev-link-form-${leaveId}`).style.display = 'flex';
+  }
+  function memberHideLinkForm(leaveId) {
+    document.getElementById(`ev-link-form-${leaveId}`).style.display = 'none';
+    document.getElementById(`ev-link-url-${leaveId}`).value  = '';
+    document.getElementById(`ev-link-note-${leaveId}`).value = '';
+  }
+
+  async function memberSubmitLink(leaveId) {
+    const url  = document.getElementById(`ev-link-url-${leaveId}`).value.trim();
+    const note = document.getElementById(`ev-link-note-${leaveId}`).value.trim();
+    if (!url) { showStatus('error', 'Please enter a URL.'); return; }
+    try {
+      const res  = await apiFetch(`http://localhost:3000/leave/${leaveId}/evidence`, {
+        method: 'POST', body: JSON.stringify({ external_url: url, note: note || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showStatus('error', data.error || 'Failed to add link.'); return; }
+      showStatus('success', 'Link added.');
+      memberHideLinkForm(leaveId);
+      _evLoaded[leaveId] = false;
+      await memberLoadEvidence(leaveId);
+    } catch { showStatus('error', 'Connection failed.'); }
+  }
+
+  async function memberViewFile(leaveId, evidenceId) {
+    try {
+      const res  = await apiFetch(`http://localhost:3000/leave/${leaveId}/evidence/${evidenceId}/url`);
+      const data = await res.json();
+      if (!res.ok) { showStatus('error', data.error || 'Failed to get file.'); return; }
+      window.open(data.url, '_blank');
+    } catch { showStatus('error', 'Connection failed.'); }
+  }
+
+  async function memberDeleteEvidence(leaveId, evidenceId) {
+    if (!confirm('Delete this evidence?')) return;
+    try {
+      const res  = await apiFetch(`http://localhost:3000/leave/${leaveId}/evidence/${evidenceId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) { showStatus('error', data.error || 'Delete failed.'); return; }
+      showStatus('success', 'Evidence removed.');
+      _evLoaded[leaveId] = false;
+      await memberLoadEvidence(leaveId);
+    } catch { showStatus('error', 'Connection failed.'); }
   }
 </script>
 </body>
