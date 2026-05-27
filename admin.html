@@ -201,6 +201,31 @@
       <p id="awol-result" style="margin-top:0.5rem;font-size:0.9em;"></p>
     </div>
   </div>
+
+  <div id="page-holidays" class="page" style="display:none">
+    <h2>Holidays</h2>
+    <div style="margin-bottom:1rem;display:flex;align-items:center;gap:1rem;">
+      <select id="holidays-country-filter" onchange="loadHolidays()" style="padding:4px 8px;">
+        <option value="">All Countries</option>
+        <option value="PH">PH</option>
+        <option value="VN">VN</option>
+        <option value="JP">JP</option>
+      </select>
+      <button onclick="openAddHolidayModal()">+ Add Holiday</button>
+    </div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:8px;border-bottom:2px solid #ddd;">Date</th>
+          <th style="text-align:left;padding:8px;border-bottom:2px solid #ddd;">Name</th>
+          <th style="text-align:left;padding:8px;border-bottom:2px solid #ddd;">Country</th>
+          <th style="text-align:left;padding:8px;border-bottom:2px solid #ddd;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="holidays-tbody"></tbody>
+    </table>
+    <p id="holidays-empty" style="display:none;color:#888;">No holidays found.</p>
+  </div>
 </div>
 
 <div class="modal-bg" id="clean-modal">
@@ -213,6 +238,35 @@
     <div class="modal-actions">
       <button class="btn" onclick="closeCleanModal()">Cancel</button>
       <button class="btn btn-danger" id="btn-clean-confirm" onclick="confirmClean()" disabled>Delete records</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Holiday Modal -->
+<div id="modal-add-holiday" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;padding:2rem;border-radius:8px;min-width:320px;max-width:480px;">
+    <h3 style="margin-top:0;">Add Holiday</h3>
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;margin-bottom:4px;">Date</label>
+      <input type="date" id="new-holiday-date" style="width:100%;padding:6px 8px;box-sizing:border-box;" />
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;margin-bottom:4px;">Name</label>
+      <input type="text" id="new-holiday-name" placeholder="e.g. New Year's Day" style="width:100%;padding:6px 8px;box-sizing:border-box;" />
+    </div>
+    <div style="margin-bottom:1.5rem;">
+      <label style="display:block;margin-bottom:4px;">Country</label>
+      <select id="new-holiday-country" style="width:100%;padding:6px 8px;box-sizing:border-box;">
+        <option value="PH">PH — Philippines</option>
+        <option value="VN">VN — Vietnam</option>
+        <option value="JP">JP — Japan</option>
+        <option value="OTHER">Other</option>
+      </select>
+    </div>
+    <div id="add-holiday-error" style="color:red;margin-bottom:1rem;display:none;"></div>
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+      <button onclick="closeAddHolidayModal()">Cancel</button>
+      <button onclick="submitAddHoliday()">Add Holiday</button>
     </div>
   </div>
 </div>
@@ -436,6 +490,7 @@ function switchPage(name) {
   }
 
   if (name === 'tardy') loadTardy();
+  if (name === 'holidays') loadHolidays();
 }
 
 function applyAuditFilters() {
@@ -769,6 +824,102 @@ async function runAwolCheck() {
       'Date: ' + data.date + ' — Inserted: ' + data.inserted + ', Skipped: ' + data.skipped;
   } catch (e) {
     resultEl.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function loadHolidays() {
+  const token = localStorage.getItem('token');
+  const country = document.getElementById('holidays-country-filter').value;
+  const url = 'http://localhost:3000/admin/holidays' + (country ? '?country=' + encodeURIComponent(country) : '');
+  try {
+    const res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    renderHolidays(data.holidays || []);
+  } catch (e) {
+    document.getElementById('holidays-tbody').innerHTML =
+      '<tr><td colspan="4" style="color:red;padding:8px;">Error: ' + escapeHtml(e.message) + '</td></tr>';
+  }
+}
+
+function renderHolidays(holidays) {
+  const tbody = document.getElementById('holidays-tbody');
+  const empty = document.getElementById('holidays-empty');
+  tbody.innerHTML = '';
+  if (!holidays.length) {
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+  for (const h of holidays) {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td style="padding:8px;border-bottom:1px solid #eee;">' + escapeHtml(h.date) + '</td>' +
+      '<td style="padding:8px;border-bottom:1px solid #eee;">' + escapeHtml(h.name) + '</td>' +
+      '<td style="padding:8px;border-bottom:1px solid #eee;">' + escapeHtml(h.country) + '</td>' +
+      '<td style="padding:8px;border-bottom:1px solid #eee;">' +
+        '<button onclick="deleteHoliday(\'' + escapeHtml(h.id) + '\')">Delete</button>' +
+      '</td>';
+    tbody.appendChild(tr);
+  }
+}
+
+function openAddHolidayModal() {
+  document.getElementById('new-holiday-date').value = '';
+  document.getElementById('new-holiday-name').value = '';
+  document.getElementById('new-holiday-country').value = 'PH';
+  document.getElementById('add-holiday-error').style.display = 'none';
+  const modal = document.getElementById('modal-add-holiday');
+  modal.style.display = 'flex';
+}
+
+function closeAddHolidayModal() {
+  document.getElementById('modal-add-holiday').style.display = 'none';
+}
+
+async function submitAddHoliday() {
+  const token = localStorage.getItem('token');
+  const date = document.getElementById('new-holiday-date').value;
+  const name = document.getElementById('new-holiday-name').value.trim();
+  const country = document.getElementById('new-holiday-country').value;
+  const errEl = document.getElementById('add-holiday-error');
+
+  if (!date || !name || !country) {
+    errEl.textContent = 'All fields are required.';
+    errEl.style.display = '';
+    return;
+  }
+
+  try {
+    const res = await fetch('http://localhost:3000/admin/holidays', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, name, country })
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || res.statusText);
+    }
+    closeAddHolidayModal();
+    loadHolidays();
+  } catch (e) {
+    errEl.textContent = 'Error: ' + e.message;
+    errEl.style.display = '';
+  }
+}
+
+async function deleteHoliday(id) {
+  if (!confirm('Delete this holiday?')) return;
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch('http://localhost:3000/admin/holidays/' + encodeURIComponent(id), {
+      method: 'DELETE',
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    loadHolidays();
+  } catch (e) {
+    alert('Error: ' + e.message);
   }
 }
 
