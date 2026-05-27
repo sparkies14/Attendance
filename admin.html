@@ -65,6 +65,9 @@
   <div style="display:flex;gap:6px;margin-bottom:18px;background:#f5f5f3;padding:4px;border-radius:10px;width:fit-content;">
     <button type="button" id="tab-users" onclick="switchPage('users')" style="padding:8px 16px;border:none;background:white;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.06);">Users</button>
     <button type="button" id="tab-audit" onclick="switchPage('audit')" style="padding:8px 16px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);">Audit Log</button>
+    <button type="button" id="tab-tardy" onclick="switchPage('tardy')" style="padding:8px 16px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);">Tardy Report</button>
+    <button type="button" id="tab-holidays" onclick="switchPage('holidays')" style="padding:8px 16px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);">Holidays</button>
+    <button type="button" id="tab-policy" onclick="switchPage('policy')" style="padding:8px 16px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);">Policy Config</button>
   </div>
 
   <div id="status-bar" class="status-bar"></div>
@@ -163,6 +166,39 @@
           <button class="btn" onclick="auditPageNext()">Next →</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ═════ TARDY REPORT PAGE ═════ -->
+  <div id="page-tardy" class="page" style="display:none">
+    <h2>Tardy Report <span style="font-size:0.8em;font-weight:normal;">(last 30 working days)</span></h2>
+    <div style="margin-bottom:1rem;display:flex;align-items:center;gap:1rem;">
+      <button onclick="loadTardy()">↻ Refresh</button>
+      <span id="tardy-last-updated" style="font-size:0.85em;color:#666;"></span>
+    </div>
+    <div id="tardy-thresholds" style="margin-bottom:1rem;font-size:0.85em;color:#555;"></div>
+    <table id="tardy-table" style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:8px;border-bottom:2px solid #ddd;">Name</th>
+          <th style="text-align:left;padding:8px;border-bottom:2px solid #ddd;">Country</th>
+          <th style="text-align:center;padding:8px;border-bottom:2px solid #ddd;">Minor</th>
+          <th style="text-align:center;padding:8px;border-bottom:2px solid #ddd;">Major</th>
+          <th style="text-align:center;padding:8px;border-bottom:2px solid #ddd;">AWOL½</th>
+          <th style="text-align:center;padding:8px;border-bottom:2px solid #ddd;">AWOL★</th>
+          <th style="text-align:left;padding:8px;border-bottom:2px solid #ddd;">Status</th>
+        </tr>
+      </thead>
+      <tbody id="tardy-tbody"></tbody>
+    </table>
+    <p id="tardy-empty" style="display:none;color:#888;">No active members found.</p>
+    <div style="margin-top:1.5rem;">
+      <h3 style="margin-bottom:0.5rem;">Manual AWOL Check</h3>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <input type="date" id="awol-date" style="padding:4px 8px;" />
+        <button onclick="runAwolCheck()">Run AWOL Check</button>
+      </div>
+      <p id="awol-result" style="margin-top:0.5rem;font-size:0.9em;"></p>
     </div>
   </div>
 </div>
@@ -350,26 +386,56 @@ async function submitInvite() {
 let auditState = { page: 1, page_size: 50, total: 0, filters: {}, loaded: false };
 
 function switchPage(name) {
-  const isUsers = name === 'users';
-  document.getElementById('page-users').style.display = isUsers ? 'block' : 'none';
-  document.getElementById('page-audit').style.display = isUsers ? 'none' : 'block';
-  document.getElementById('page-h1').textContent = isUsers ? 'User Management' : 'Audit Log';
-  document.getElementById('btn-invite').style.display = isUsers ? '' : 'none';
+  const pages = ['users', 'audit', 'tardy', 'holidays', 'policy'];
+  const titles = {
+    users:    'User Management',
+    audit:    'Audit Log',
+    tardy:    'Tardy Report',
+    holidays: 'Holidays',
+    policy:   'Policy Config',
+  };
 
-  const a = document.getElementById('tab-users');
-  const b = document.getElementById('tab-audit');
-  if (isUsers) {
-    a.style.background='white'; a.style.fontWeight='600'; a.style.color='var(--text)';
-    b.style.background='transparent'; b.style.fontWeight='500'; b.style.color='var(--text2)';
-  } else {
-    b.style.background='white'; b.style.fontWeight='600'; b.style.color='var(--text)';
-    a.style.background='transparent'; a.style.fontWeight='500'; a.style.color='var(--text2)';
+  // Hide all known pages
+  for (const p of pages) {
+    const el = document.getElementById('page-' + p);
+    if (el) el.style.display = 'none';
+  }
+
+  // Show the selected page
+  const active = document.getElementById('page-' + name);
+  if (active) active.style.display = 'block';
+
+  // Update header
+  document.getElementById('page-h1').textContent = titles[name] || name;
+  document.getElementById('btn-invite').style.display = name === 'users' ? '' : 'none';
+
+  // Update tab highlight styles
+  for (const p of pages) {
+    const tab = document.getElementById('tab-' + p);
+    if (!tab) continue;
+    if (p === name) {
+      tab.style.background = 'white';
+      tab.style.fontWeight = '600';
+      tab.style.color = 'var(--text)';
+      tab.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)';
+    } else {
+      tab.style.background = 'transparent';
+      tab.style.fontWeight = '500';
+      tab.style.color = 'var(--text2)';
+      tab.style.boxShadow = '';
+    }
+  }
+
+  // Per-page side effects
+  if (name === 'audit') {
     if (!auditState.loaded) loadAudit();
     refreshCleanButton();
     refreshExportStatus();
     document.getElementById('btn-clean').style.display = currentUser.role === 'owner' ? '' : 'none';
     document.getElementById('link-skip-export').style.display = currentUser.role === 'owner' ? '' : 'none';
   }
+
+  if (name === 'tardy') loadTardy();
 }
 
 function applyAuditFilters() {
@@ -626,6 +692,80 @@ async function confirmClean() {
     refreshExportStatus();
   } catch (e) {
     showStatus('error', 'Connection failed.');
+  }
+}
+
+async function loadTardy() {
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch('http://localhost:3000/admin/tardy-report', {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    renderTardy(data);
+    document.getElementById('tardy-last-updated').textContent =
+      'Last updated: ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    document.getElementById('tardy-tbody').innerHTML =
+      '<tr><td colspan="7" style="color:red;padding:8px;">Error: ' + e.message + '</td></tr>';
+  }
+}
+
+function renderTardy(data) {
+  const { thresholds, members } = data;
+  document.getElementById('tardy-thresholds').textContent =
+    'Thresholds — Minor: ' + thresholds.minor +
+    ' | Major: ' + thresholds.major +
+    ' | AWOL½: ' + thresholds.awolHalf +
+    ' | AWOL★: ' + thresholds.awolFull;
+
+  const tbody = document.getElementById('tardy-tbody');
+  tbody.innerHTML = '';
+  const empty = document.getElementById('tardy-empty');
+
+  if (!members || members.length === 0) {
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  for (const m of members) {
+    const tr = document.createElement('tr');
+    if (m.exceeded) tr.style.backgroundColor = '#fff3cd';
+    const statusText = m.exceeded
+      ? '⚠️ Exceeded<br><small style="color:#856404;">' + m.reasons.join(', ') + '</small>'
+      : '✅ OK';
+    tr.innerHTML =
+      '<td style="padding:8px;border-bottom:1px solid #eee;">' + (m.name || '') + '</td>' +
+      '<td style="padding:8px;border-bottom:1px solid #eee;">' + (m.country || '—') + '</td>' +
+      '<td style="text-align:center;padding:8px;border-bottom:1px solid #eee;">' + m.counts.minor + '</td>' +
+      '<td style="text-align:center;padding:8px;border-bottom:1px solid #eee;">' + m.counts.major + '</td>' +
+      '<td style="text-align:center;padding:8px;border-bottom:1px solid #eee;">' + m.counts.awolHalf + '</td>' +
+      '<td style="text-align:center;padding:8px;border-bottom:1px solid #eee;">' + m.counts.awolFull + '</td>' +
+      '<td style="padding:8px;border-bottom:1px solid #eee;">' + statusText + '</td>';
+    tbody.appendChild(tr);
+  }
+}
+
+async function runAwolCheck() {
+  const token = localStorage.getItem('token');
+  const dateInput = document.getElementById('awol-date').value;
+  const body = dateInput ? JSON.stringify({ date: dateInput }) : '{}';
+  const resultEl = document.getElementById('awol-result');
+  resultEl.textContent = 'Running…';
+  try {
+    const res = await fetch('http://localhost:3000/admin/run-awol-check', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    resultEl.textContent =
+      'Date: ' + data.date + ' — Inserted: ' + data.inserted + ', Skipped: ' + data.skipped;
+  } catch (e) {
+    resultEl.textContent = 'Error: ' + e.message;
   }
 }
 
