@@ -86,4 +86,48 @@ describe('GET /tardy', () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/YYYY-MM-DD/i);
   });
+
+  test('200 — returns per-member counts and country rollup', async () => {
+    supabase.from.mockReturnValueOnce(c([MEMBER]));    // users
+    supabase.from.mockReturnValueOnce(c([ATT_ROW]));   // attendance
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .get('/tardy?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(200);
+    expect(res.body.from).toBe('2026-05-01');
+    expect(res.body.to).toBe('2026-05-27');
+    expect(res.body.members).toHaveLength(1);
+    expect(res.body.members[0].email).toBe('ana@test.com');
+    expect(res.body.members[0].minor).toBe(1);
+    expect(res.body.members[0].total).toBe(1);
+    expect(res.body.byCountry).toHaveLength(1);
+    expect(res.body.byCountry[0].country).toBe('PH');
+    expect(res.body.byCountry[0].minor).toBe(1);
+  });
+
+  test('200 — empty members when no active users', async () => {
+    supabase.from.mockReturnValueOnce(c([]));  // users
+    supabase.from.mockReturnValueOnce(c([]));  // attendance
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .get('/tardy?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(200);
+    expect(res.body.members).toHaveLength(0);
+    expect(res.body.byCountry).toHaveLength(0);
+  });
+
+  test('500 when DB error on users query', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .get('/tardy?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
+
+  test('500 when DB error on attendance query', async () => {
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .get('/tardy?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
 });
