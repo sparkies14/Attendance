@@ -484,6 +484,19 @@ body {
   .ts-date { width: 64px; }
   .ts-cin, .ts-cout { display: none; }
 }
+.balance-card {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+.balance-label { font-size: 12px; color: #16a34a; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.balance-days  { font-size: 28px; font-weight: 700; color: #15803d; margin: 4px 0 2px; }
+.balance-sub   { font-size: 12px; color: #6b7280; }
+.balance-card.warn { background: #fff7ed; border-color: #fed7aa; }
+.balance-card.warn .balance-label { color: #ea580c; }
+.balance-card.warn .balance-days  { color: #c2410c; }
 </style>
 </head>
 <body>
@@ -792,6 +805,11 @@ body {
             <button onclick="closeCountryPicker()" style="margin-left:0.25rem;">Cancel</button>
             <span id="country-save-status" style="margin-left:0.5rem;font-size:0.85em;"></span>
           </div>
+        </div>
+        <div class="balance-card" id="leave-balance-card" style="display:none">
+          <div class="balance-label">Leave Balance</div>
+          <div class="balance-days" id="leave-balance-days">—</div>
+          <div class="balance-sub" id="leave-balance-sub"></div>
         </div>
         <div id="leave-history-container">
           <div class="loading-state">
@@ -1226,6 +1244,12 @@ function updateButtons() {
     }
 
     if (action === 'leave') {
+      const card = document.getElementById('leave-balance-card');
+      const bal  = card ? parseInt(card.dataset.balance || '1', 10) : 1;
+      if (bal <= 0) {
+        const go = confirm('You have no remaining leave days. Your request will still be sent for approval. Continue?');
+        if (!go) return;
+      }
       const leaveType   = document.getElementById('leave-type').value;
       const leaveReason = document.getElementById('leave-reason').value.trim();
       if (!leaveType) { showStatus('error', 'Please select a leave type.'); return; }
@@ -1316,6 +1340,7 @@ function updateButtons() {
       const res  = await apiFetch(`${MEMBER_DATA}?email=${encodeURIComponent(currentUser.email)}&name=${encodeURIComponent(currentUser.name)}&month=${calMonth}&year=${calYear}`)
       const data = await res.json();
       memberData = data;
+      fetchLeaveBalance(currentUser.email);
       renderMemberData();
       updateTodaySummary();
       renderPayroll();
@@ -1323,6 +1348,26 @@ function updateButtons() {
     } catch(e) {
       console.error('Failed to load member data:', e);
     }
+  }
+
+  async function fetchLeaveBalance(email) {
+    try {
+      const jwt = sessionStorage.getItem('anosupo_jwt');
+      const res = await fetch(
+        `http://localhost:3000/leave-balance?email=${encodeURIComponent(email)}`,
+        { headers: { Authorization: `Bearer ${jwt}` } }
+      );
+      if (!res.ok) return;
+      const { grantsEarned, used, adjustments, balance } = await res.json();
+      const card = document.getElementById('leave-balance-card');
+      document.getElementById('leave-balance-days').textContent =
+        `${balance} day${balance === 1 ? '' : 's'} remaining`;
+      document.getElementById('leave-balance-sub').textContent =
+        `${used} used · ${grantsEarned + adjustments} earned`;
+      card.className = 'balance-card' + (balance <= 0 ? ' warn' : '');
+      card.style.display = '';
+      card.dataset.balance = balance;
+    } catch (_) {}
   }
 
   /* ── Update Today Summary + Hero ── */
