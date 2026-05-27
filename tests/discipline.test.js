@@ -100,4 +100,13 @@ describe('POST /', () => {
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('DB error');
   });
+
+  test('500 when DB error on insert', async () => {
+    supabase.from.mockReturnValueOnce(c({ id: 'user-1' }));           // user lookup succeeds
+    supabase.from.mockReturnValueOnce(c(null, { message: 'Insert failed' })); // insert fails
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/').send({ email: 'ana@test.com', reason: '5 tardies' });
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('Insert failed');
+  });
 });
