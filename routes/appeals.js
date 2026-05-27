@@ -75,7 +75,9 @@ router.get('/all', requireRole('owner', 'admin'), async (req, res) => {
     if (a.status === 'Pending' && b.status !== 'Pending') return -1;
     if (a.status !== 'Pending' && b.status === 'Pending') return 1;
     if (a.status !== 'Pending' && b.status !== 'Pending') {
-      return new Date(b.resolved_at) - new Date(a.resolved_at);
+      const bRes = b.resolved_at ? new Date(b.resolved_at) : 0;
+      const aRes = a.resolved_at ? new Date(a.resolved_at) : 0;
+      return bRes - aRes;
     }
     return new Date(b.created_at) - new Date(a.created_at);
   });

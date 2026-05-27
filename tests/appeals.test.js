@@ -257,4 +257,28 @@ describe('GET /all', () => {
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('DB error');
   });
+
+  test('200 — owner role also gets access', async () => {
+    supabase.from.mockReturnValueOnce(c([]));
+    supabase.from.mockReturnValueOnce(c([]));
+    const res = await request(makeApp('owner', 'owner@test.com')).get('/all');
+    expect(res.status).toBe(200);
+  });
+
+  test('200 — orphaned appeal (no matching user) returns null email and name', async () => {
+    supabase.from.mockReturnValueOnce(c([APPEAL]));  // appeal with user_id 'user-1'
+    supabase.from.mockReturnValueOnce(c([]));          // users — no matching user
+    const res = await request(makeApp('admin', 'admin@test.com')).get('/all');
+    expect(res.status).toBe(200);
+    expect(res.body.appeals[0].email).toBeNull();
+    expect(res.body.appeals[0].name).toBeNull();
+  });
+
+  test('200 — returns empty array when no appeals exist', async () => {
+    supabase.from.mockReturnValueOnce(c([]));  // no appeals
+    supabase.from.mockReturnValueOnce(c([]));  // no users
+    const res = await request(makeApp('admin', 'admin@test.com')).get('/all');
+    expect(res.status).toBe(200);
+    expect(res.body.appeals).toHaveLength(0);
+  });
 });
