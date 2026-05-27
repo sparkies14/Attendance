@@ -749,6 +749,50 @@ body {
           <div class="page-title">Leave History</div>
           <div class="page-sub">All your leave requests</div>
         </div>
+        <div id="tardy-summary-card" style="margin-bottom:1.5rem;padding:1.25rem;border:1px solid #ddd;border-radius:8px;">
+          <h3 style="margin-top:0;margin-bottom:1rem;">Your Attendance <span style="font-size:0.8em;font-weight:normal;">(last 30 working days)</span></h3>
+          <table style="width:100%;border-collapse:collapse;max-width:400px;">
+            <tbody>
+              <tr>
+                <td style="padding:6px 0;color:#555;">Minor Tardy</td>
+                <td id="ts-minor" style="padding:6px 0;font-weight:600;">—</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#555;">Major Tardy</td>
+                <td id="ts-major" style="padding:6px 0;font-weight:600;">—</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#555;">AWOL Half Day</td>
+                <td id="ts-awol-half" style="padding:6px 0;font-weight:600;">—</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#555;">AWOL Full Day</td>
+                <td id="ts-awol-full" style="padding:6px 0;font-weight:600;">—</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#555;">Status</td>
+                <td id="ts-status" style="padding:6px 0;font-weight:600;">—</td>
+              </tr>
+            </tbody>
+          </table>
+          <p id="ts-reason" style="display:none;margin:0.5rem 0 0;font-size:0.85em;color:#856404;"></p>
+          <hr style="margin:1rem 0;border:none;border-top:1px solid #eee;" />
+          <div id="country-display">
+            Country: <span id="country-label" style="font-weight:600;">—</span>
+            <button onclick="openCountryPicker()" style="margin-left:0.75rem;">Change</button>
+          </div>
+          <div id="country-picker" style="display:none;margin-top:0.5rem;">
+            <select id="country-select" style="padding:4px 8px;margin-right:0.5rem;">
+              <option value="PH">🇵🇭 Philippines (PH)</option>
+              <option value="VN">🇻🇳 Vietnam (VN)</option>
+              <option value="JP">🇯🇵 Japan (JP)</option>
+              <option value="OTHER">Other</option>
+            </select>
+            <button onclick="saveCountry()">Save</button>
+            <button onclick="closeCountryPicker()" style="margin-left:0.25rem;">Cancel</button>
+            <span id="country-save-status" style="margin-left:0.5rem;font-size:0.85em;"></span>
+          </div>
+        </div>
         <div id="leave-history-container">
           <div class="loading-state">
             <div class="loading-spinner"></div>
@@ -917,7 +961,7 @@ body {
   }
 
   function bootMember(user) {
-    currentUser = { name: user.name, email: user.email, avatar: defaultAvatar(user.name), role: user.role };
+    currentUser = { id: user.id || null, name: user.name, email: user.email, avatar: defaultAvatar(user.name), role: user.role };
     document.getElementById('user-name').textContent = user.name.split(' ')[0];
     document.getElementById('user-role').textContent = (user.role === 'owner' || user.role === 'admin') ? 'Manager' : 'Member';
     document.getElementById('user-avatar').src = currentUser.avatar;
@@ -925,6 +969,7 @@ body {
     document.getElementById('auth-gate').classList.add('hidden');
     document.getElementById('app').classList.add('show');
     loadMemberData();
+    loadTardySummary();
     dataRefreshTimer = setInterval(() => loadMemberData(), REFRESH_INTERVAL);
   }
 
@@ -1633,6 +1678,73 @@ function updateButtons() {
     const remEl = document.getElementById('pay-hours-remaining');
     remEl.className = remaining <= 0 ? 'pay-stat-val green' : 'pay-stat-val yellow';
     document.getElementById('bd-hours-needed').className = remaining <= 0 ? 'bd-val green' : 'bd-val yellow';
+  }
+
+  /* ── Tardy Summary ── */
+  async function loadTardySummary() {
+    try {
+      const res = await apiFetch('http://localhost:3000/member/tardy-summary');
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById('ts-minor').textContent     = data.minorTardy     ?? '—';
+      document.getElementById('ts-major').textContent     = data.majorTardy     ?? '—';
+      document.getElementById('ts-awol-half').textContent = data.awolHalf       ?? '—';
+      document.getElementById('ts-awol-full').textContent = data.awolFull       ?? '—';
+      document.getElementById('ts-status').textContent    = data.exceeded === false ? '✅ On Track' : '⚠️ Policy Warning';
+      const reasonEl = document.getElementById('ts-reason');
+      if (data.exceeded && data.reasons && data.reasons.length > 0) {
+        reasonEl.textContent = data.reasons.join(', ');
+        reasonEl.style.display = 'block';
+      } else {
+        reasonEl.style.display = 'none';
+      }
+      if (data.country) {
+        document.getElementById('country-label').textContent = data.country;
+        document.getElementById('country-select').value = data.country;
+      }
+    } catch (e) {
+      console.error('Failed to load tardy summary:', e);
+    }
+  }
+
+  function openCountryPicker() {
+    document.getElementById('country-display').style.display = 'none';
+    document.getElementById('country-picker').style.display  = 'block';
+    document.getElementById('country-save-status').textContent = '';
+  }
+
+  function closeCountryPicker() {
+    document.getElementById('country-picker').style.display  = 'none';
+    document.getElementById('country-display').style.display = 'block';
+  }
+
+  async function saveCountry() {
+    const selected = document.getElementById('country-select').value;
+    const userId   = currentUser && currentUser.id;
+    const statusEl = document.getElementById('country-save-status');
+    if (!userId) {
+      statusEl.textContent = 'Error: user ID not found.';
+      return;
+    }
+    statusEl.textContent = 'Saving…';
+    try {
+      const res = await apiFetch(`http://localhost:3000/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ country: selected })
+      });
+      if (res.ok) {
+        document.getElementById('country-label').textContent = selected;
+        statusEl.textContent = '';
+        closeCountryPicker();
+        loadTardySummary();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        statusEl.textContent = 'Error: ' + (err.error || res.status);
+      }
+    } catch (e) {
+      statusEl.textContent = 'Connection failed.';
+    }
   }
 
   /* ── Leave History ── */
