@@ -253,3 +253,47 @@ describe('POST /:id/void', () => {
     expect(res.body.error).toBe('DB error');
   });
 });
+
+/* ─── POST /:id/acknowledge ─── */
+describe('POST /:id/acknowledge', () => {
+  test('403 for member role', async () => {
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .post('/1/acknowledge');
+    expect(res.status).toBe(403);
+  });
+
+  test('404 when record not found', async () => {
+    supabase.from.mockReturnValueOnce(c(null));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/99/acknowledge');
+    expect(res.status).toBe(404);
+  });
+
+  test('409 when warning is voided', async () => {
+    supabase.from.mockReturnValueOnce(c({ id: 1, voided: true, acknowledged: false }));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/acknowledge');
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/voided/i);
+  });
+
+  test('200 on success — record marked acknowledged', async () => {
+    const ACKED = { ...RECORD, acknowledged: true, acknowledged_at: '2026-05-27T02:00:00Z' };
+    supabase.from.mockReturnValueOnce(c({ id: 1, voided: false, acknowledged: false })); // fetch
+    supabase.from.mockReturnValueOnce(c(ACKED));                                          // update
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/acknowledge');
+    expect(res.status).toBe(200);
+    expect(res.body.record.acknowledged).toBe(true);
+    expect(res.body.record.acknowledged_at).toBe('2026-05-27T02:00:00Z');
+  });
+
+  test('500 when DB error on update', async () => {
+    supabase.from.mockReturnValueOnce(c({ id: 1, voided: false, acknowledged: false }));
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/acknowledge');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
+});
