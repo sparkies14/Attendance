@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const PROTECTED_PATHS = ['/insights'];
-
 export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-  const isProtected = PROTECTED_PATHS.some(p => pathname.startsWith(p));
-  if (!isProtected) return NextResponse.next();
-
   const token = req.cookies.get('att_token')?.value;
-  if (!token) return redirectToLogin(req);
+  if (!token) return redirectToLogin();
 
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
@@ -25,14 +19,13 @@ export async function middleware(req: NextRequest) {
 
     return NextResponse.next({ request: { headers: requestHeaders } });
   } catch {
-    return redirectToLogin(req);
+    return redirectToLogin();
   }
 }
 
-function redirectToLogin(req: NextRequest) {
-  return NextResponse.redirect(
-    new URL(process.env.NEXT_PUBLIC_API_URL + '/index.html')
-  );
+function redirectToLogin() {
+  const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+  return NextResponse.redirect(new URL(base + '/index.html'));
 }
 
 export const config = {
