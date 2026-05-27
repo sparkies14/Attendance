@@ -96,4 +96,28 @@ router.post('/:id/demote',     (req, res) => performRoleAction(req, res, 'demote
 router.post('/:id/activate',   (req, res) => performRoleAction(req, res, 'activate',   { status: 'Active' }));
 router.post('/:id/deactivate', (req, res) => performRoleAction(req, res, 'deactivate', { status: 'Inactive' }));
 
+router.patch('/:id', async (req, res) => {
+  const id      = req.params.id;
+  const { country } = req.body || {};
+
+  const isSelf     = id === req.user.user_id;
+  const isElevated = ['owner', 'admin'].includes(req.user.role);
+  if (!isSelf && !isElevated) {
+    return res.status(403).json({ error: 'Forbidden.' });
+  }
+
+  if (!country || typeof country !== 'string' || country.trim().length === 0 || country.length > 10) {
+    return res.status(400).json({ error: 'country must be a non-empty string (ISO 3166-1 alpha-2 recommended, max 10 chars).' });
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .update({ country: country.trim().toUpperCase() })
+    .eq('id', id)
+    .select('id, email, name, country')
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  return res.json({ success: true, user: data });
+});
+
 module.exports = router;
