@@ -277,6 +277,14 @@ describe('POST /:id/acknowledge', () => {
     expect(res.body.error).toMatch(/voided/i);
   });
 
+  test('409 when warning is already acknowledged', async () => {
+    supabase.from.mockReturnValueOnce(c({ id: 1, voided: false, acknowledged: true }));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/acknowledge');
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/already acknowledged/i);
+  });
+
   test('200 on success — record marked acknowledged', async () => {
     const ACKED = { ...RECORD, acknowledged: true, acknowledged_at: '2026-05-27T02:00:00Z' };
     supabase.from.mockReturnValueOnce(c({ id: 1, voided: false, acknowledged: false })); // fetch

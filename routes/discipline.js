@@ -100,6 +100,7 @@ router.post('/:id/acknowledge', requireRole('owner', 'admin'), async (req, res) 
   if (fetchErr) return res.status(500).json({ error: fetchErr.message });
   if (!record) return res.status(404).json({ error: 'Record not found.' });
   if (record.voided) return res.status(409).json({ error: 'Cannot acknowledge a voided warning.' });
+  if (record.acknowledged) return res.status(409).json({ error: 'Warning is already acknowledged.' });
 
   const { data, error } = await supabase
     .from('discipline_records')
