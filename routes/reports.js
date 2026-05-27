@@ -49,4 +49,8 @@ router.get('/attention', requireRole('owner', 'admin'), async (req, res) => {
   }
 });
 
+router.get('/deductions', requireRole('owner', 'admin'), (_req, res) => {
+  return res.json({ message: 'Deduction reporting available after Phase 6.', data: [] });
+});
+
 module.exports = router;

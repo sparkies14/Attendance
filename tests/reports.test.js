@@ -359,3 +359,18 @@ describe('GET /attention', () => {
     expect(res.body.error).toBe('fail');
   });
 });
+
+/* ─── GET /deductions ─── */
+describe('GET /deductions', () => {
+  test('403 for member role', async () => {
+    const res = await request(makeApp('member', 'ana@test.com')).get('/deductions');
+    expect(res.status).toBe(403);
+  });
+
+  test('200 — returns placeholder shape', async () => {
+    const res = await request(makeApp('admin', 'admin@test.com')).get('/deductions');
+    expect(res.status).toBe(200);
+    expect(res.body.message).toMatch(/Phase 6/i);
+    expect(res.body.data).toEqual([]);
+  });
+});
