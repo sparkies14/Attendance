@@ -9,14 +9,20 @@ if (!process.env.JWT_SECRET) {
 
 const app = express();
 
+const CORS_ORIGINS = new Set([
+  'https://sparkies14.github.io',
+  process.env.FRONTEND_URL,
+].filter(Boolean));
+
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || origin.startsWith('http://localhost') || origin === 'https://sparkies14.github.io') {
+    if (!origin || origin.startsWith('http://localhost') || CORS_ORIGINS.has(origin)) {
       cb(null, true);
     } else {
       cb(new Error('Not allowed by CORS'));
     }
   },
+  credentials: true,
 }));
 
 app.use(express.json());
