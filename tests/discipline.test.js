@@ -194,3 +194,62 @@ describe('GET /all', () => {
     expect(res.body.error).toBe('DB error');
   });
 });
+
+/* ─── POST /:id/void ─── */
+describe('POST /:id/void', () => {
+  test('403 for member role', async () => {
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .post('/1/void').send({ reason: 'issued in error' });
+    expect(res.status).toBe(403);
+  });
+
+  test('400 when reason missing', async () => {
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/void').send({});
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/reason/i);
+  });
+
+  test('400 when reason is empty string', async () => {
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/void').send({ reason: '   ' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/reason/i);
+  });
+
+  test('404 when record not found', async () => {
+    supabase.from.mockReturnValueOnce(c(null));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/99/void').send({ reason: 'error' });
+    expect(res.status).toBe(404);
+  });
+
+  test('409 when warning is already voided', async () => {
+    supabase.from.mockReturnValueOnce(c({ id: 1, voided: true }));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/void').send({ reason: 'error' });
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/already voided/i);
+  });
+
+  test('200 on success — record marked voided', async () => {
+    const VOIDED = { ...RECORD, voided: true, void_reason: 'issued in error', voided_by: 'admin@test.com', voided_at: '2026-05-27T01:00:00Z' };
+    supabase.from.mockReturnValueOnce(c({ id: 1, voided: false })); // fetch
+    supabase.from.mockReturnValueOnce(c(VOIDED));                   // update
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/void').send({ reason: 'issued in error' });
+    expect(res.status).toBe(200);
+    expect(res.body.record.voided).toBe(true);
+    expect(res.body.record.void_reason).toBe('issued in error');
+    expect(res.body.record.voided_by).toBe('admin@test.com');
+  });
+
+  test('500 when DB error on update', async () => {
+    supabase.from.mockReturnValueOnce(c({ id: 1, voided: false }));        // fetch
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));   // update
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/void').send({ reason: 'issued in error' });
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
+});

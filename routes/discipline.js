@@ -68,4 +68,27 @@ router.get('/', async (req, res) => {
   return res.json({ records: data || [] });
 });
 
+router.post('/:id/void', requireRole('owner', 'admin'), async (req, res) => {
+  const { reason } = req.body || {};
+  if (!reason || !reason.trim()) return res.status(400).json({ error: 'reason is required.' });
+
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'Invalid record id.' });
+
+  const { data: record, error: fetchErr } = await supabase
+    .from('discipline_records').select('id, voided').eq('id', id).maybeSingle();
+  if (fetchErr) return res.status(500).json({ error: fetchErr.message });
+  if (!record) return res.status(404).json({ error: 'Record not found.' });
+  if (record.voided) return res.status(409).json({ error: 'Warning is already voided.' });
+
+  const { data, error } = await supabase
+    .from('discipline_records')
+    .update({ voided: true, void_reason: reason.trim(), voided_by: req.user.email, voided_at: new Date().toISOString() })
+    .eq('id', id)
+    .select('id, user_id, reason, issued_by, issued_at, voided, void_reason, voided_by, voided_at, acknowledged, acknowledged_at')
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  return res.json({ record: data });
+});
+
 module.exports = router;
