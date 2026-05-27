@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const supabase = require('../lib/supabase');
-const { hashPassword, verifyPassword, signToken } = require('../lib/auth');
+const { hashPassword, verifyPassword, signToken, verifyToken } = require('../lib/auth');
 const requireAuth = require('../middleware/requireAuth');
 const audit = require('../lib/audit');
 
@@ -19,8 +19,18 @@ async function verifyGoogleCredential(credential) {
 }
 
 function issueLoginResponse(user) {
-  const token = signToken({ user_id: user.id, email: user.email, role: user.role });
+  const token = signToken({ user_id: user.id, email: user.email, role: user.role, name: user.name });
   return { token, user: { id: user.id, email: user.email, name: user.name, role: user.role } };
+}
+
+function setAuthCookie(res, token) {
+  res.cookie('att_token', token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000,
+    path: '/',
+  });
 }
 
 // ── Public ──────────────────────────────────────────────────────────
@@ -80,6 +90,14 @@ router.post('/register', async (req, res) => {
   return res.json({ success: true, message: 'Account ready. Waiting for admin approval.' });
 });
 
+router.post('/set-cookie', (req, res) => {
+  const { token } = req.body || {};
+  const payload = verifyToken(token);
+  if (!payload) return res.status(401).json({ error: 'Invalid or expired token.' });
+  setAuthCookie(res, token);
+  return res.json({ success: true });
+});
+
 router.post('/login', async (req, res) => {
   const { email, password } = req.body || {};
   if (!validateEmail(email) || typeof password !== 'string') {
@@ -136,7 +154,9 @@ router.post('/login', async (req, res) => {
     target_user_id: user.id, target_table: 'users', target_id: user.id,
   });
 
-  return res.json(issueLoginResponse(user));
+  const loginData = issueLoginResponse(user);
+  setAuthCookie(res, loginData.token);
+  return res.json(loginData);
 });
 
 router.post('/google', async (req, res) => {
@@ -194,7 +214,9 @@ router.post('/google', async (req, res) => {
     target_user_id: user.id, target_table: 'users', target_id: user.id,
   });
 
-  return res.json(issueLoginResponse(user));
+  const loginData = issueLoginResponse(user);
+  setAuthCookie(res, loginData.token);
+  return res.json(loginData);
 });
 
 // ── Authenticated ───────────────────────────────────────────────────
