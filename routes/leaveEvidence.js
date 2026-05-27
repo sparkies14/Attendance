@@ -36,7 +36,12 @@ router.get('/:id/evidence', async (req, res) => {
   return res.json({ evidence: data || [] });
 });
 
-router.post('/:id/evidence', upload.single('file'), async (req, res) => {
+router.post('/:id/evidence', (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    next();
+  });
+}, async (req, res) => {
   const { leave, allowed } = await checkAccess(req.params.id, req.user);
   if (!leave)   return res.status(404).json({ error: 'Leave request not found.' });
   if (!allowed) return res.status(403).json({ error: 'Forbidden.' });
@@ -92,7 +97,8 @@ router.delete('/:id/evidence/:eid', async (req, res) => {
   if (!elevated && !isUploader) return res.status(403).json({ error: 'Forbidden.' });
 
   if (ev.file_path) {
-    await supabase.storage.from('leave-evidence').remove([ev.file_path]);
+    const { error: storageErr } = await supabase.storage.from('leave-evidence').remove([ev.file_path]);
+    if (storageErr) console.error('Storage remove failed:', storageErr.message);
   }
 
   const { error } = await supabase.from('leave_evidence').delete().eq('id', ev.id);
