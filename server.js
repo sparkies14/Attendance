@@ -25,6 +25,11 @@ app.use('/auth',  require('./routes/auth'));
 app.use('/users', require('./routes/users'));
 app.use('/audit', require('./routes/audit'));
 
+app.use('/admin', require('./routes/adminTardy'));
+app.use('/admin', require('./routes/adminHolidays'));
+app.use('/admin', require('./routes/adminPolicyConfig'));
+app.use('/member', require('./routes/adminTardy'));
+
 app.use('/webhook/attendance',  require('./routes/attendance'));
 app.use('/webhook/member-data', require('./routes/memberData'));
 app.use('/webhook/dashboard',   require('./routes/dashboard'));
@@ -32,3 +37,5 @@ app.use('/webhook/approve',     require('./routes/approve'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Attendance server running on http://localhost:${PORT}`));
+
+require('./lib/cron').registerCron();
