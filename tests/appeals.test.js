@@ -183,12 +183,14 @@ describe('POST /', () => {
 /* ─── GET / ─── */
 describe('GET /', () => {
   test('200 — returns own appeals sorted newest first', async () => {
-    supabase.from.mockReturnValueOnce(c([APPEAL]));
+    const OLDER = { ...APPEAL, id: 2, created_at: '2026-05-26T00:00:00Z' };
+    const NEWER = { ...APPEAL, id: 3, created_at: '2026-05-27T12:00:00Z' };
+    supabase.from.mockReturnValueOnce(c([NEWER, OLDER]));
     const res = await request(makeApp('member', 'ana@test.com')).get('/');
     expect(res.status).toBe(200);
-    expect(res.body.appeals).toHaveLength(1);
-    expect(res.body.appeals[0].target_type).toBe('discipline');
-    expect(res.body.appeals[0].status).toBe('Pending');
+    expect(res.body.appeals).toHaveLength(2);
+    expect(res.body.appeals[0].id).toBe(3);
+    expect(res.body.appeals[1].id).toBe(2);
   });
 
   test('200 — returns empty array when member has no appeals', async () => {
