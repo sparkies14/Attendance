@@ -229,3 +229,65 @@ describe('GET /leave', () => {
     expect(res.body.error).toBe('adj DB fail');
   });
 });
+
+/* ─── GET /discipline ─── */
+describe('GET /discipline', () => {
+  const app = makeApp('admin', 'admin@test.com');
+  const memberApp = makeApp('member', 'ana@test.com');
+
+  test('403 for member role', async () => {
+    const res = await request(memberApp).get('/discipline?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(403);
+  });
+
+  test('400 when date range is invalid', async () => {
+    const res = await request(app).get('/discipline?from=bad&to=2026-05-27');
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/YYYY-MM-DD/i);
+  });
+
+  test('200 — returns warning counts and issuedInRange', async () => {
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c([DISC_REC]));
+    const res = await request(app).get('/discipline?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(200);
+    expect(res.body.from).toBe('2026-05-01');
+    expect(res.body.to).toBe('2026-05-27');
+    expect(res.body.members).toHaveLength(1);
+    const m = res.body.members[0];
+    expect(m.email).toBe('ana@test.com');
+    expect(m.total).toBe(1);
+    expect(m.active).toBe(1);
+    expect(m.voided).toBe(0);
+    expect(m.issuedInRange).toBe(1);
+  });
+
+  test('200 — distinguishes active vs voided', async () => {
+    const activeRec  = { user_id: 'user-1', voided: false, issued_at: '2026-05-10T00:00:00Z' };
+    const voidedRec  = { user_id: 'user-1', voided: true,  issued_at: '2026-04-01T00:00:00Z' };
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c([activeRec, voidedRec]));
+    const res = await request(app).get('/discipline?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(200);
+    const m = res.body.members[0];
+    expect(m.total).toBe(2);
+    expect(m.active).toBe(1);
+    expect(m.voided).toBe(1);
+    expect(m.issuedInRange).toBe(1); // only the May one
+  });
+
+  test('500 when DB error on users query', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB fail' }));
+    const res = await request(app).get('/discipline?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB fail');
+  });
+
+  test('500 when DB error on discipline_records query', async () => {
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c(null, { message: 'disc DB fail' }));
+    const res = await request(app).get('/discipline?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('disc DB fail');
+  });
+});
