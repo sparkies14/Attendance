@@ -353,4 +353,29 @@ describe('POST /:id/resolve', () => {
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('DB error');
   });
+
+  test('500 when DB error on appeal fetch', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/resolve').send({ outcome: 'Approved', note: 'valid' });
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
+
+  test('200 on success — appeal marked Rejected', async () => {
+    const REJECTED = {
+      ...APPEAL,
+      status: 'Rejected',
+      resolution_note: 'No evidence to support this appeal.',
+      resolved_by: 'admin@test.com',
+      resolved_at: '2026-05-27T02:00:00Z',
+    };
+    supabase.from.mockReturnValueOnce(c({ id: 1, status: 'Pending' })); // fetch
+    supabase.from.mockReturnValueOnce(c(REJECTED));                      // update
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/resolve').send({ outcome: 'Rejected', note: 'No evidence to support this appeal.' });
+    expect(res.status).toBe(200);
+    expect(res.body.appeal.status).toBe('Rejected');
+    expect(res.body.appeal.resolution_note).toBe('No evidence to support this appeal.');
+  });
 });
