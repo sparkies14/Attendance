@@ -29,5 +29,5 @@ function redirectToLogin() {
 }
 
 export const config = {
-  matcher: ['/insights/:path*'],
+  matcher: ['/insights/:path*', '/help/:path*'],
 };
