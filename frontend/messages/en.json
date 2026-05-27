@@ -1,0 +1,8 @@
+{
+  "InsightsPage": {
+    "title": "Insights",
+    "welcome": "Welcome, {name}",
+    "role": "Role: {role}",
+    "comingSoon": "Dashboard coming soon."
+  }
+}
