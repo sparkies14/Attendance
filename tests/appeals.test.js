@@ -282,3 +282,75 @@ describe('GET /all', () => {
     expect(res.body.appeals).toHaveLength(0);
   });
 });
+
+/* ─── POST /:id/resolve ─── */
+describe('POST /:id/resolve', () => {
+  test('403 for member role', async () => {
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .post('/1/resolve').send({ outcome: 'Approved', note: 'valid' });
+    expect(res.status).toBe(403);
+  });
+
+  test('400 when outcome is invalid', async () => {
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/resolve').send({ outcome: 'Maybe', note: 'valid' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/outcome/i);
+  });
+
+  test('400 when note is missing', async () => {
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/resolve').send({ outcome: 'Approved' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/note/i);
+  });
+
+  test('400 when note is empty string', async () => {
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/resolve').send({ outcome: 'Approved', note: '   ' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/note/i);
+  });
+
+  test('404 when appeal not found', async () => {
+    supabase.from.mockReturnValueOnce(c(null));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/99/resolve').send({ outcome: 'Rejected', note: 'no basis' });
+    expect(res.status).toBe(404);
+  });
+
+  test('409 when appeal is already resolved', async () => {
+    supabase.from.mockReturnValueOnce(c({ id: 1, status: 'Approved' }));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/resolve').send({ outcome: 'Rejected', note: 'too late' });
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/already resolved/i);
+  });
+
+  test('200 on success — appeal marked Approved with note and resolved_by', async () => {
+    const RESOLVED = {
+      ...APPEAL,
+      status: 'Approved',
+      resolution_note: 'Tardy was a system error.',
+      resolved_by: 'admin@test.com',
+      resolved_at: '2026-05-27T01:00:00Z',
+    };
+    supabase.from.mockReturnValueOnce(c({ id: 1, status: 'Pending' })); // fetch
+    supabase.from.mockReturnValueOnce(c(RESOLVED));                      // update
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/resolve').send({ outcome: 'Approved', note: 'Tardy was a system error.' });
+    expect(res.status).toBe(200);
+    expect(res.body.appeal.status).toBe('Approved');
+    expect(res.body.appeal.resolution_note).toBe('Tardy was a system error.');
+    expect(res.body.appeal.resolved_by).toBe('admin@test.com');
+  });
+
+  test('500 when DB error on update', async () => {
+    supabase.from.mockReturnValueOnce(c({ id: 1, status: 'Pending' }));
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/1/resolve').send({ outcome: 'Approved', note: 'valid' });
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
+});

@@ -95,4 +95,35 @@ router.get('/', async (req, res) => {
   return res.json({ appeals: data || [] });
 });
 
+router.post('/:id/resolve', requireRole('owner', 'admin'), async (req, res) => {
+  const { outcome, note } = req.body || {};
+
+  if (!outcome || !['Approved', 'Rejected'].includes(outcome)) {
+    return res.status(400).json({ error: 'outcome must be "Approved" or "Rejected".' });
+  }
+  if (!note || !note.trim()) {
+    return res.status(400).json({ error: 'note is required.' });
+  }
+
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: 'Invalid appeal id.' });
+  }
+
+  const { data: appeal, error: fetchErr } = await supabase
+    .from('appeals').select('id, status').eq('id', id).maybeSingle();
+  if (fetchErr) return res.status(500).json({ error: fetchErr.message });
+  if (!appeal) return res.status(404).json({ error: 'Appeal not found.' });
+  if (appeal.status !== 'Pending') return res.status(409).json({ error: 'Appeal is already resolved.' });
+
+  const { data, error } = await supabase
+    .from('appeals')
+    .update({ status: outcome, resolution_note: note.trim(), resolved_by: req.user.email, resolved_at: new Date().toISOString() })
+    .eq('id', id)
+    .select('id, user_id, target_type, target_id, reason, status, resolution_note, resolved_by, resolved_at, created_at')
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  return res.json({ appeal: data });
+});
+
 module.exports = router;
