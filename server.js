@@ -25,6 +25,7 @@ app.use('/auth',  require('./routes/auth'));
 app.use('/users', require('./routes/users'));
 app.use('/audit', require('./routes/audit'));
 app.use('/leave', require('./routes/leaveEvidence'));
+app.use('/leave-balance', require('./routes/leaveBalance'));
 
 app.use('/admin', require('./routes/adminTardy'));
 app.use('/admin', require('./routes/adminHolidays'));
