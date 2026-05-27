@@ -3,6 +3,27 @@
     "title": "Insights",
     "welcome": "Welcome, {name}",
     "role": "Role: {role}",
-    "comingSoon": "Dashboard coming soon."
+    "comingSoon": "Dashboard coming soon.",
+    "dateFrom": "From",
+    "dateTo": "To",
+    "apply": "Apply",
+    "dateError": "End date must be after start date.",
+    "attentionTitle": "Needs Attention (this month)",
+    "noAttention": "No members need attention this month.",
+    "tardyTitle": "Tardy",
+    "leaveTitle": "Leave Utilization",
+    "disciplineTitle": "Discipline",
+    "noTardy": "No tardy records in this date range.",
+    "noWarnings": "No active warnings in this date range.",
+    "downloadCsv": "↓ CSV",
+    "downloadPdf": "↓ PDF",
+    "errorLoad": "Failed to load {section} data — try refreshing.",
+    "legendMinor": "Minor",
+    "legendMajor": "Major",
+    "legendAwolHalf": "AWOL Half Day",
+    "legendAwolFull": "AWOL Full Day",
+    "legendUsed": "Used",
+    "legendRemaining": "Remaining",
+    "legendActive": "Active Warnings"
   }
 }
