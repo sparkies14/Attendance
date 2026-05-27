@@ -806,7 +806,7 @@ body {
             <span id="country-save-status" style="margin-left:0.5rem;font-size:0.85em;"></span>
           </div>
         </div>
-        <div class="balance-card" id="leave-balance-card" style="display:none">
+        <div class="balance-card" id="leave-balance-card" style="display:none" data-balance="0">
           <div class="balance-label">Leave Balance</div>
           <div class="balance-days" id="leave-balance-days">—</div>
           <div class="balance-sub" id="leave-balance-sub"></div>
@@ -1360,8 +1360,9 @@ function updateButtons() {
       const card = document.getElementById('leave-balance-card');
       document.getElementById('leave-balance-days').textContent =
         `${balance} day${balance === 1 ? '' : 's'} remaining`;
+      const adjPart = adjustments !== 0 ? ` · ${adjustments > 0 ? '+' : ''}${adjustments} adjusted` : '';
       document.getElementById('leave-balance-sub').textContent =
-        `${used} used · ${grantsEarned + adjustments} earned`;
+        `${used} used · ${grantsEarned} earned${adjPart}`;
       card.className = 'balance-card' + (balance <= 0 ? ' warn' : '');
       card.style.display = '';
       card.dataset.balance = balance;
