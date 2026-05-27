@@ -16,7 +16,7 @@ const CORS_ORIGINS = new Set([
 
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || origin.startsWith('http://localhost') || CORS_ORIGINS.has(origin)) {
+    if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin) || CORS_ORIGINS.has(origin)) {
       cb(null, true);
     } else {
       cb(new Error('Not allowed by CORS'));
