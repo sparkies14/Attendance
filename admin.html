@@ -226,6 +226,37 @@
     </table>
     <p id="holidays-empty" style="display:none;color:#888;">No holidays found.</p>
   </div>
+
+  <div id="page-policy" class="page" style="display:none">
+    <h2>Policy Config</h2>
+    <p id="policy-readonly-note" style="display:none;color:#888;font-style:italic;">Admins can view but not edit thresholds.</p>
+    <div style="max-width:480px;">
+      <div style="margin-bottom:1rem;display:flex;align-items:center;gap:1rem;">
+        <label style="min-width:220px;">Threshold — Minor Tardy</label>
+        <input type="number" id="policy-minor" min="1" style="width:70px;padding:4px 8px;" />
+        <span style="color:#666;font-size:0.9em;">occurrences in 30 working days</span>
+      </div>
+      <div style="margin-bottom:1rem;display:flex;align-items:center;gap:1rem;">
+        <label style="min-width:220px;">Threshold — Major Tardy</label>
+        <input type="number" id="policy-major" min="1" style="width:70px;padding:4px 8px;" />
+        <span style="color:#666;font-size:0.9em;">occurrences in 30 working days</span>
+      </div>
+      <div style="margin-bottom:1rem;display:flex;align-items:center;gap:1rem;">
+        <label style="min-width:220px;">Threshold — AWOL Half Day</label>
+        <input type="number" id="policy-awol-half" min="1" style="width:70px;padding:4px 8px;" />
+        <span style="color:#666;font-size:0.9em;">occurrences in 30 working days</span>
+      </div>
+      <div style="margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;">
+        <label style="min-width:220px;">Threshold — AWOL Full Day</label>
+        <input type="number" id="policy-awol-full" min="1" style="width:70px;padding:4px 8px;" />
+        <span style="color:#666;font-size:0.9em;">occurrences in 30 working days</span>
+      </div>
+      <div id="policy-save-row" style="display:none;">
+        <button onclick="savePolicyConfig()">Save</button>
+        <span id="policy-save-status" style="margin-left:1rem;font-size:0.9em;"></span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="modal-bg" id="clean-modal">
@@ -491,6 +522,7 @@ function switchPage(name) {
 
   if (name === 'tardy') loadTardy();
   if (name === 'holidays') loadHolidays();
+  if (name === 'policy') loadPolicyConfig();
 }
 
 function applyAuditFilters() {
@@ -921,6 +953,66 @@ async function deleteHoliday(id) {
     loadHolidays();
   } catch (e) {
     alert('Error: ' + e.message);
+  }
+}
+
+async function loadPolicyConfig() {
+  try {
+    const res = await apiFetch(`${API_BASE}/admin/policy-config`);
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    const cfg = data.config || {};
+    document.getElementById('policy-minor').value     = cfg.threshold_minor_tardy ?? 3;
+    document.getElementById('policy-major').value     = cfg.threshold_major_tardy ?? 2;
+    document.getElementById('policy-awol-half').value = cfg.threshold_awol_half   ?? 1;
+    document.getElementById('policy-awol-full').value = cfg.threshold_awol_full   ?? 1;
+    applyPolicyEditability();
+  } catch (e) {
+    document.getElementById('policy-save-status').textContent = 'Error loading: ' + e.message;
+  }
+}
+
+function applyPolicyEditability() {
+  const isOwner = currentUser && currentUser.role === 'owner';
+  const inputs = ['policy-minor', 'policy-major', 'policy-awol-half', 'policy-awol-full'];
+  for (const id of inputs) {
+    document.getElementById(id).disabled = !isOwner;
+  }
+  document.getElementById('policy-save-row').style.display = isOwner ? '' : 'none';
+  document.getElementById('policy-readonly-note').style.display = isOwner ? 'none' : '';
+}
+
+async function savePolicyConfig() {
+  const minor    = parseInt(document.getElementById('policy-minor').value, 10);
+  const major    = parseInt(document.getElementById('policy-major').value, 10);
+  const awolHalf = parseInt(document.getElementById('policy-awol-half').value, 10);
+  const awolFull = parseInt(document.getElementById('policy-awol-full').value, 10);
+  const statusEl = document.getElementById('policy-save-status');
+
+  if ([minor, major, awolHalf, awolFull].some(v => !Number.isInteger(v) || v < 1)) {
+    statusEl.textContent = 'All thresholds must be positive integers.';
+    return;
+  }
+
+  statusEl.textContent = 'Saving…';
+  try {
+    const res = await apiFetch(`${API_BASE}/admin/policy-config`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        threshold_minor_tardy: minor,
+        threshold_major_tardy: major,
+        threshold_awol_half: awolHalf,
+        threshold_awol_full: awolFull,
+      })
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || res.statusText);
+    }
+    statusEl.textContent = 'Saved ✓';
+    setTimeout(() => { statusEl.textContent = ''; }, 3000);
+  } catch (e) {
+    statusEl.textContent = 'Error: ' + e.message;
   }
 }
 
