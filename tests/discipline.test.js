@@ -159,3 +159,38 @@ describe('GET /', () => {
     expect(res.body.error).toBe('DB error');
   });
 });
+
+/* ─── GET /all ─── */
+describe('GET /all', () => {
+  test('403 for member role', async () => {
+    const res = await request(makeApp('member', 'ana@test.com')).get('/all');
+    expect(res.status).toBe(403);
+  });
+
+  test('200 — returns all active members sorted by name with counts', async () => {
+    supabase.from.mockReturnValueOnce(c([
+      { id: 'user-1', email: 'ana@test.com', name: 'Ana Reyes' },
+      { id: 'user-2', email: 'ben@test.com', name: 'Ben Cruz' },
+    ])); // users
+    supabase.from.mockReturnValueOnce(c([
+      { ...RECORD, user_id: 'user-1', voided: false },
+      { ...RECORD, id: 2, user_id: 'user-1', voided: true },
+    ])); // discipline_records
+    const res = await request(makeApp('admin', 'admin@test.com')).get('/all');
+    expect(res.status).toBe(200);
+    expect(res.body.members).toHaveLength(2);
+    const ana = res.body.members.find(m => m.email === 'ana@test.com');
+    expect(ana.totalWarnings).toBe(2);
+    expect(ana.activeWarnings).toBe(1);
+    const ben = res.body.members.find(m => m.email === 'ben@test.com');
+    expect(ben.totalWarnings).toBe(0);
+    expect(ben.activeWarnings).toBe(0);
+  });
+
+  test('500 when DB error on members query', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('admin', 'admin@test.com')).get('/all');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
+});

@@ -5,6 +5,30 @@ const requireRole = require('../middleware/requireRole');
 
 router.use(requireAuth);
 
+router.get('/all', requireRole('owner', 'admin'), async (req, res) => {
+  const { data: members, error: membersErr } = await supabase
+    .from('users').select('id, email, name').eq('status', 'Active').neq('role', 'owner');
+  if (membersErr) return res.status(500).json({ error: membersErr.message });
+
+  const { data: allRecords, error: recErr } = await supabase
+    .from('discipline_records')
+    .select('id, user_id, reason, issued_by, issued_at, voided, void_reason, voided_by, voided_at, acknowledged, acknowledged_at');
+  if (recErr) return res.status(500).json({ error: recErr.message });
+
+  const result = (members || []).map(m => {
+    const records = (allRecords || []).filter(r => r.user_id === m.id);
+    return {
+      email: m.email,
+      name: m.name,
+      totalWarnings: records.length,
+      activeWarnings: records.filter(r => !r.voided).length,
+      records,
+    };
+  }).sort((a, b) => a.name.localeCompare(b.name));
+
+  return res.json({ members: result });
+});
+
 router.post('/', requireRole('owner', 'admin'), async (req, res) => {
   const { email, reason } = req.body || {};
   if (!email) return res.status(400).json({ error: 'email is required.' });
