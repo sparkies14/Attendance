@@ -141,4 +141,41 @@ describe('POST /', () => {
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('DB error');
   });
+
+  test('500 when DB error on discipline_records lookup', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .post('/').send({ target_type: 'discipline', target_id: '1', reason: 'reason' });
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
+
+  test('500 when DB error on leave_log lookup', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .post('/').send({ target_type: 'leave', target_id: '1', reason: 'reason' });
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
+
+  test('500 when DB error on duplicate check', async () => {
+    supabase.from.mockReturnValueOnce(c({ id: 1 }));                        // discipline_records — found
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));    // dup check fails
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .post('/').send({ target_type: 'discipline', target_id: '1', reason: 'reason' });
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
+
+  test('201 on success — leave appeal', async () => {
+    const LEAVE_APPEAL = { ...APPEAL, target_type: 'leave', target_id: '5' };
+    supabase.from.mockReturnValueOnce(c({ id: 5 }));       // leave_log — found
+    supabase.from.mockReturnValueOnce(c(null));             // duplicate check — none
+    supabase.from.mockReturnValueOnce(c(LEAVE_APPEAL));    // insert
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .post('/').send({ target_type: 'leave', target_id: '5', reason: 'Leave was wrongly rejected.' });
+    expect(res.status).toBe(201);
+    expect(res.body.appeal.target_type).toBe('leave');
+    expect(res.body.appeal.status).toBe('Pending');
+  });
 });
