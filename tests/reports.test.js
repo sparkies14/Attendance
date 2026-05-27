@@ -87,6 +87,12 @@ describe('GET /tardy', () => {
     expect(res.body.error).toMatch(/YYYY-MM-DD/i);
   });
 
+  it('400 when from is after to', async () => {
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .get('/tardy?from=2026-12-31&to=2026-01-01');
+    expect(res.status).toBe(400);
+  });
+
   test('200 — returns per-member counts and country rollup', async () => {
     supabase.from.mockReturnValueOnce(c([MEMBER]));    // users
     supabase.from.mockReturnValueOnce(c([ATT_ROW]));   // attendance
@@ -102,6 +108,7 @@ describe('GET /tardy', () => {
     expect(res.body.byCountry).toHaveLength(1);
     expect(res.body.byCountry[0].country).toBe('PH');
     expect(res.body.byCountry[0].minor).toBe(1);
+    expect(res.body.byCountry[0].total).toBe(1);
   });
 
   test('200 — empty members when no active users', async () => {
@@ -120,6 +127,26 @@ describe('GET /tardy', () => {
       .get('/tardy?from=2026-05-01&to=2026-05-27');
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('DB error');
+  });
+
+  it('200 — counts all four tardy types correctly', async () => {
+    const rows = [
+      { email: 'ana@test.com', date: '2026-05-05', late_status: 'MINOR TARDY' },
+      { email: 'ana@test.com', date: '2026-05-06', late_status: 'MAJOR TARDY' },
+      { email: 'ana@test.com', date: '2026-05-07', late_status: 'AWOL HALF DAY' },
+      { email: 'ana@test.com', date: '2026-05-08', late_status: 'AWOL FULL DAY' },
+    ];
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c(rows));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .get('/tardy?from=2026-05-01&to=2026-05-31');
+    expect(res.status).toBe(200);
+    const m = res.body.members[0];
+    expect(m.minor).toBe(1);
+    expect(m.major).toBe(1);
+    expect(m.awolHalf).toBe(1);
+    expect(m.awolFull).toBe(1);
+    expect(m.total).toBe(4);
   });
 
   test('500 when DB error on attendance query', async () => {
