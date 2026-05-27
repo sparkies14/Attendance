@@ -374,3 +374,65 @@ describe('GET /deductions', () => {
     expect(res.body.data).toEqual([]);
   });
 });
+
+/* ─── CSV exports ─── */
+describe('CSV exports', () => {
+  const app = makeApp('admin', 'admin@test.com');
+  const memberApp = makeApp('member', 'ana@test.com');
+
+  test('403 for member on tardy.csv', async () => {
+    const res = await request(memberApp).get('/export/tardy.csv?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(403);
+  });
+
+  test('400 for bad date on tardy.csv', async () => {
+    const res = await request(app).get('/export/tardy.csv?from=bad&to=2026-05-27');
+    expect(res.status).toBe(400);
+  });
+
+  test('200 tardy.csv — correct headers and body', async () => {
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c([ATT_ROW]));
+    const res = await request(app).get('/export/tardy.csv?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/text\/csv/);
+    expect(res.headers['content-disposition']).toContain('tardy-2026-05-01-to-2026-05-27.csv');
+    const lines = res.text.split('\n');
+    expect(lines[0]).toBe('Name,Email,Country,Minor,Major,AWOL Half,AWOL Full,Total');
+    expect(lines[1]).toContain('Ana Reyes');
+  });
+
+  test('200 leave.csv — correct headers and body', async () => {
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c([LEAVE_ROW]));
+    supabase.from.mockReturnValueOnce(c([]));
+    const res = await request(app).get('/export/leave.csv?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/text\/csv/);
+    expect(res.headers['content-disposition']).toContain('leave-2026-05-01-to-2026-05-27.csv');
+    const lines = res.text.split('\n');
+    expect(lines[0]).toBe('Name,Email,Entitled,Used,Remaining,Used In Range');
+    expect(lines[1]).toContain('Ana Reyes');
+  });
+
+  test('200 discipline.csv — correct headers and body', async () => {
+    supabase.from.mockReturnValueOnce(c([MEMBER]));
+    supabase.from.mockReturnValueOnce(c([DISC_REC]));
+    const res = await request(app).get('/export/discipline.csv?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/text\/csv/);
+    expect(res.headers['content-disposition']).toContain('discipline-2026-05-01-to-2026-05-27.csv');
+    const lines = res.text.split('\n');
+    expect(lines[0]).toBe('Name,Email,Total Warnings,Active,Voided,Issued In Range');
+    expect(lines[1]).toContain('Ana Reyes');
+  });
+
+  test('200 tardy.csv — escapes commas in values', async () => {
+    const memberWithComma = { ...MEMBER, name: 'Reyes, Ana' };
+    supabase.from.mockReturnValueOnce(c([memberWithComma]));
+    supabase.from.mockReturnValueOnce(c([]));
+    const res = await request(app).get('/export/tardy.csv?from=2026-05-01&to=2026-05-27');
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('"Reyes, Ana"');
+  });
+});
