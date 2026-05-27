@@ -85,6 +85,14 @@ describe('GET /balance', () => {
     expect(res.body.adjustments).toBe(3);
     expect(res.body.balance).toBe(13);
   });
+
+  test('500 when DB error on user lookup', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .get('/balance?email=ana@test.com');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
 });
 
 /* ─── GET /balance/all ─── */
@@ -107,6 +115,13 @@ describe('GET /balance/all', () => {
     expect(res.body.members).toHaveLength(1);
     expect(res.body.members[0].used).toBe(2);
     expect(res.body.members[0].balance).toBe(8);
+  });
+
+  test('500 when DB error on members query', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('admin', 'admin@test.com')).get('/balance/all');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
   });
 });
 
@@ -158,6 +173,14 @@ describe('POST /balance/adjust', () => {
     expect(res.status).toBe(201);
     expect(res.body.adjustment.amount).toBe(-2);
   });
+
+  test('500 when DB error on user lookup', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/balance/adjust').send({ email: 'ana@test.com', amount: 2, note: 'test' });
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
 });
 
 /* ─── GET /balance/adjustments ─── */
@@ -182,5 +205,13 @@ describe('GET /balance/adjustments', () => {
     expect(res.status).toBe(200);
     expect(res.body.adjustments).toHaveLength(1);
     expect(res.body.adjustments[0].amount).toBe(3);
+  });
+
+  test('500 when DB error on user lookup', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .get('/balance/adjustments?email=ana@test.com');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
   });
 });

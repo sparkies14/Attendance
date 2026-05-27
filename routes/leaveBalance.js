@@ -99,7 +99,10 @@ router.get('/', async (req, res) => {
 router.post('/adjust', requireRole('owner', 'admin'), async (req, res) => {
   const { email, amount, note } = req.body || {};
   if (!email) return res.status(400).json({ error: 'email is required.' });
-  const amt = parseInt(amount, 10);
+  if (amount === undefined || amount === null) {
+    return res.status(400).json({ error: 'amount is required.' });
+  }
+  const amt = Number(amount);
   if (!Number.isInteger(amt) || amt === 0) {
     return res.status(400).json({ error: 'amount must be a non-zero integer.' });
   }
