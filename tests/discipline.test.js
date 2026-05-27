@@ -110,3 +110,52 @@ describe('POST /', () => {
     expect(res.body.error).toBe('Insert failed');
   });
 });
+
+/* ─── GET / ─── */
+describe('GET /', () => {
+  test('400 when email missing', async () => {
+    const res = await request(makeApp('member', 'ana@test.com')).get('/');
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/email/i);
+  });
+
+  test('403 when member accesses another member', async () => {
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .get('/?email=other@test.com');
+    expect(res.status).toBe(403);
+  });
+
+  test('404 when user not found', async () => {
+    supabase.from.mockReturnValueOnce(c(null));
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .get('/?email=ana@test.com');
+    expect(res.status).toBe(404);
+  });
+
+  test('200 — member can access own warnings', async () => {
+    supabase.from.mockReturnValueOnce(c({ id: 'user-1' }));  // users lookup
+    supabase.from.mockReturnValueOnce(c([RECORD]));           // discipline_records
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .get('/?email=ana@test.com');
+    expect(res.status).toBe(200);
+    expect(res.body.records).toHaveLength(1);
+    expect(res.body.records[0].reason).toBe('5 minor tardies');
+  });
+
+  test('200 — admin can access any member warnings', async () => {
+    supabase.from.mockReturnValueOnce(c({ id: 'user-1' }));
+    supabase.from.mockReturnValueOnce(c([]));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .get('/?email=ana@test.com');
+    expect(res.status).toBe(200);
+    expect(res.body.records).toHaveLength(0);
+  });
+
+  test('500 when DB error on user lookup', async () => {
+    supabase.from.mockReturnValueOnce(c(null, { message: 'DB error' }));
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .get('/?email=ana@test.com');
+    expect(res.status).toBe(500);
+    expect(res.body.error).toBe('DB error');
+  });
+});
