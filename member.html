@@ -1352,10 +1352,8 @@ function updateButtons() {
 
   async function fetchLeaveBalance(email) {
     try {
-      const jwt = sessionStorage.getItem('anosupo_jwt');
-      const res = await fetch(
-        `http://localhost:3000/leave-balance?email=${encodeURIComponent(email)}`,
-        { headers: { Authorization: `Bearer ${jwt}` } }
+      const res = await apiFetch(
+        `http://localhost:3000/leave-balance?email=${encodeURIComponent(email)}`
       );
       if (!res.ok) return;
       const { grantsEarned, used, adjustments, balance } = await res.json();
