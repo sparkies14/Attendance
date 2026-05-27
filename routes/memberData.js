@@ -73,6 +73,7 @@ router.get('/', async (req, res) => {
   }
 
   const leaveHistory = (allLeave || []).map(l => ({
+    id: l.id,
     date: l.date,
     leaveType: l.leave_type,
     reason: l.reason,
