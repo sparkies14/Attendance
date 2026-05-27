@@ -68,6 +68,7 @@
     <button type="button" id="tab-tardy" onclick="switchPage('tardy')" style="padding:8px 16px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);">Tardy Report</button>
     <button type="button" id="tab-holidays" onclick="switchPage('holidays')" style="padding:8px 16px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);">Holidays</button>
     <button type="button" id="tab-policy" onclick="switchPage('policy')" style="padding:8px 16px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);">Policy Config</button>
+    <button type="button" id="tab-leave-balance" onclick="switchPage('leave-balance')" style="padding:8px 16px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);">Leave Balances</button>
   </div>
 
   <div id="status-bar" class="status-bar"></div>
@@ -255,6 +256,38 @@
         <button onclick="savePolicyConfig()">Save</button>
         <span id="policy-save-status" style="margin-left:1rem;font-size:0.9em;"></span>
       </div>
+    </div>
+  </div>
+
+  <div id="page-leave-balance" class="page" style="display:none">
+    <h2>Leave Balances</h2>
+    <div style="margin-bottom:1rem;">
+      <button onclick="loadLeaveBalances()">Refresh</button>
+    </div>
+    <div id="leave-balances-body">
+      <p style="color:#888;">Loading...</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Adjust Leave Balance Modal -->
+<div id="modal-adjust-leave" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;padding:2rem;border-radius:8px;min-width:320px;max-width:420px;">
+    <h3 style="margin-top:0;">Adjust Leave Balance</h3>
+    <p id="adjust-leave-name" style="margin:0 0 1rem;font-weight:600;"></p>
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;margin-bottom:4px;">Days to add (use negative to deduct)</label>
+      <input type="number" id="adjust-leave-amount" style="width:100%;padding:6px 8px;box-sizing:border-box;" placeholder="e.g. 2 or -3">
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;margin-bottom:4px;">Reason (required)</label>
+      <input type="text" id="adjust-leave-note" style="width:100%;padding:6px 8px;box-sizing:border-box;" placeholder="e.g. Correcting hire year">
+    </div>
+    <div id="adjust-leave-error" style="color:#ef4444;font-size:13px;min-height:18px;margin-bottom:10px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="submitLeaveAdjustment()">Save</button>
+      <button onclick="closeAdjustLeaveModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -471,13 +504,14 @@ async function submitInvite() {
 let auditState = { page: 1, page_size: 50, total: 0, filters: {}, loaded: false };
 
 function switchPage(name) {
-  const pages = ['users', 'audit', 'tardy', 'holidays', 'policy'];
+  const pages = ['users', 'audit', 'tardy', 'holidays', 'policy', 'leave-balance'];
   const titles = {
-    users:    'User Management',
-    audit:    'Audit Log',
-    tardy:    'Tardy Report',
-    holidays: 'Holidays',
-    policy:   'Policy Config',
+    users:          'User Management',
+    audit:          'Audit Log',
+    tardy:          'Tardy Report',
+    holidays:       'Holidays',
+    policy:         'Policy Config',
+    'leave-balance': 'Leave Balances',
   };
 
   // Hide all known pages
@@ -523,6 +557,7 @@ function switchPage(name) {
   if (name === 'tardy') loadTardy();
   if (name === 'holidays') loadHolidays();
   if (name === 'policy') loadPolicyConfig();
+  if (name === 'leave-balance') loadLeaveBalances();
 }
 
 function applyAuditFilters() {
@@ -1018,6 +1053,92 @@ async function savePolicyConfig() {
 
 loadCurrentUser();
 loadUsers();
+
+let _adjustLeaveEmail = '';
+
+async function loadLeaveBalances() {
+  const body = document.getElementById('leave-balances-body');
+  body.innerHTML = '<p style="color:#888;">Loading...</p>';
+  try {
+    const res     = await apiFetch(`${API_BASE}/leave-balance/all`);
+    const { members } = await res.json();
+    if (!members || members.length === 0) {
+      body.innerHTML = '<p style="color:#888;">No members found.</p>';
+      return;
+    }
+    body.innerHTML = `
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:2px solid #ddd;">Name</th>
+            <th style="text-align:left;padding:8px;border-bottom:2px solid #ddd;">Balance</th>
+            <th style="text-align:left;padding:8px;border-bottom:2px solid #ddd;">Used</th>
+            <th style="text-align:left;padding:8px;border-bottom:2px solid #ddd;">Earned</th>
+            <th style="text-align:left;padding:8px;border-bottom:2px solid #ddd;">Adjusted</th>
+            <th style="padding:8px;border-bottom:2px solid #ddd;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${members.map(m => `
+            <tr>
+              <td style="padding:8px;border-bottom:1px solid #eee;">${escapeHtml(m.name)}</td>
+              <td style="padding:8px;border-bottom:1px solid #eee;font-weight:600;">${m.balance}</td>
+              <td style="padding:8px;border-bottom:1px solid #eee;">${m.used}</td>
+              <td style="padding:8px;border-bottom:1px solid #eee;">${m.grantsEarned}</td>
+              <td style="padding:8px;border-bottom:1px solid #eee;">${m.adjustments >= 0 ? '+' : ''}${m.adjustments}</td>
+              <td style="padding:8px;border-bottom:1px solid #eee;">
+                <button onclick="openAdjustLeaveModal(${JSON.stringify(m.email)}, ${JSON.stringify(m.name)})">Adjust</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (e) {
+    body.innerHTML = `<p style="color:red;">${escapeHtml(e.message)}</p>`;
+  }
+}
+
+function openAdjustLeaveModal(email, name) {
+  _adjustLeaveEmail = email;
+  document.getElementById('adjust-leave-name').textContent = name;
+  document.getElementById('adjust-leave-amount').value = '';
+  document.getElementById('adjust-leave-note').value   = '';
+  document.getElementById('adjust-leave-error').textContent = '';
+  const modal = document.getElementById('modal-adjust-leave');
+  modal.style.display = 'flex';
+}
+
+function closeAdjustLeaveModal() {
+  document.getElementById('modal-adjust-leave').style.display = 'none';
+}
+
+async function submitLeaveAdjustment() {
+  const amount = parseInt(document.getElementById('adjust-leave-amount').value, 10);
+  const note   = document.getElementById('adjust-leave-note').value.trim();
+  const errEl  = document.getElementById('adjust-leave-error');
+  errEl.textContent = '';
+
+  if (!amount || amount === 0) { errEl.textContent = 'Amount must be a non-zero integer.'; return; }
+  if (!note)                   { errEl.textContent = 'Reason is required.'; return; }
+
+  try {
+    const res = await apiFetch(`${API_BASE}/leave-balance/adjust`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: _adjustLeaveEmail, amount, note }),
+    });
+    if (!res.ok) {
+      const { error } = await res.json();
+      errEl.textContent = error || 'Error saving adjustment.';
+      return;
+    }
+    closeAdjustLeaveModal();
+    loadLeaveBalances();
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+}
 </script>
 </body>
 </html>
