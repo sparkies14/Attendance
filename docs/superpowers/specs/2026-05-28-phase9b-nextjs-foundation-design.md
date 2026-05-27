@@ -63,7 +63,7 @@ Express login returns a JWT in the JSON response body. The existing HTML pages s
 
 **Minimal Express changes — existing behavior is preserved:**
 
-1. **Modify two login routes** (`POST /login` and `POST /auth/google`) to also set an `httpOnly` cookie named `att_token` alongside the existing JSON response. Old HTML pages are unaffected — they still receive the JWT in the response body and store it in `localStorage` as before.
+1. **Modify two login routes** (`POST /auth/login` and `POST /auth/google`) to also set an `httpOnly` cookie named `att_token` alongside the existing JSON response. Old HTML pages are unaffected — they still receive the JWT in the response body and store it in `localStorage` as before.
 
 2. **Add one new route** `POST /auth/set-cookie` — accepts a valid JWT in the request body, verifies it, and sets the `att_token` cookie. This handles users who are **already logged in** (JWT in `localStorage`) when they first visit a Next.js page, allowing the cookie to be set without requiring a new login.
 
@@ -148,5 +148,5 @@ The page has no charts, no data fetching from the reporting APIs, and no navigat
 ## Testing
 
 - Existing Jest suite (255 tests) must continue to pass — no Express behavior changes for old routes
-- New Express routes (`POST /auth/set-cookie`, modified login routes) get Jest + supertest tests
+- New Express route (`POST /auth/set-cookie`) and modified login routes (`POST /auth/login`, `POST /auth/google`) get Jest + supertest tests
 - Next.js: manual end-to-end verification (visit `/insights` logged in → see placeholder; visit without cookie → redirected to login)
