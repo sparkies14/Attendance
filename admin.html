@@ -61,6 +61,42 @@
 .tasks-cal-cell.selected { border-color: var(--amber); }
 .tasks-cal-cell.weekend  { color: var(--text3); cursor: default; }
 .tasks-cal-cell.weekend:hover { background: transparent; }
+.week-grid {
+  display: grid;
+  gap: 1px; background: var(--border);
+  border-radius: 12px; overflow: hidden;
+  min-width: 700px;
+}
+.wg-head {
+  background: #fafaf8; padding: 8px 10px;
+  font-size: 11px; font-weight: 600; color: var(--text2);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  text-align: center; min-height: 44px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 1px;
+}
+.wg-head.today-col { background: var(--accent-light); color: var(--accent); }
+.wg-head.weekend-col { background: #f9f8f6; }
+.wg-member-cell {
+  background: #fafaf8; padding: 8px 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.wg-cell {
+  background: white; padding: 6px 8px;
+  min-height: 56px; vertical-align: top;
+}
+.wg-cell.today-col { background: rgba(26,107,60,0.03); }
+.wg-cell.weekend-col { background: #f9f8f6; }
+.wg-todo-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px; border-radius: 5px; font-size: 11px;
+  color: #6d28d9; background: rgba(109,40,217,0.07);
+  margin-bottom: 3px; max-width: 100%; cursor: pointer;
+}
+.wg-todo-pill.done { color: var(--text3); background: #f1f1ef; text-decoration: line-through; }
+.wg-todo-pill .pip { width: 4px; height: 4px; border-radius: 50%; background: #6d28d9; flex-shrink: 0; }
+.wg-todo-pill.done .pip { background: var(--text3); }
+.wg-pill-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px; display: inline-block; }
 </style>
 </head>
 <body>
@@ -72,6 +108,7 @@
       <button class="btn" onclick="window.location.href='dashboard.html'">← Dashboard</button>
       <button class="btn btn-primary" id="btn-invite" onclick="openInvite()">+ Invite User</button>
       <button class="btn" onclick="signOut()">Sign Out</button>
+      <button class="btn" onclick="switchPage('tasks')">Team Tasks</button>
     </div>
   </header>
 
@@ -82,6 +119,7 @@
     <button type="button" id="tab-holidays" onclick="switchPage('holidays')" style="padding:8px 16px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);">Holidays</button>
     <button type="button" id="tab-policy" onclick="switchPage('policy')" style="padding:8px 16px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);">Policy Config</button>
     <button type="button" id="tab-leave-balance" onclick="switchPage('leave-balance')" style="padding:8px 16px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);">Leave Balances</button>
+    <button type="button" id="tab-tasks" onclick="switchPage('tasks')" style="padding:8px 16px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);">Team Tasks</button>
   </div>
 
   <div id="status-bar" class="status-bar"></div>
@@ -280,6 +318,20 @@
     <div id="leave-balances-body">
       <p style="color:#888;">Loading...</p>
     </div>
+  </div>
+
+  <div id="page-tasks" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <h2 style="font-family:'Instrument Serif',serif;font-size:26px;font-weight:normal">Team Tasks</h2>
+        <p id="tasks-week-label" style="font-size:13px;color:var(--text2);margin-top:4px"></p>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="shiftWeek(-1)">← Prev week</button>
+        <button class="btn" onclick="shiftWeek(1)">Next week →</button>
+      </div>
+    </div>
+    <div id="tasks-week-grid" style="overflow-x:auto"></div>
   </div>
 
 </div>
@@ -559,7 +611,7 @@ async function submitInvite() {
 let auditState = { page: 1, page_size: 50, total: 0, filters: {}, loaded: false };
 
 function switchPage(name) {
-  const pages = ['users', 'audit', 'tardy', 'holidays', 'policy', 'leave-balance'];
+  const pages = ['users', 'audit', 'tardy', 'holidays', 'policy', 'leave-balance', 'tasks'];
   const titles = {
     users:          'User Management',
     audit:          'Audit Log',
@@ -567,6 +619,7 @@ function switchPage(name) {
     holidays:       'Holidays',
     policy:         'Policy Config',
     'leave-balance': 'Leave Balances',
+    tasks:          'Team Tasks',
   };
 
   // Hide all known pages
@@ -613,6 +666,7 @@ function switchPage(name) {
   if (name === 'holidays') loadHolidays();
   if (name === 'policy') loadPolicyConfig();
   if (name === 'leave-balance') loadLeaveBalances();
+  if (name === 'tasks') loadTeamTasks();
 }
 
 function applyAuditFilters() {
@@ -1350,6 +1404,95 @@ async function submitAssignTask() {
     await loadDayTasks();
     await loadTasksDots();
   } catch (e) { errEl.textContent = e.message; }
+}
+
+let _weekStart = null;
+
+function getMonday(d) {
+  const date = new Date(d);
+  const day  = date.getDay();
+  const diff = (day === 0 ? -6 : 1 - day);
+  date.setDate(date.getDate() + diff);
+  return date.toISOString().slice(0, 10);
+}
+
+function addDays(iso, n) {
+  const d = new Date(iso);
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function loadTeamTasks() {
+  if (!_weekStart) _weekStart = getMonday(new Date());
+  fetchTeamTasks();
+}
+
+function shiftWeek(delta) {
+  _weekStart = addDays(_weekStart, delta * 7);
+  fetchTeamTasks();
+}
+
+async function fetchTeamTasks() {
+  const gridEl = document.getElementById('tasks-week-grid');
+  gridEl.innerHTML = '<p style="padding:16px;color:var(--text2)">Loading…</p>';
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const days = Array.from({ length: 6 }, (_, i) => addDays(_weekStart, i));
+  const endISO = days[5];
+  const [y1, m1, d1] = _weekStart.split('-');
+  const [y2, m2, d2] = endISO.split('-');
+  document.getElementById('tasks-week-label').textContent =
+    `Week of ${parseInt(m1)}/${parseInt(d1)}/${y1} – ${parseInt(m2)}/${parseInt(d2)}/${y2}`;
+  try {
+    const res = await apiFetch(`${API_BASE}/todos/admin/week?week_start=${_weekStart}`);
+    const data = await res.json();
+    if (!res.ok) { gridEl.innerHTML = `<p style="padding:16px;color:var(--red)">${escapeHtml(data.error || 'Error loading.')}</p>`; return; }
+    renderWeekGrid(data.members || [], data.todos || [], days, todayISO);
+  } catch (e) {
+    gridEl.innerHTML = `<p style="padding:16px;color:var(--red)">${escapeHtml(e.message)}</p>`;
+  }
+}
+
+const TEAM_DOW = ['Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function renderWeekGrid(members, todos, days, todayISO) {
+  const gridEl = document.getElementById('tasks-week-grid');
+  const isWkEnd = (iso) => { const d = new Date(iso).getDay(); return d === 0 || d === 6; };
+
+  let html = `<div class="week-grid" style="grid-template-columns:160px repeat(${days.length},1fr)">`;
+
+  html += `<div class="wg-head" style="text-align:left;align-items:flex-start">Member</div>`;
+  days.forEach((iso, i) => {
+    const [,, d] = iso.split('-');
+    const isToday = iso === todayISO;
+    const cls = isToday ? 'wg-head today-col' : isWkEnd(iso) ? 'wg-head weekend-col' : 'wg-head';
+    html += `<div class="${cls}"><span style="font-size:10px">${isToday ? TEAM_DOW[i] + ' · TODAY' : TEAM_DOW[i]}</span><span style="font-family:'Instrument Serif',serif;font-size:18px">${parseInt(d)}</span></div>`;
+  });
+
+  if (!members.length) {
+    html += `<div style="grid-column:1/-1;padding:24px;text-align:center;color:var(--text2)">No active members.</div>`;
+  }
+  members.forEach(m => {
+    const initials = m.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    html += `<div class="wg-member-cell">
+      <div style="width:26px;height:26px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--accent);flex-shrink:0">${escapeHtml(initials)}</div>
+      <div><div style="font-size:12.5px;font-weight:500">${escapeHtml(m.name)}</div></div>
+    </div>`;
+    days.forEach(iso => {
+      const isToday = iso === todayISO;
+      const isWknd  = isWkEnd(iso);
+      const cls     = isToday ? 'wg-cell today-col' : isWknd ? 'wg-cell weekend-col' : 'wg-cell';
+      const dayTodos = todos.filter(t => t.user_id === m.id && String(t.date).slice(0, 10) === iso);
+      const pills = dayTodos.map(t =>
+        `<div class="wg-todo-pill ${t.completed ? 'done' : ''}" title="${escapeHtml(t.text)}" onclick="openMemberTasksModal('${m.id}', ${JSON.stringify(m.name)})">
+          <span class="pip"></span><span class="wg-pill-text">${escapeHtml(t.text)}</span>
+        </div>`
+      ).join('');
+      html += `<div class="${cls}">${pills}</div>`;
+    });
+  });
+
+  html += '</div>';
+  gridEl.innerHTML = html;
 }
 </script>
 </body>
