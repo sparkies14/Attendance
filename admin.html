@@ -48,6 +48,19 @@
   .status-bar.show { display: block; }
   .status-bar.error   { background: #fdf0f0; color: var(--red); border: 1px solid #f5d0d0; }
   .status-bar.success { background: var(--accent-light); color: var(--accent); border: 1px solid #d4eadc; }
+.tasks-cal-cell {
+  padding: 4px 2px; border-radius: 6px; text-align: center;
+  font-size: 11px; cursor: pointer; border: 1.5px solid transparent;
+  min-height: 28px; position: relative;
+}
+.tasks-cal-cell:hover { background: var(--accent-light); }
+.tasks-cal-cell.has-todos::after {
+  content: ''; position: absolute; bottom: 2px; right: 3px;
+  width: 4px; height: 4px; border-radius: 50%; background: #6d28d9;
+}
+.tasks-cal-cell.selected { border-color: var(--amber); }
+.tasks-cal-cell.weekend  { color: var(--text3); cursor: default; }
+.tasks-cal-cell.weekend:hover { background: transparent; }
 </style>
 </head>
 <body>
@@ -335,6 +348,47 @@
   </div>
 </div>
 
+<!-- ── Member Tasks Modal ── -->
+<div id="modal-member-tasks" class="modal-bg">
+  <div class="modal" style="width:680px;max-width:95vw">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h2 id="tasks-modal-name" style="font-size:20px">Tasks</h2>
+      <button class="btn" onclick="closeMemberTasksModal()" style="padding:4px 10px;font-size:18px;line-height:1">×</button>
+    </div>
+
+    <div style="display:flex;gap:20px;align-items:flex-start">
+      <!-- Mini calendar -->
+      <div style="flex-shrink:0;width:220px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <button class="btn" style="padding:4px 10px" onclick="shiftTasksMonth(-1)">←</button>
+          <span id="tasks-month-label" style="font-family:'Instrument Serif',serif;font-size:16px"></span>
+          <button class="btn" style="padding:4px 10px" onclick="shiftTasksMonth(1)">→</button>
+        </div>
+        <div id="tasks-mini-cal" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:11px"></div>
+      </div>
+
+      <!-- Day tasks panel -->
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span id="tasks-day-label" style="font-family:'Instrument Serif',serif;font-size:15px;color:var(--text2)">Select a day</span>
+          <button class="btn btn-primary" style="font-size:12px;padding:5px 10px" onclick="openAssignTaskForm()">+ Assign task</button>
+        </div>
+        <div id="tasks-assign-form" style="display:none;margin-bottom:10px">
+          <div style="display:flex;gap:6px">
+            <input id="tasks-assign-input" style="flex:1;padding:7px 10px;font-size:13px;border:1px solid var(--border);border-radius:8px;font-family:inherit" placeholder="Task description…">
+            <button class="btn btn-primary" style="font-size:12px" onclick="submitAssignTask()">Save</button>
+            <button class="btn" style="font-size:12px" onclick="closeAssignTaskForm()">Cancel</button>
+          </div>
+          <p id="tasks-assign-error" style="color:var(--red);font-size:12px;margin-top:4px"></p>
+        </div>
+        <div id="tasks-day-list" style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto">
+          <p style="font-size:12px;color:var(--text3)">Select a day on the calendar.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="invite-modal">
   <div class="modal">
     <h2>Invite User</h2>
@@ -435,6 +489,7 @@ function renderUsers(users) {
 function actionButtons(u, isMe) {
   if (isMe) return '<span style="color:var(--text3);font-size:12px;">(you)</span>';
   const buttons = [];
+  if (!isMe) buttons.push(`<button class="btn" onclick="openMemberTasksModal('${u.id}', ${JSON.stringify(u.name)})">Tasks</button>`);
   const myRole = currentUser.role;
 
   if (u.status !== 'Active' && canAct(u, 'activate'))
@@ -1144,6 +1199,153 @@ async function submitLeaveAdjustment() {
   } catch (e) {
     errEl.textContent = e.message;
   }
+}
+
+let _tasksUserId  = null;
+let _tasksYear    = new Date().getFullYear();
+let _tasksMonth   = new Date().getMonth() + 1;
+let _tasksSelDate = null;
+let _tasksDots    = {};
+
+const TASK_MONTHS = ['January','February','March','April','May','June',
+  'July','August','September','October','November','December'];
+const TASK_DOW = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+function openMemberTasksModal(userId, name) {
+  _tasksUserId = userId;
+  _tasksYear   = new Date().getFullYear();
+  _tasksMonth  = new Date().getMonth() + 1;
+  _tasksSelDate = null;
+  document.getElementById('tasks-modal-name').textContent = name + ' — Tasks';
+  document.getElementById('tasks-day-label').textContent  = 'Select a day';
+  document.getElementById('tasks-day-list').innerHTML     = '<p style="font-size:12px;color:var(--text3)">Select a day on the calendar.</p>';
+  closeAssignTaskForm();
+  loadTasksDots();
+  document.getElementById('modal-member-tasks').classList.add('show');
+}
+
+function closeMemberTasksModal() {
+  document.getElementById('modal-member-tasks').classList.remove('show');
+}
+
+async function loadTasksDots() {
+  try {
+    const res = await apiFetch(`${API_BASE}/todos/admin/month?user_id=${_tasksUserId}&month=${_tasksMonth}&year=${_tasksYear}`);
+    const { todosByDate } = await res.json();
+    _tasksDots = todosByDate || {};
+  } catch { _tasksDots = {}; }
+  renderTasksMiniCal();
+}
+
+function renderTasksMiniCal() {
+  document.getElementById('tasks-month-label').textContent = `${TASK_MONTHS[_tasksMonth - 1]} ${_tasksYear}`;
+  const firstDow = new Date(_tasksYear, _tasksMonth - 1, 1).getDay();
+  const days     = new Date(_tasksYear, _tasksMonth, 0).getDate();
+  let html = TASK_DOW.map(d => `<div style="text-align:center;font-size:10px;color:var(--text3);padding:2px 0;font-weight:600;">${d}</div>`).join('');
+  for (let i = 0; i < firstDow; i++) html += '<div></div>';
+  for (let day = 1; day <= days; day++) {
+    const dow  = new Date(_tasksYear, _tasksMonth - 1, day).getDay();
+    const iso  = `${_tasksYear}-${String(_tasksMonth).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const isWk = dow === 0 || dow === 6;
+    const isSel = iso === _tasksSelDate;
+    const hasDot = !!_tasksDots[iso];
+    const cls  = ['tasks-cal-cell', isWk ? 'weekend' : '', isSel ? 'selected' : '', hasDot ? 'has-todos' : ''].filter(Boolean).join(' ');
+    const onclick = isWk ? '' : `onclick="selectTasksDay('${iso}', ${day})"`;
+    html += `<div class="${cls}" ${onclick}>${day}</div>`;
+  }
+  document.getElementById('tasks-mini-cal').innerHTML = html;
+}
+
+function shiftTasksMonth(delta) {
+  _tasksMonth += delta;
+  if (_tasksMonth > 12) { _tasksMonth = 1;  _tasksYear++; }
+  if (_tasksMonth < 1)  { _tasksMonth = 12; _tasksYear--; }
+  _tasksSelDate = null;
+  document.getElementById('tasks-day-label').textContent = 'Select a day';
+  document.getElementById('tasks-day-list').innerHTML = '<p style="font-size:12px;color:var(--text3)">Select a day on the calendar.</p>';
+  closeAssignTaskForm();
+  loadTasksDots();
+}
+
+async function selectTasksDay(iso, day) {
+  _tasksSelDate = iso;
+  const dow = TASK_DOW[new Date(_tasksYear, _tasksMonth - 1, day).getDay()];
+  document.getElementById('tasks-day-label').textContent = `${TASK_MONTHS[_tasksMonth - 1]} ${day}, ${_tasksYear} · ${dow}`;
+  renderTasksMiniCal();
+  closeAssignTaskForm();
+  await loadDayTasks();
+}
+
+async function loadDayTasks() {
+  const listEl = document.getElementById('tasks-day-list');
+  listEl.innerHTML = '<p style="font-size:12px;color:var(--text3)">Loading…</p>';
+  try {
+    const res = await apiFetch(`${API_BASE}/todos/admin?user_id=${_tasksUserId}&date=${_tasksSelDate}`);
+    const data = await res.json();
+    if (!res.ok) { listEl.innerHTML = `<p style="font-size:12px;color:var(--red)">${escapeHtml(data.error || 'Error loading tasks.')}</p>`; return; }
+    renderDayTasks(data.todos || []);
+  } catch (e) {
+    listEl.innerHTML = `<p style="font-size:12px;color:var(--red)">${escapeHtml(e.message)}</p>`;
+  }
+}
+
+function renderDayTasks(todos) {
+  const listEl = document.getElementById('tasks-day-list');
+  if (!todos.length) { listEl.innerHTML = '<p style="font-size:12px;color:var(--text3)">No tasks for this day.</p>'; return; }
+  listEl.innerHTML = todos.map(t => `
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:8px;background:#fafaf8;border:1px solid var(--border);opacity:${t.completed ? 0.6 : 1}">
+      <button onclick="adminToggleTodo(${t.id}, ${!t.completed})" style="width:16px;height:16px;border-radius:4px;border:${t.completed ? 'none' : '1.5px solid #ccc'};background:${t.completed ? 'var(--accent)' : 'transparent'};color:white;font-size:10px;flex-shrink:0;margin-top:1px;cursor:pointer">${t.completed ? '✓' : ''}</button>
+      <span style="flex:1;font-size:13px;color:var(--text);line-height:1.4;text-decoration:${t.completed ? 'line-through' : 'none'}">${escapeHtml(t.text)}${t.created_by ? `<span style="font-size:10px;color:var(--text3);margin-left:6px">(assigned by ${escapeHtml(t.created_by)})</span>` : ''}</span>
+      <button onclick="adminDeleteTodo(${t.id})" style="background:none;border:none;cursor:pointer;font-size:13px;color:#ccc;padding:0 2px">×</button>
+    </div>
+  `).join('');
+}
+
+async function adminToggleTodo(id, completed) {
+  try {
+    const res = await apiFetch(`${API_BASE}/todos/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ completed }) });
+    if (res.ok) await loadDayTasks();
+  } catch {}
+}
+
+async function adminDeleteTodo(id) {
+  try {
+    const res = await apiFetch(`${API_BASE}/todos/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      await loadDayTasks();
+      await loadTasksDots();
+    }
+  } catch {}
+}
+
+function openAssignTaskForm() {
+  if (!_tasksSelDate) { showStatus('error', 'Select a day first.'); return; }
+  document.getElementById('tasks-assign-form').style.display = 'block';
+  document.getElementById('tasks-assign-input').value = '';
+  document.getElementById('tasks-assign-error').textContent = '';
+  document.getElementById('tasks-assign-input').focus();
+}
+
+function closeAssignTaskForm() {
+  document.getElementById('tasks-assign-form').style.display = 'none';
+}
+
+async function submitAssignTask() {
+  const text  = document.getElementById('tasks-assign-input').value.trim();
+  const errEl = document.getElementById('tasks-assign-error');
+  errEl.textContent = '';
+  if (!text) { errEl.textContent = 'Task text is required.'; return; }
+  try {
+    const res = await apiFetch(`${API_BASE}/todos/admin`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: _tasksUserId, date: _tasksSelDate, text }),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Failed to assign task.'; return; }
+    closeAssignTaskForm();
+    await loadDayTasks();
+    await loadTasksDots();
+  } catch (e) { errEl.textContent = e.message; }
 }
 </script>
 </body>
