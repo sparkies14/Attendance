@@ -377,6 +377,83 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                   </form>
                 </div>
               )}
+
+              {/* ── Todos section ── */}
+              <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 16, paddingTop: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <span style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    Tasks for this day
+                  </span>
+                  {!showAddForm && (
+                    <button
+                      onClick={() => setShowAddForm(true)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 6, padding: '3px 10px', fontSize: 11.5, fontFamily: F_SANS, color: C.text2, cursor: 'pointer' }}
+                    >
+                      + Add task
+                    </button>
+                  )}
+                </div>
+
+                {todoErr && <p style={{ fontSize: 12, color: C.red, marginBottom: 8 }}>{todoErr}</p>}
+                {todosBusy && <p style={{ fontSize: 12, color: C.text3 }}>Loading…</p>}
+
+                {!todosBusy && todos.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
+                    {todos.map(todo => (
+                      <div
+                        key={todo.id}
+                        style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', borderRadius: 8, background: C.surface2, border: `1px solid ${C.border}`, opacity: todo.completed ? 0.6 : 1 }}
+                      >
+                        <button
+                          onClick={() => toggleTodo(todo.id, !todo.completed)}
+                          style={{ width: 16, height: 16, borderRadius: 4, border: todo.completed ? 'none' : `1.5px solid ${C.borderStrong}`, background: todo.completed ? C.green : 'transparent', color: '#fff', fontSize: 10, flexShrink: 0, marginTop: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          {todo.completed ? '✓' : ''}
+                        </button>
+                        <span style={{ flex: 1, fontSize: 13, color: C.text, lineHeight: 1.4, textDecoration: todo.completed ? 'line-through' : 'none' }}>
+                          {todo.text}
+                        </span>
+                        <button
+                          onClick={() => deleteTodo(todo.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: C.text3, padding: '0 2px', lineHeight: 1 }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!todosBusy && todos.length === 0 && !showAddForm && (
+                  <p style={{ fontSize: 12, color: C.text3, marginBottom: 8 }}>No tasks for this day.</p>
+                )}
+
+                {showAddForm && (
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                    <input
+                      autoFocus
+                      value={addText}
+                      onChange={e => setAddText(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') addTodo(toISO(selected!.date)); if (e.key === 'Escape') { setShowAddForm(false); setAddText(''); } }}
+                      placeholder="What do you need to do?"
+                      style={{ flex: 1, padding: '7px 10px', border: `1px solid ${C.accentBorder}`, borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, background: C.surface, color: C.text, outline: 'none' }}
+                    />
+                    <button
+                      onClick={() => addTodo(toISO(selected!.date))}
+                      disabled={addBusy || !addText.trim()}
+                      style={{ padding: '7px 12px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}
+                    >
+                      {addBusy ? '…' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => { setShowAddForm(false); setAddText(''); }}
+                      style={{ padding: '7px 10px', background: 'transparent', color: C.text2, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F_SANS, cursor: 'pointer' }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
