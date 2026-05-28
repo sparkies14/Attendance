@@ -12,6 +12,7 @@ const app = express();
 
 const CORS_ORIGINS = new Set([
   'https://sparkies14.github.io',
+  'https://attendance-zeta-tawny.vercel.app',
   process.env.FRONTEND_URL,
 ].filter(Boolean));
 
