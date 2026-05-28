@@ -1231,8 +1231,12 @@ function closeMemberTasksModal() {
 async function loadTasksDots() {
   try {
     const res = await apiFetch(`${API_BASE}/todos/admin/month?user_id=${_tasksUserId}&month=${_tasksMonth}&year=${_tasksYear}`);
-    const { todosByDate } = await res.json();
-    _tasksDots = todosByDate || {};
+    if (res.ok) {
+      const { todosByDate } = await res.json();
+      _tasksDots = todosByDate || {};
+    } else {
+      _tasksDots = {};
+    }
   } catch { _tasksDots = {}; }
   renderTasksMiniCal();
 }
