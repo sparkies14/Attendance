@@ -3,7 +3,7 @@
 import { clientFetch } from '@/lib/clientFetch';
 
 import { useState } from 'react';
-import type { MemberData, CalendarDay, Todo } from '../MemberDashboard';
+import type { MemberData, CalendarDay, PlanEvent } from '../MemberDashboard';
 
 interface Props {
   email: string;
@@ -78,16 +78,18 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
   const [appMsg,   setAppMsg]   = useState<string | null>(null);
   const [appErr,   setAppErr]   = useState<string | null>(null);
   const [appBusy,  setAppBusy]  = useState(false);
-  const [todos,       setTodos]       = useState<Todo[]>([]);
-  const [todosBusy,   setTodosBusy]   = useState(false);
-  const [todoErr,     setTodoErr]     = useState<string | null>(null);
+  const [events,      setEvents]      = useState<PlanEvent[]>([]);
+  const [eventsBusy,  setEventsBusy]  = useState(false);
+  const [eventErr,    setEventErr]    = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [addText,     setAddText]     = useState('');
+  const [addTitle,    setAddTitle]    = useState('');
+  const [addStart,    setAddStart]    = useState('09:00');
+  const [addEnd,      setAddEnd]      = useState('10:00');
   const [addBusy,     setAddBusy]     = useState(false);
 
   async function navigate(m: number, y: number) {
     setNavErr(null); setBusy(true); setSelected(null); setAppDay(null);
-    setTodos([]); setShowAddForm(false); setTodoErr(null);
+    setEvents([]); setShowAddForm(false); setEventErr(null);
     try {
       const r = await clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${m}&year=${y}`, { });
       if (r.ok) { setData(await r.json()); setMonth(m); setYear(y); }
@@ -111,50 +113,53 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
     finally  { setAppBusy(false); }
   }
 
-  async function fetchTodos(isoDate: string) {
-    setTodosBusy(true); setTodoErr(null); setTodos([]);
+  async function fetchEvents(isoDate: string) {
+    setEventsBusy(true); setEventErr(null); setEvents([]);
     try {
-      const r = await clientFetch(`${apiUrl}/todos?date=${isoDate}`, { });
-      if (r.ok) setTodos((await r.json()).todos ?? []);
-      else setTodoErr('Could not load tasks.');
-    } catch { setTodoErr('Network error.'); }
-    finally  { setTodosBusy(false); }
+      const r = await clientFetch(`${apiUrl}/plan-events?date=${isoDate}`);
+      if (r.ok) setEvents((await r.json()).events ?? []);
+      else setEventErr('Could not load plan.');
+    } catch { setEventErr('Network error.'); }
+    finally  { setEventsBusy(false); }
   }
 
-  async function addTodo(isoDate: string) {
-    if (!addText.trim()) return;
+  async function addEvent(isoDate: string, keepForm: boolean) {
+    if (!addTitle.trim()) return;
     setAddBusy(true);
     try {
-      const r = await clientFetch(`${apiUrl}/todos`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: isoDate, text: addText.trim() }),
+      const r = await clientFetch(`${apiUrl}/plan-events`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: isoDate, title: addTitle.trim(), start_time: addStart, end_time: addEnd }),
       });
       if (r.ok) {
-        const { todo } = await r.json();
-        setTodos(prev => [...prev, todo]);
-        setAddText(''); setShowAddForm(false);
-      } else { setTodoErr('Could not save task.'); }
-    } catch { setTodoErr('Network error.'); }
+        const { event } = await r.json();
+        setEvents(prev => [...prev, event].sort((a, b) => a.start_time.localeCompare(b.start_time)));
+        setAddTitle('');
+        if (!keepForm) { setShowAddForm(false); setAddStart('09:00'); setAddEnd('10:00'); }
+      } else { setEventErr('Could not save event.'); }
+    } catch { setEventErr('Network error.'); }
     finally  { setAddBusy(false); }
   }
 
-  async function toggleTodo(id: number, completed: boolean) {
+  async function toggleEvent(id: number, completed: boolean) {
     try {
-      const r = await clientFetch(`${apiUrl}/todos/${id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ completed }),
+      const r = await clientFetch(`${apiUrl}/plan-events/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed }),
       });
       if (r.ok) {
-        const { todo } = await r.json();
-        setTodos(prev => prev.map(t => t.id === id ? todo : t));
-      } else { setTodoErr('Could not update task.'); }
-    } catch { setTodoErr('Network error.'); }
+        const { event } = await r.json();
+        setEvents(prev => prev.map(e => e.id === id ? event : e));
+      } else { setEventErr('Could not update event.'); }
+    } catch { setEventErr('Network error.'); }
   }
 
-  async function deleteTodo(id: number) {
+  async function deleteEvent(id: number) {
     try {
-      const r = await clientFetch(`${apiUrl}/todos/${id}`, { method: 'DELETE' });
-      if (r.ok) setTodos(prev => prev.filter(t => t.id !== id));
-      else setTodoErr('Could not delete task.');
-    } catch { setTodoErr('Network error.'); }
+      const r = await clientFetch(`${apiUrl}/plan-events/${id}`, { method: 'DELETE' });
+      if (r.ok) setEvents(prev => prev.filter(e => e.id !== id));
+      else setEventErr('Could not delete event.');
+    } catch { setEventErr('Network error.'); }
   }
 
   const calendar     = data?.calendar ?? [];
@@ -235,11 +240,11 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                       onClick={() => {
                         if (!canSelect) return;
                         if (isSel) {
-                          setSelected(null); setTodos([]); setShowAddForm(false); setTodoErr(null);
+                          setSelected(null); setEvents([]); setShowAddForm(false); setEventErr(null);
                         } else {
                           setSelected(cell);
-                          fetchTodos(toISO(cell.date));
-                          setShowAddForm(false); setTodoErr(null);
+                          fetchEvents(toISO(cell.date));
+                          setShowAddForm(false); setEventErr(null);
                         }
                       }}
                       style={{
@@ -277,8 +282,8 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                           {parseFloat(String(cell.totalHours)).toFixed(1)}h
                         </div>
                       )}
-                      {/* Todo dot */}
-                      {!cell.isWeekend && (data?.todosByDate?.[toISO(cell.date)] ?? 0) > 0 && (
+                      {/* Plan dot */}
+                      {!cell.isWeekend && (data?.planEventsByDate?.[toISO(cell.date)] ?? 0) > 0 && (
                         <div style={{
                           position: 'absolute', bottom: 5, right: 6,
                           width: 5, height: 5, borderRadius: '50%',
@@ -301,7 +306,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
               ))}
               <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.04em' }}>
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#7c3aed', display: 'inline-block' }} />
-                Has tasks
+                Has plans
               </span>
             </div>
           </div>
@@ -383,43 +388,48 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                 </div>
               )}
 
-              {/* ── Todos section ── */}
+              {/* ── Plan events section ── */}
               <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 16, paddingTop: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                   <span style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    Tasks for this day
+                    Day plan
                   </span>
                   {!showAddForm && (
                     <button
                       onClick={() => setShowAddForm(true)}
                       style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 6, padding: '3px 10px', fontSize: 11.5, fontFamily: F_SANS, color: C.text2, cursor: 'pointer' }}
                     >
-                      + Add task
+                      + Add event
                     </button>
                   )}
                 </div>
 
-                {todoErr && <p style={{ fontSize: 12, color: C.red, marginBottom: 8 }}>{todoErr}</p>}
-                {todosBusy && <p style={{ fontSize: 12, color: C.text3 }}>Loading…</p>}
+                {eventErr && <p style={{ fontSize: 12, color: C.red, marginBottom: 8 }}>{eventErr}</p>}
+                {eventsBusy && <p style={{ fontSize: 12, color: C.text3 }}>Loading…</p>}
 
-                {!todosBusy && todos.length > 0 && (
+                {!eventsBusy && events.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
-                    {todos.map(todo => (
+                    {events.map(ev => (
                       <div
-                        key={todo.id}
-                        style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', borderRadius: 8, background: C.surface2, border: `1px solid ${C.border}`, opacity: todo.completed ? 0.6 : 1 }}
+                        key={ev.id}
+                        style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 11px', borderRadius: 9, background: C.surface2, border: `1px solid ${C.border}`, opacity: ev.completed ? 0.55 : 1 }}
                       >
                         <button
-                          onClick={() => toggleTodo(todo.id, !todo.completed)}
-                          style={{ width: 16, height: 16, borderRadius: 4, border: todo.completed ? 'none' : `1.5px solid ${C.borderStrong}`, background: todo.completed ? C.green : 'transparent', color: '#fff', fontSize: 10, flexShrink: 0, marginTop: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          onClick={() => toggleEvent(ev.id, !ev.completed)}
+                          style={{ width: 16, height: 16, borderRadius: 4, border: ev.completed ? 'none' : `1.5px solid ${C.borderStrong}`, background: ev.completed ? C.green : 'transparent', color: '#fff', fontSize: 10, flexShrink: 0, marginTop: 2, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         >
-                          {todo.completed ? '✓' : ''}
+                          {ev.completed ? '✓' : ''}
                         </button>
-                        <span style={{ flex: 1, fontSize: 13, color: C.text, lineHeight: 1.4, textDecoration: todo.completed ? 'line-through' : 'none' }}>
-                          {todo.text}
-                        </span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: '#7c3aed', letterSpacing: '0.03em', marginBottom: 2 }}>
+                            {ev.start_time} – {ev.end_time}
+                          </div>
+                          <div style={{ fontSize: 13, color: C.text, lineHeight: 1.3, textDecoration: ev.completed ? 'line-through' : 'none' }}>
+                            {ev.title}
+                          </div>
+                        </div>
                         <button
-                          onClick={() => deleteTodo(todo.id)}
+                          onClick={() => deleteEvent(ev.id)}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: C.text3, padding: '0 2px', lineHeight: 1 }}
                         >
                           ×
@@ -429,33 +439,61 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                   </div>
                 )}
 
-                {!todosBusy && todos.length === 0 && !showAddForm && (
-                  <p style={{ fontSize: 12, color: C.text3, marginBottom: 8 }}>No tasks for this day.</p>
+                {!eventsBusy && events.length === 0 && !showAddForm && (
+                  <p style={{ fontSize: 12, color: C.text3, marginBottom: 8 }}>No plan events for this day.</p>
                 )}
 
                 {showAddForm && (
-                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                  <div style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 10, padding: '14px', marginTop: 6 }}>
+                    <div style={{ fontFamily: F_MONO, fontSize: 10, color: '#7c3aed', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>
+                      New plan event
+                    </div>
                     <input
                       autoFocus
-                      value={addText}
-                      onChange={e => setAddText(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') addTodo(toISO(selected!.date)); if (e.key === 'Escape') { setShowAddForm(false); setAddText(''); } }}
-                      placeholder="What do you need to do?"
-                      style={{ flex: 1, padding: '7px 10px', border: `1px solid ${C.accentBorder}`, borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, background: C.surface, color: C.text, outline: 'none' }}
+                      value={addTitle}
+                      onChange={e => setAddTitle(e.target.value)}
+                      placeholder="What are you doing? (e.g. Meeting with AT)"
+                      style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, background: C.surface, color: C.text, outline: 'none', marginBottom: 8, boxSizing: 'border-box' as const }}
                     />
-                    <button
-                      onClick={() => addTodo(toISO(selected!.date))}
-                      disabled={addBusy || !addText.trim()}
-                      style={{ padding: '7px 12px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}
-                    >
-                      {addBusy ? '…' : 'Save'}
-                    </button>
-                    <button
-                      onClick={() => { setShowAddForm(false); setAddText(''); }}
-                      style={{ padding: '7px 10px', background: 'transparent', color: C.text2, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F_SANS, cursor: 'pointer' }}
-                    >
-                      Cancel
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <span style={{ fontFamily: F_MONO, fontSize: 9.5, color: C.text3, letterSpacing: '0.06em', flexShrink: 0 }}>FROM</span>
+                      <input
+                        type="time"
+                        value={addStart}
+                        onChange={e => setAddStart(e.target.value)}
+                        style={{ padding: '6px 8px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12.5, fontFamily: F_MONO, background: C.surface, color: C.text }}
+                      />
+                      <span style={{ color: C.text3, fontSize: 12 }}>→</span>
+                      <span style={{ fontFamily: F_MONO, fontSize: 9.5, color: C.text3, letterSpacing: '0.06em', flexShrink: 0 }}>TO</span>
+                      <input
+                        type="time"
+                        value={addEnd}
+                        onChange={e => setAddEnd(e.target.value)}
+                        style={{ padding: '6px 8px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12.5, fontFamily: F_MONO, background: C.surface, color: C.text }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        onClick={() => addEvent(toISO(selected!.date), false)}
+                        disabled={addBusy || !addTitle.trim()}
+                        style={{ padding: '7px 12px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}
+                      >
+                        {addBusy ? '…' : 'Save'}
+                      </button>
+                      <button
+                        onClick={() => addEvent(toISO(selected!.date), true)}
+                        disabled={addBusy || !addTitle.trim()}
+                        style={{ padding: '7px 12px', background: 'rgba(124,58,237,0.08)', color: '#7c3aed', border: '1px solid rgba(124,58,237,0.2)', borderRadius: 8, fontSize: 12, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}
+                      >
+                        Save + add another
+                      </button>
+                      <button
+                        onClick={() => { setShowAddForm(false); setAddTitle(''); setAddStart('09:00'); setAddEnd('10:00'); }}
+                        style={{ padding: '7px 10px', background: 'transparent', color: C.text2, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F_SANS, cursor: 'pointer' }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
