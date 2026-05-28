@@ -11,7 +11,7 @@ export default function OverviewTab({ user, leaveBalance, memberData }: Props) {
   const s = memberData?.summary;
 
   const statBox = (label: string, value: number, color: string) => (
-    <div key={label} style={{ flex: 1, padding: '1rem', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 10, textAlign: 'center' }}>
+    <div style={{ flex: 1, padding: '1rem', backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, textAlign: 'center' }}>
       <div style={{ fontFamily: 'monospace', fontSize: '1.5rem', fontWeight: 700, color }}>{value}</div>
       <div style={{ fontFamily: 'monospace', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280', marginTop: '0.25rem' }}>{label}</div>
     </div>
@@ -30,7 +30,7 @@ export default function OverviewTab({ user, leaveBalance, memberData }: Props) {
   return (
     <div>
       <div style={{ marginBottom: '0.5rem', fontFamily: 'Georgia, serif', fontSize: '1.1rem', color: '#111' }}>
-        {user.name}
+        {user.name || user.email}
       </div>
       <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#6b7280', marginBottom: '1.75rem' }}>
         {user.email}
@@ -56,7 +56,7 @@ export default function OverviewTab({ user, leaveBalance, memberData }: Props) {
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             {statBox('Total',     leaveBalance.total,     '#374151')}
             {statBox('Used',      leaveBalance.used,      '#d97706')}
-            {statBox('Remaining', leaveBalance.remaining, '#16a34a')}
+            {statBox('Remaining', Math.max(0, leaveBalance.remaining), '#16a34a')}
           </div>
         ) : (
           <p style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#6b7280' }}>No data available.</p>
