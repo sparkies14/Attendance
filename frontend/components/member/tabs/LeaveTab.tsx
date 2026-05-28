@@ -94,9 +94,9 @@ export default function LeaveTab({ email, leaveBalance, initialLeaveHistory, api
           <p style={labelStyle}>Leave Balance</p>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             {[
-              { label: 'Total',     val: leaveBalance.total,                         color: '#374151' },
+              { label: 'Total',     val: leaveBalance.grantsEarned,                  color: '#374151' },
               { label: 'Used',      val: leaveBalance.used,                          color: '#d97706' },
-              { label: 'Remaining', val: Math.max(0, leaveBalance.remaining),        color: '#16a34a' },
+              { label: 'Remaining', val: Math.max(0, leaveBalance.balance),          color: '#16a34a' },
             ].map(({ label, val, color }) => (
               <div key={label} style={{ flex: 1, minWidth: 80, padding: '0.75rem', backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, textAlign: 'center' }}>
                 <div style={{ fontFamily: 'monospace', fontSize: '1.25rem', fontWeight: 700, color }}>{val}</div>

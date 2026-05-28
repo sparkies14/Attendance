@@ -54,9 +54,9 @@ export default function OverviewTab({ user, leaveBalance, memberData }: Props) {
         <p style={labelStyle}>Leave Balance</p>
         {leaveBalance ? (
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            {statBox('Total',     leaveBalance.total,     '#374151')}
-            {statBox('Used',      leaveBalance.used,      '#d97706')}
-            {statBox('Remaining', Math.max(0, leaveBalance.remaining), '#16a34a')}
+            {statBox('Total',     leaveBalance.grantsEarned,          '#374151')}
+            {statBox('Used',      leaveBalance.used,                  '#d97706')}
+            {statBox('Remaining', Math.max(0, leaveBalance.balance),  '#16a34a')}
           </div>
         ) : (
           <p style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#6b7280' }}>No data available.</p>

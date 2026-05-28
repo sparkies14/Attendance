@@ -80,7 +80,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
   async function navigate(m: number, y: number) {
     setNavErr(null); setBusy(true); setSelected(null); setAppDay(null);
     try {
-      const r = await fetch(`${apiUrl}/member-data?email=${encodeURIComponent(email)}&month=${m}&year=${y}`, { credentials: 'include' });
+      const r = await fetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${m}&year=${y}`, { credentials: 'include' });
       if (r.ok) { setData(await r.json()); setMonth(m); setYear(y); }
       else setNavErr('Failed to load data.');
     } finally { setBusy(false); }

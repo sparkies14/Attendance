@@ -61,9 +61,10 @@ function buildMockData(month: number, year: number): { user: UserProfile; leaveB
       email: 'jocel@anosupo.ai',
       name: 'Jocel Reyes',
       hire_year: 2023,
-      total: 15,
+      grantsEarned: 15,
       used: 4,
-      remaining: 11,
+      adjustments: 0,
+      balance: 11,
     },
     memberData: {
       month,
@@ -98,7 +99,7 @@ export default async function MemberPage() {
   const [user, leaveBalance, memberData] = await Promise.all([
     safeFetch<UserProfile>(`${apiUrl}/auth/me`, token),
     safeFetch<LeaveBalance>(`${apiUrl}/leave-balance?email=${encodeURIComponent(email)}`, token),
-    safeFetch<MemberData>(`${apiUrl}/member-data?email=${encodeURIComponent(email)}&month=${month}&year=${year}`, token),
+    safeFetch<MemberData>(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${month}&year=${year}`, token),
   ]);
 
   // In development: fall back to mock data so the UI is always visible

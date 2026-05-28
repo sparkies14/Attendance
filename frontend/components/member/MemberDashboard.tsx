@@ -20,9 +20,10 @@ export interface LeaveBalance {
   email: string;
   name: string;
   hire_year: number;
-  total: number;
+  grantsEarned: number;
   used: number;
-  remaining: number;
+  adjustments: number;
+  balance: number;
 }
 
 export interface CalendarDay {

@@ -117,13 +117,13 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   async function doAction(body: Record<string, unknown>) {
     setLoading(true); setMsg(null); setErr(null);
     try {
-      const res  = await fetch(`${apiUrl}/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
+      const res  = await fetch(`${apiUrl}/webhook/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) { setErr(data.error ?? 'Action failed.'); }
       else {
         setMsg(data.message ?? 'Done.');
         const jst = getJST();
-        const r = await fetch(`${apiUrl}/member-data?email=${encodeURIComponent(user.email)}&month=${parseInt(jst.date.split('-')[1])}&year=${parseInt(jst.date.split('-')[0])}`, { credentials: 'include' });
+        const r = await fetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(user.email)}&month=${parseInt(jst.date.split('-')[1])}&year=${parseInt(jst.date.split('-')[0])}`, { credentials: 'include' });
         if (r.ok) {
           const d = await r.json();
           setToday(findToday(d.calendar));
@@ -145,7 +145,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     e.preventDefault();
     setLLoading(true); setLMsg(null); setLErr(null);
     try {
-      const res  = await fetch(`${apiUrl}/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'leave', date: leaveDate, leave_type: leaveType, reason: leaveReason }) });
+      const res  = await fetch(`${apiUrl}/webhook/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'leave', date: leaveDate, leave_type: leaveType, reason: leaveReason }) });
       const data = await res.json();
       if (!res.ok) { setLErr(data.error ?? 'Request failed.'); }
       else { setLMsg('Leave request submitted.'); setLeaveDate(''); setLeaveReason(''); }
@@ -341,17 +341,17 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
             <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Leave balance</div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
               <span style={{ fontFamily: F_SERIF, fontSize: 38, color: C.text, letterSpacing: '-0.025em', lineHeight: 1 }}>{leaveBalance.used}</span>
-              <span style={{ fontFamily: F_SERIF, fontSize: 22, color: C.text3, letterSpacing: '-0.015em' }}>/ {leaveBalance.total}</span>
+              <span style={{ fontFamily: F_SERIF, fontSize: 22, color: C.text3, letterSpacing: '-0.015em' }}>/ {leaveBalance.grantsEarned}</span>
             </div>
             <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.green, letterSpacing: '0.04em', marginBottom: 12 }}>
-              {Math.max(0, leaveBalance.remaining)} days available
+              {Math.max(0, leaveBalance.balance)} days available
             </div>
             <div style={{ height: 4, background: C.border, borderRadius: 999 }}>
-              <div style={{ height: '100%', width: `${Math.min(100, (leaveBalance.used / (leaveBalance.total || 1)) * 100)}%`, background: leaveBalance.remaining <= 5 ? C.accent : C.text, borderRadius: 999 }} />
+              <div style={{ height: '100%', width: `${Math.min(100, (leaveBalance.used / (leaveBalance.grantsEarned || 1)) * 100)}%`, background: leaveBalance.balance <= 5 ? C.accent : C.text, borderRadius: 999 }} />
             </div>
-            {leaveBalance.remaining <= 5 && leaveBalance.remaining > 0 && (
+            {leaveBalance.balance <= 5 && leaveBalance.balance > 0 && (
               <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.accent, marginTop: 8, letterSpacing: '0.02em' }}>
-                Only {leaveBalance.remaining} day{leaveBalance.remaining !== 1 ? 's' : ''} remaining.
+                Only {leaveBalance.balance} day{leaveBalance.balance !== 1 ? 's' : ''} remaining.
               </div>
             )}
           </div>

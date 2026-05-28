@@ -79,10 +79,13 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
   const [showForm,    setShowForm]    = useState(false);
 
   useEffect(() => {
+    const jst = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+    const month = jst.getMonth() + 1;
+    const year  = jst.getFullYear();
     setLoading(true);
-    fetch(`${apiUrl}/leaves?email=${encodeURIComponent(email)}`, { credentials: 'include' })
+    fetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${month}&year=${year}`, { credentials: 'include' })
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.leaves || d?.leaveHistory || Array.isArray(d)) setHistory(d?.leaves ?? d?.leaveHistory ?? d); })
+      .then(d => { if (d?.leaveHistory) setHistory(d.leaveHistory); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [email, apiUrl]);
@@ -91,7 +94,7 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
     e.preventDefault();
     setFormLoading(true); setFormMsg(null); setFormErr(null);
     try {
-      const res  = await fetch(`${apiUrl}/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'leave', date: leaveDate, leave_type: leaveType, reason: leaveReason }) });
+      const res  = await fetch(`${apiUrl}/webhook/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'leave', date: leaveDate, leave_type: leaveType, reason: leaveReason }) });
       const data = await res.json();
       if (!res.ok) { setFormErr(data.error ?? 'Request failed.'); }
       else {
@@ -181,24 +184,24 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
               <>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
                   <span style={{ fontFamily: F_SERIF, fontSize: 64, color: C.text, letterSpacing: '-0.04em', lineHeight: 0.85 }}>{leaveBalance.used}</span>
-                  <span style={{ fontFamily: F_SERIF, fontSize: 32, color: C.text3, letterSpacing: '-0.025em' }}>/ {leaveBalance.total}</span>
+                  <span style={{ fontFamily: F_SERIF, fontSize: 32, color: C.text3, letterSpacing: '-0.025em' }}>/ {leaveBalance.grantsEarned}</span>
                 </div>
                 <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.green, letterSpacing: '0.04em', marginBottom: 16 }}>
-                  {Math.max(0, leaveBalance.remaining)} days available · {pending.length} planned
+                  {Math.max(0, leaveBalance.balance)} days available · {pending.length} planned
                 </div>
                 {/* Stacked color bar */}
                 <div style={{ display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', gap: 1 }}>
                   {leaveBalance.used > 0 && (
                     <div style={{ flex: leaveBalance.used, background: C.accent, borderRadius: '999px 0 0 999px' }} />
                   )}
-                  {leaveBalance.remaining > 0 && (
-                    <div style={{ flex: leaveBalance.remaining, background: C.border, borderRadius: '0 999px 999px 0' }} />
+                  {leaveBalance.balance > 0 && (
+                    <div style={{ flex: leaveBalance.balance, background: C.border, borderRadius: '0 999px 999px 0' }} />
                   )}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: F_MONO, fontSize: 10, color: C.text3, marginTop: 6 }}>
                   <span>Used: {leaveBalance.used}d</span>
-                  <span>Remaining: {leaveBalance.remaining}d</span>
-                  <span>Total: {leaveBalance.total}d</span>
+                  <span>Remaining: {leaveBalance.balance}d</span>
+                  <span>Total: {leaveBalance.grantsEarned}d</span>
                 </div>
               </>
             ) : (
