@@ -26,7 +26,7 @@ function c(data, error = null) {
     single:      jest.fn(() => Promise.resolve(result)),
     insert:      jest.fn(() => ch),
     update:      jest.fn(() => ch),
-    delete:      jest.fn(() => Promise.resolve({ error: null })),
+    delete:      jest.fn(() => ch),
   };
   return ch;
 }

@@ -79,7 +79,7 @@ router.delete('/:id', async (req, res) => {
   if (!isAdmin && existing.user_id !== req.user.user_id) {
     return res.status(403).json({ error: 'Forbidden.' });
   }
-  const { error } = await supabase.from('todos').eq('id', id).delete();
+  const { error } = await supabase.from('todos').delete().eq('id', id);
   if (error) return res.status(500).json({ error: error.message });
   return res.json({ ok: true });
 });
