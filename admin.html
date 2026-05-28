@@ -1392,6 +1392,8 @@ function openAssignTaskForm() {
   if (!_tasksSelDate) { showStatus('error', 'Select a day first.'); return; }
   document.getElementById('tasks-assign-form').style.display = 'block';
   document.getElementById('tasks-assign-input').value = '';
+  document.getElementById('tasks-assign-start').value  = '09:00';
+  document.getElementById('tasks-assign-end').value    = '10:00';
   document.getElementById('tasks-assign-error').textContent = '';
   document.getElementById('tasks-assign-input').focus();
 }
