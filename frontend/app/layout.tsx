@@ -16,7 +16,11 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata = {
   title: 'Anosupo AI · 出勤管理',
-  viewport: 'width=device-width, initial-scale=1',
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
