@@ -10,39 +10,58 @@ interface Props {
   apiUrl: string;
 }
 
-const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const LEAVE_TYPES  = ['Vacation', 'Sick', 'Personal', 'Other'];
-
-const TYPE_COLOR: Record<string, string> = {
-  vacation: '#3b82f6',
-  sick:     '#ef4444',
-  personal: '#8b5cf6',
-  other:    '#f59e0b',
-  special:  '#f59e0b',
-  emergency:'#ef4444',
+const C = {
+  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
+  border: '#e6e6e6', borderStrong: '#d4d4d4',
+  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
+  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
+  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
+  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
+  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
 };
 
-const STATUS_COLOR: Record<string, string> = {
-  Approved: '#16a34a',
-  Pending:  '#d97706',
-  Rejected: '#dc2626',
+const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
+const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
+const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
+
+const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const LEAVE_TYPES = ['Vacation', 'Sick', 'Personal', 'Other'];
+
+const TYPE_COLOR: Record<string, string> = {
+  vacation:  '#2563eb',
+  sick:      '#dc2626',
+  personal:  '#7c3aed',
+  other:     '#b45309',
+  special:   '#b45309',
+  emergency: '#dc2626',
+};
+
+const STATUS_CONFIG: Record<string, { bg: string; border: string; text: string }> = {
+  Approved: { bg: C.greenSoft,  border: C.greenBorder,  text: C.green  },
+  Pending:  { bg: C.accentSoft, border: C.accentBorder, text: C.accent },
+  Rejected: { bg: C.redSoft,    border: C.redBorder,    text: C.red    },
 };
 
 function typeColor(t: string): string {
-  return TYPE_COLOR[t.toLowerCase()] ?? '#6b7280';
+  return TYPE_COLOR[t.toLowerCase()] ?? C.text3;
 }
 
-// Parse M/D/YYYY → Date (UTC)
 function parseDate(ds: string): Date {
   const [m, d, y] = ds.split('/').map(Number);
   return new Date(y, m - 1, d);
 }
 
-// Format M/D/YYYY → "May 29, 2026"
 function fmtDate(ds: string): string {
   try {
     const [m, d, y] = ds.split('/').map(Number);
-    return `${['January','February','March','April','May','June','July','August','September','October','November','December'][m-1]} ${d}, ${y}`;
+    return `${MONTHS_LONG[m-1]} ${d}, ${y}`;
+  } catch { return ds; }
+}
+
+function fmtShort(ds: string): string {
+  try {
+    const [m, d] = ds.split('/').map(Number);
+    return `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]} ${d}`;
   } catch { return ds; }
 }
 
@@ -51,16 +70,14 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
   const [filter,  setFilter]  = useState<string>('all');
   const [loading, setLoading] = useState(false);
 
-  // Leave form
-  const [showForm,    setShowForm]    = useState(false);
   const [leaveDate,   setLeaveDate]   = useState('');
   const [leaveType,   setLeaveType]   = useState(LEAVE_TYPES[0]);
   const [leaveReason, setLeaveReason] = useState('');
   const [formLoading, setFormLoading] = useState(false);
   const [formMsg,     setFormMsg]     = useState<string | null>(null);
   const [formErr,     setFormErr]     = useState<string | null>(null);
+  const [showForm,    setShowForm]    = useState(false);
 
-  // Fetch full leave history on mount
   useEffect(() => {
     setLoading(true);
     fetch(`${apiUrl}/leaves?email=${encodeURIComponent(email)}`, { credentials: 'include' })
@@ -80,12 +97,8 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
       else {
         setFormMsg('Leave request submitted.');
         setLeaveDate(''); setLeaveReason(''); setShowForm(false);
-        // Refresh
         const r = await fetch(`${apiUrl}/leaves?email=${encodeURIComponent(email)}`, { credentials: 'include' });
-        if (r.ok) {
-          const d = await r.json();
-          setHistory(d?.leaves ?? d?.leaveHistory ?? d ?? history);
-        }
+        if (r.ok) { const d = await r.json(); setHistory(d?.leaves ?? d?.leaveHistory ?? d ?? history); }
       }
     } catch { setFormErr('Network error.'); }
     finally  { setFormLoading(false); }
@@ -93,74 +106,64 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
 
   const today     = new Date();
   const thisYear  = today.getFullYear();
+  const yearStart = new Date(thisYear, 0, 1);
+  const yearEnd   = new Date(thisYear, 11, 31);
+  const yearMs    = yearEnd.getTime() - yearStart.getTime();
 
-  // Classify records
   const upcoming  = history.filter(r => { try { return parseDate(r.date) > today && r.status !== 'Rejected'; } catch { return false; } });
   const pending   = history.filter(r => r.status === 'Pending');
   const yearRecs  = history.filter(r => { try { return parseDate(r.date).getFullYear() === thisYear; } catch { return false; } });
+  const filtered  = filter === 'all' ? history : history.filter(r => r.status === filter);
 
-  // Per-type counts from history
-  const typeCounts = LEAVE_TYPES.reduce<Record<string, number>>((acc, t) => {
-    acc[t] = yearRecs.filter(r => r.leaveType?.toLowerCase() === t.toLowerCase() && r.status === 'Approved').length;
-    return acc;
-  }, {});
-
-  // Year at a glance: leaves by month
-  const monthBars = MONTHS_SHORT.map((lbl, i) => {
-    const count = yearRecs.filter(r => { try { return parseDate(r.date).getMonth() === i; } catch { return false; } }).length;
-    return { lbl, count };
-  });
-  const maxMonth = Math.max(1, ...monthBars.map(b => b.count));
-
-  // Filtered history for table
-  const filtered = filter === 'all' ? history : history.filter(r => r.status === filter);
-
-  const label: React.CSSProperties = { fontSize: '0.62rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase' as const, letterSpacing: '0.1em' };
-  const card: React.CSSProperties  = { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: '1.25rem' };
-  const inp: React.CSSProperties   = { width: '100%', padding: '0.45rem 0.65rem', border: '1px solid #e5e7eb', borderRadius: 7, fontSize: '0.82rem', color: '#111', backgroundColor: '#fff', boxSizing: 'border-box' as const };
+  const inp: React.CSSProperties = {
+    width: '100%', padding: '8px 10px', border: `1px solid ${C.border}`, borderRadius: 8,
+    fontSize: 12.5, color: C.text, background: C.bg, boxSizing: 'border-box', fontFamily: F_SANS,
+  };
 
   return (
     <div>
-      {/* Page heading */}
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: 800, color: '#111', margin: 0, lineHeight: 1.1 }}>Time off.</h2>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            style={{ padding: '0.5rem 1rem', backgroundColor: '#111', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
-          >
-            + Request leave
-          </button>
+      {/* Heading */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 6 }}>
+        <div>
+          <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Time off.</div>
+          <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
+            Balance · Year view · History · {thisYear}
+          </div>
         </div>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          style={{ padding: '8px 16px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 9, fontSize: 13, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}
+        >
+          + Request leave
+        </button>
       </div>
-      <p style={{ ...label, marginBottom: '1.5rem' }}>Balance · Year view · History · {thisYear}</p>
 
       {/* Leave request form */}
       {showForm && (
-        <div style={{ ...card, marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#111', marginBottom: '0.75rem' }}>New leave request</div>
-          {formMsg && <div style={{ marginBottom: '0.75rem', padding: '0.5rem 0.7rem', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 7, fontSize: '0.78rem', color: '#16a34a' }}>{formMsg}</div>}
-          {formErr && <div style={{ marginBottom: '0.75rem', padding: '0.5rem 0.7rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 7, fontSize: '0.78rem', color: '#dc2626' }}>{formErr}</div>}
-          <form onSubmit={submitLeave} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr auto', gap: '0.75rem', alignItems: 'flex-end' }}>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px', marginBottom: 16, marginTop: 16 }}>
+          <div style={{ fontFamily: F_SERIF, fontSize: 18, color: C.text, letterSpacing: '-0.01em', marginBottom: 14 }}>New leave request</div>
+          {formMsg && <div style={{ marginBottom: 10, padding: '8px 10px', background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 8, fontSize: 12.5, color: C.green }}>{formMsg}</div>}
+          {formErr && <div style={{ marginBottom: 10, padding: '8px 10px', background: C.redSoft,   border: `1px solid ${C.redBorder}`,   borderRadius: 8, fontSize: 12.5, color: C.red }}>{formErr}</div>}
+          <form onSubmit={submitLeave} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr auto', gap: 10, alignItems: 'flex-end' }}>
             <div>
-              <label style={{ ...label, display: 'block', marginBottom: '0.3rem' }}>Type</label>
+              <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Type</label>
               <select value={leaveType} onChange={e => setLeaveType(e.target.value)} style={inp}>
                 {LEAVE_TYPES.map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ ...label, display: 'block', marginBottom: '0.3rem' }}>Date</label>
+              <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Date</label>
               <input type="date" value={leaveDate} onChange={e => setLeaveDate(e.target.value)} required style={inp} />
             </div>
             <div>
-              <label style={{ ...label, display: 'block', marginBottom: '0.3rem' }}>Reason</label>
+              <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Reason</label>
               <input type="text" value={leaveReason} onChange={e => setLeaveReason(e.target.value)} required placeholder="Brief reason…" style={inp} />
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', paddingBottom: 1 }}>
-              <button type="submit" disabled={formLoading} style={{ padding: '0.48rem 0.9rem', backgroundColor: '#111', color: '#fff', border: 'none', borderRadius: 7, fontSize: '0.78rem', fontWeight: 600, cursor: formLoading ? 'not-allowed' : 'pointer' }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="submit" disabled={formLoading} style={{ padding: '8px 14px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, fontWeight: 500, cursor: formLoading ? 'not-allowed' : 'pointer' }}>
                 {formLoading ? '…' : 'Submit'}
               </button>
-              <button type="button" onClick={() => { setShowForm(false); setFormErr(null); }} style={{ padding: '0.48rem 0.9rem', backgroundColor: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 7, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>
+              <button type="button" onClick={() => { setShowForm(false); setFormErr(null); }} style={{ padding: '8px 14px', background: C.surface, color: C.text2, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}>
                 Cancel
               </button>
             </div>
@@ -168,159 +171,197 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
         </div>
       )}
 
-      {/* Balance + type breakdown */}
-      <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
+      <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-        {/* Balance card */}
-        <div style={card}>
-          <div style={{ ...label, marginBottom: '0.5rem' }}>Used this year</div>
-          {leaveBalance ? (
-            <>
-              <div style={{ fontSize: '2.8rem', fontWeight: 800, color: '#111', lineHeight: 1, marginBottom: '0.15rem' }}>
-                {leaveBalance.used}<span style={{ fontSize: '1.2rem', fontWeight: 400, color: '#9ca3af' }}> /{leaveBalance.total}</span>
-              </div>
-              <div style={{ fontSize: '0.78rem', color: '#22c55e', fontWeight: 600, marginBottom: '0.75rem' }}>
-                {Math.max(0, leaveBalance.remaining)} days available
-              </div>
-              <div style={{ height: 5, backgroundColor: '#f3f4f6', borderRadius: 999, marginBottom: '0.5rem' }}>
-                <div style={{ height: '100%', width: `${Math.min(100, (leaveBalance.used / (leaveBalance.total || 1)) * 100)}%`, backgroundColor: '#111', borderRadius: 999 }} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', color: '#9ca3af', fontWeight: 600 }}>
-                <span>JAN</span><span>DEC</span>
-              </div>
-            </>
-          ) : (
-            <p style={{ fontSize: '0.82rem', color: '#9ca3af' }}>No balance data.</p>
-          )}
+        {/* Balance hero */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
+          <div style={{ padding: '24px 28px' }}>
+            <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Leave balance · {thisYear}</div>
+            {leaveBalance ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontFamily: F_SERIF, fontSize: 64, color: C.text, letterSpacing: '-0.04em', lineHeight: 0.85 }}>{leaveBalance.used}</span>
+                  <span style={{ fontFamily: F_SERIF, fontSize: 32, color: C.text3, letterSpacing: '-0.025em' }}>/ {leaveBalance.total}</span>
+                </div>
+                <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.green, letterSpacing: '0.04em', marginBottom: 16 }}>
+                  {Math.max(0, leaveBalance.remaining)} days available · {pending.length} planned
+                </div>
+                {/* Stacked color bar */}
+                <div style={{ display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', gap: 1 }}>
+                  {leaveBalance.used > 0 && (
+                    <div style={{ flex: leaveBalance.used, background: C.accent, borderRadius: '999px 0 0 999px' }} />
+                  )}
+                  {leaveBalance.remaining > 0 && (
+                    <div style={{ flex: leaveBalance.remaining, background: C.border, borderRadius: '0 999px 999px 0' }} />
+                  )}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: F_MONO, fontSize: 10, color: C.text3, marginTop: 6 }}>
+                  <span>Used: {leaveBalance.used}d</span>
+                  <span>Remaining: {leaveBalance.remaining}d</span>
+                  <span>Total: {leaveBalance.total}d</span>
+                </div>
+              </>
+            ) : (
+              <p style={{ fontSize: 13, color: C.text3 }}>No balance data available.</p>
+            )}
+          </div>
         </div>
 
-        {/* Type breakdown */}
-        <div style={card}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
-            {LEAVE_TYPES.map(t => {
-              const used = typeCounts[t] ?? 0;
-              const col  = typeColor(t);
-              return (
-                <div key={t}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.35rem' }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: col, display: 'inline-block', flexShrink: 0 }} />
-                    <span style={{ ...label, color: col }}>{t.toUpperCase()}</span>
-                  </div>
-                  <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#111', lineHeight: 1, marginBottom: '0.2rem' }}>
-                    {used}<span style={{ fontSize: '0.9rem', fontWeight: 400, color: '#9ca3af' }}> days</span>
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: '#9ca3af', lineHeight: 1.4 }}>used this year</div>
-                </div>
-              );
+        {/* Year strip — horizontal timeline */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
+          <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>
+            Year at a glance · {thisYear}
+          </div>
+          <div style={{ position: 'relative', height: 48, background: C.surface2, borderRadius: 8, overflow: 'hidden' }}>
+            {/* Month dividers */}
+            {Array.from({ length: 11 }, (_, i) => {
+              const pct = ((i + 1) / 12) * 100;
+              return <div key={i} style={{ position: 'absolute', top: 0, bottom: 0, left: `${pct}%`, width: 1, background: C.border, opacity: 0.6 }} />;
             })}
+            {/* Leave bars */}
+            {yearRecs.map((r, i) => {
+              try {
+                const d = parseDate(r.date);
+                const pct = ((d.getTime() - yearStart.getTime()) / yearMs) * 100;
+                const tint = STATUS_CONFIG[r.status]?.text ?? C.accent;
+                return (
+                  <div key={i} title={`${fmtShort(r.date)} · ${r.leaveType} · ${r.status}`} style={{ position: 'absolute', top: 8, bottom: 8, left: `${Math.max(0, Math.min(99, pct))}%`, width: 6, background: tint, borderRadius: 3, opacity: 0.85 }} />
+                );
+              } catch { return null; }
+            })}
+            {/* Today cursor */}
+            {(() => {
+              const todayPct = ((today.getTime() - yearStart.getTime()) / yearMs) * 100;
+              return todayPct >= 0 && todayPct <= 100 ? (
+                <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${todayPct}%`, width: 1.5, background: C.accent }}>
+                  <span style={{ position: 'absolute', top: -1, left: '50%', transform: 'translateX(-50%)', fontFamily: F_MONO, fontSize: 7.5, color: C.accent, whiteSpace: 'nowrap', background: C.surface, padding: '1px 3px', borderRadius: 2 }}>Today</span>
+                </div>
+              ) : null;
+            })()}
+          </div>
+          {/* Month labels */}
+          <div style={{ display: 'flex', marginTop: 4 }}>
+            {['J','F','M','A','M','J','J','A','S','O','N','D'].map((m, i) => (
+              <div key={i} style={{ flex: 1, textAlign: 'center', fontFamily: F_MONO, fontSize: 9, color: C.text3, letterSpacing: '0.06em' }}>{m}</div>
+            ))}
           </div>
         </div>
-      </div>
 
-      {/* Year at a glance */}
-      <div style={{ ...card, marginBottom: '1.25rem' }}>
-        <div style={{ ...label, marginBottom: '0.75rem' }}>Year at a glance · {thisYear}</div>
-        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'flex-end', height: 60 }}>
-          {monthBars.map(({ lbl, count }) => (
-            <div key={lbl} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem', height: '100%' }}>
-              <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'flex-end' }}>
-                <div style={{ width: '100%', backgroundColor: count > 0 ? '#8b5cf6' : '#f3f4f6', borderRadius: 4, height: `${count > 0 ? Math.max(15, (count / maxMonth) * 100) : 8}%`, opacity: count === 0 ? 0.4 : 1 }} />
-              </div>
-              <div style={{ fontSize: '0.58rem', color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase' }}>{lbl}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+        {/* Upcoming + Pending */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
 
-      {/* Upcoming + Pending */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
-
-        {/* Upcoming */}
-        <div style={card}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.25rem' }}>
-            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#111' }}>Upcoming</div>
-          </div>
-          <div style={{ ...label, marginBottom: '0.85rem' }}>{upcoming.length} planned</div>
-          {upcoming.length === 0 ? (
-            <p style={{ fontSize: '0.82rem', color: '#9ca3af' }}>No upcoming leaves.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-              {upcoming.slice(0, 4).map(r => (
-                <div key={r.id} style={{ padding: '0.7rem 0.85rem', backgroundColor: '#f9fafb', borderRadius: 10, borderLeft: `3px solid ${typeColor(r.leaveType)}` }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                    <div>
-                      <span style={{ fontSize: '0.62rem', fontWeight: 700, color: typeColor(r.leaveType), textTransform: 'uppercase', letterSpacing: '0.06em' }}>{r.leaveType}</span>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#111', marginTop: '0.1rem' }}>{r.reason || 'No reason given'}</div>
-                      <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: '0.1rem' }}>{fmtDate(r.date)}</div>
+          {/* Upcoming */}
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
+            <div style={{ fontFamily: F_SERIF, fontSize: 18, color: C.text, letterSpacing: '-0.01em', marginBottom: 3 }}>Upcoming</div>
+            <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>{upcoming.length} planned</div>
+            {upcoming.length === 0 ? (
+              <p style={{ fontSize: 12.5, color: C.text3 }}>No upcoming leaves.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {upcoming.slice(0, 4).map(r => {
+                  const sc = STATUS_CONFIG[r.status] ?? { bg: C.surface2, border: C.border, text: C.text3 };
+                  return (
+                    <div key={r.id} style={{ padding: '10px 12px', background: C.surface2, borderRadius: 10, borderLeft: `3px solid ${typeColor(r.leaveType)}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                        <div>
+                          <div style={{ fontFamily: F_MONO, fontSize: 10, color: typeColor(r.leaveType), letterSpacing: '0.08em', textTransform: 'uppercase' }}>{r.leaveType}</div>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: C.text, marginTop: 2 }}>{r.reason || 'No reason'}</div>
+                          <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, marginTop: 2 }}>{fmtDate(r.date)}</div>
+                        </div>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 9px', borderRadius: 999, background: sc.bg, border: `1px solid ${sc.border}`, fontFamily: F_MONO, fontSize: 10, color: sc.text, letterSpacing: '0.06em', height: 'fit-content', whiteSpace: 'nowrap' }}>
+                          {r.status}
+                        </span>
+                      </div>
                     </div>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: STATUS_COLOR[r.status] ?? '#9ca3af', textTransform: 'uppercase', flexShrink: 0 }}>{r.status}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Pending action */}
-        <div style={card}>
-          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#111', marginBottom: '0.25rem' }}>Pending action</div>
-          <div style={{ ...label, marginBottom: '0.85rem' }}>{pending.length} awaiting approval</div>
-          {pending.length === 0 ? (
-            <p style={{ fontSize: '0.82rem', color: '#9ca3af' }}>Nothing awaiting approval.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-              {pending.map(r => (
-                <div key={r.id} style={{ padding: '0.75rem', backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                    <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#d97706', textTransform: 'uppercase' }}>Pending</span>
-                    <span style={{ fontSize: '0.72rem', color: '#9ca3af' }}>{fmtDate(r.date)}</span>
-                  </div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#111' }}>{r.leaveType} · {r.reason || 'No reason'}</div>
-                  <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: '0.25rem' }}>Waiting for approval.</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Leave history table */}
-      <div style={card}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#111' }}>Leave history</div>
-          <div style={{ display: 'flex', gap: '0.4rem' }}>
-            {[['all','All'], ['Approved','Approved'], ['Pending','Pending'], ['Rejected','Rejected']].map(([val, lbl]) => (
-              <button key={val} onClick={() => setFilter(val)}
-                style={{ padding: '0.3rem 0.7rem', backgroundColor: filter === val ? '#111' : '#f3f4f6', color: filter === val ? '#fff' : '#6b7280', border: 'none', borderRadius: 999, fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer' }}>
-                {lbl}
-                {val !== 'all' && <span style={{ marginLeft: '0.3rem', opacity: 0.7 }}>{history.filter(r => r.status === val).length}</span>}
-                {val === 'all' && <span style={{ marginLeft: '0.3rem', opacity: 0.7 }}>{history.length}</span>}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {loading && <p style={{ fontSize: '0.82rem', color: '#9ca3af', padding: '0.5rem 0' }}>Loading…</p>}
-
-        {!loading && filtered.length === 0 ? (
-          <p style={{ fontSize: '0.82rem', color: '#9ca3af' }}>No records{filter !== 'all' ? ` with status "${filter}"` : ''} found.</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            {filtered.map(r => (
-              <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.7rem 0.85rem', border: '1px solid #f3f4f6', borderRadius: 10, flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: typeColor(r.leaveType), display: 'inline-block', flexShrink: 0 }} />
-                  <div>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#111' }}>{r.leaveType}</span>
-                    <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginLeft: '0.5rem' }}>{fmtDate(r.date)}</span>
-                    {r.reason && <span style={{ fontSize: '0.72rem', color: '#9ca3af', marginLeft: '0.5rem' }}>— {r.reason}</span>}
-                  </div>
-                </div>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: STATUS_COLOR[r.status] ?? '#6b7280' }}>{r.status}</span>
+                  );
+                })}
               </div>
-            ))}
+            )}
           </div>
-        )}
+
+          {/* Pending action */}
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
+            <div style={{ fontFamily: F_SERIF, fontSize: 18, color: C.text, letterSpacing: '-0.01em', marginBottom: 3 }}>Pending action</div>
+            <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>{pending.length} awaiting approval</div>
+            {pending.length === 0 ? (
+              <p style={{ fontSize: 12.5, color: C.text3 }}>Nothing awaiting approval.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {pending.map(r => (
+                  <div key={r.id} style={{ padding: '12px 14px', background: C.accentSoft, border: `1px solid ${C.accentBorder}`, borderRadius: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontFamily: F_MONO, fontSize: 10, color: C.accent, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Pending review</span>
+                      <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3 }}>{fmtShort(r.date)}</span>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{r.leaveType}</div>
+                    {r.reason && <div style={{ fontSize: 12, color: C.text2, marginTop: 2 }}>{r.reason}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Leave history timeline */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div>
+              <div style={{ fontFamily: F_SERIF, fontSize: 18, color: C.text, letterSpacing: '-0.01em' }}>Leave history</div>
+              <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 3 }}>All records</div>
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {[['all','All'], ['Approved','Approved'], ['Pending','Pending'], ['Rejected','Rejected']].map(([val, lbl]) => (
+                <button key={val} onClick={() => setFilter(val)}
+                  style={{ padding: '5px 12px', background: filter === val ? C.text : 'transparent', color: filter === val ? '#fafafa' : C.text3, border: `1px solid ${filter === val ? C.text : C.border}`, borderRadius: 999, fontSize: 11.5, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}>
+                  {lbl}
+                  <span style={{ marginLeft: 5, opacity: 0.6, fontFamily: F_MONO, fontSize: 10 }}>
+                    {val === 'all' ? history.length : history.filter(r => r.status === val).length}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {loading && <p style={{ fontSize: 12.5, color: C.text3 }}>Loading…</p>}
+
+          {!loading && filtered.length === 0 ? (
+            <p style={{ fontSize: 12.5, color: C.text3 }}>No records{filter !== 'all' ? ` with status "${filter}"` : ''} found.</p>
+          ) : (
+            <div style={{ position: 'relative', paddingLeft: 32 }}>
+              {/* Timeline vertical line */}
+              <div style={{ position: 'absolute', left: 10, top: 0, bottom: 0, width: 1, background: C.border }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {filtered.map((r, i) => {
+                  const sc   = STATUS_CONFIG[r.status] ?? { bg: C.surface2, border: C.border, text: C.text3 };
+                  const dot  = sc.text;
+                  return (
+                    <div key={r.id} style={{ position: 'relative', display: 'flex', gap: 12, paddingBottom: i < filtered.length - 1 ? 14 : 0 }}>
+                      {/* Dot on line */}
+                      <div style={{ position: 'absolute', left: -26, top: 14, width: 10, height: 10, borderRadius: '50%', background: dot, border: `2px solid ${C.surface}`, zIndex: 1 }} />
+                      {/* Date in gutter */}
+                      <div style={{ position: 'absolute', left: -116, top: 12, width: 80, textAlign: 'right', fontFamily: F_MONO, fontSize: 9.5, color: C.text3, lineHeight: 1.3 }}>
+                        {fmtShort(r.date)}
+                      </div>
+                      {/* Card */}
+                      <div style={{ flex: 1, padding: '10px 14px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: typeColor(r.leaveType), display: 'inline-block', flexShrink: 0 }} />
+                          <div>
+                            <span style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{r.leaveType}</span>
+                            {r.reason && <span style={{ fontSize: 12, color: C.text3, marginLeft: 8 }}>— {r.reason}</span>}
+                          </div>
+                        </div>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 9px', borderRadius: 999, background: sc.bg, border: `1px solid ${sc.border}`, fontFamily: F_MONO, fontSize: 10, color: sc.text, letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
+                          {r.status}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

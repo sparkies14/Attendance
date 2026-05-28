@@ -63,11 +63,27 @@ export interface MemberDashboardProps {
 
 type Page = 'home' | 'calendar' | 'leave' | 'payroll';
 
+// Design tokens (light mode — sidebar always dark)
+const C = {
+  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
+  border: '#e6e6e6', borderStrong: '#d4d4d4',
+  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
+  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
+  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
+  red: '#dc2626',
+  sidebarBg: '#050505', sidebarText: '#a3a3a3', sidebarBorder: '#161616',
+  sidebarActive: 'rgba(244,185,66,0.12)', sidebarActiveText: '#f4b942',
+};
+
+const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
+const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
+const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
+
 const NAV: { id: Page; label: string; icon: string }[] = [
-  { id: 'home',     label: 'Home',          icon: '●' },
-  { id: 'calendar', label: 'Calendar',      icon: '▦' },
-  { id: 'leave',    label: 'Leave history', icon: '≡' },
-  { id: 'payroll',  label: 'Payroll',       icon: '¥' },
+  { id: 'home',     label: 'Home',         icon: '◉' },
+  { id: 'calendar', label: 'Calendar',     icon: '▦' },
+  { id: 'leave',    label: 'Leave history', icon: '⌇' },
+  { id: 'payroll',  label: 'Payroll',      icon: '¥' },
 ];
 
 const DAYS_LONG   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -102,102 +118,114 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
     window.location.replace('/login');
   }
 
-  const jst    = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
-  const hour   = jst.getHours();
-  const hi     = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  const week   = isoWeek(jst);
-  const first  = (user.name || user.email).split(' ')[0];
-  const inits  = user.name
+  const jst   = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+  const hour  = jst.getHours();
+  const hi    = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const week  = isoWeek(jst);
+  const first = (user.name || user.email).split(' ')[0];
+  const inits = user.name
     ? user.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
     : user.email[0].toUpperCase();
 
+  const dateStr = `${DAYS_LONG[jst.getDay()]}, ${MONTHS_LONG[jst.getMonth()]} ${jst.getDate()} · Week ${week}`;
+
   return (
-    <div style={{ display: 'flex', height: '100vh', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif", overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100vh', fontFamily: F_SANS, overflow: 'hidden', background: C.bg, color: C.text }}>
 
-      {/* ── Sidebar ── */}
-      <aside style={{ width: 190, minWidth: 190, backgroundColor: '#111', display: 'flex', flexDirection: 'column', height: '100vh', flexShrink: 0, overflowY: 'auto' }}>
+      {/* ── Sidebar (always dark) ── */}
+      <aside style={{ width: 220, flexShrink: 0, background: C.sidebarBg, borderRight: `1px solid ${C.sidebarBorder}`, display: 'flex', flexDirection: 'column', height: '100vh' }}>
 
-        {/* Logo */}
-        <div style={{ padding: '1.5rem 1.25rem 1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <div style={{ width: 34, height: 34, backgroundColor: '#fff', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ color: '#111', fontSize: '0.88rem', fontWeight: 900, letterSpacing: '-0.05em' }}>A·</span>
-            </div>
-            <div>
-              <div style={{ color: '#fff', fontSize: '0.82rem', fontWeight: 700, lineHeight: 1.2 }}>Anosupo AI</div>
-              <div style={{ color: '#4b5563', fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Attendance</div>
-            </div>
+        {/* Brand */}
+        <div style={{ padding: '20px 22px 22px', borderBottom: `1px solid ${C.sidebarBorder}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg, #f4b942, #b45309)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ color: '#0a0a0a', fontSize: 13, fontWeight: 900, fontFamily: F_SANS, letterSpacing: '-0.04em' }}>A</span>
+          </div>
+          <div>
+            <div style={{ fontFamily: F_SANS, fontSize: 13.5, fontWeight: 500, color: '#fafafa', letterSpacing: '-0.01em', lineHeight: 1.1 }}>Anosupo AI</div>
+            <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 2 }}>Attendance</div>
           </div>
         </div>
 
         {/* Nav */}
-        <nav style={{ padding: '0 0.75rem', flex: 1 }}>
-          <div style={{ color: '#4b5563', fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', padding: '0 0.5rem 0.65rem' }}>Menu</div>
+        <div style={{ padding: '14px 10px', flex: 1 }}>
+          <div style={{ fontFamily: F_MONO, fontSize: 9.5, color: '#525252', letterSpacing: '0.14em', textTransform: 'uppercase', padding: '4px 12px 8px' }}>Menu</div>
           {NAV.map(({ id, label, icon }) => {
             const on = page === id;
             return (
               <button
                 key={id}
                 onClick={() => setPage(id)}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', width: '100%', padding: '0.6rem 0.75rem', marginBottom: '0.1rem', backgroundColor: on ? '#1f2937' : 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', textAlign: 'left' }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                  padding: '9px 12px', marginBottom: 2, borderRadius: 8,
+                  background: on ? C.sidebarActive : 'transparent',
+                  border: 'none', cursor: 'pointer', textAlign: 'left',
+                  color: on ? C.sidebarActiveText : C.sidebarText,
+                  fontSize: 13, fontFamily: F_SANS, fontWeight: on ? 500 : 400,
+                }}
               >
-                <span style={{ color: on ? '#fff' : '#4b5563', fontSize: '0.7rem', width: 14, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
-                <span style={{ color: on ? '#f9fafb' : '#6b7280', fontSize: '0.82rem', fontWeight: on ? 600 : 400 }}>{label}</span>
+                <span style={{ width: 16, textAlign: 'center', fontFamily: F_MONO, fontSize: 13, flexShrink: 0 }}>{icon}</span>
+                <span>{label}</span>
               </button>
             );
           })}
-        </nav>
+        </div>
 
-        {/* User / sign out */}
-        <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid #1f2937' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ color: '#fff', fontSize: '0.7rem', fontWeight: 700 }}>{inits}</span>
+        {/* User row */}
+        <div style={{ padding: '14px 14px 16px', borderTop: `1px solid ${C.sidebarBorder}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #f4b942, #b45309)', color: '#0a0a0a', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {inits}
             </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ color: '#e5e7eb', fontSize: '0.78rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name || user.email}</div>
-              <div style={{ color: '#4b5563', fontSize: '0.62rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 500, color: '#fafafa', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name || user.email}</div>
+              <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, letterSpacing: '0.04em', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</div>
             </div>
           </div>
-          <button onClick={signOut} style={{ color: '#6b7280', fontSize: '0.75rem', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Sign out</button>
+          <button
+            onClick={signOut}
+            style={{ width: '100%', background: 'transparent', color: C.sidebarText, border: `1px solid ${C.sidebarBorder}`, borderRadius: 8, padding: '7px', fontSize: 11.5, fontFamily: F_SANS, cursor: 'pointer' }}
+          >
+            Sign out
+          </button>
         </div>
       </aside>
 
-      {/* ── Main ── */}
-      <main style={{ flex: 1, backgroundColor: '#fafafa', display: 'flex', flexDirection: 'column', minWidth: 0, height: '100vh', overflowY: 'auto' }}>
+      {/* ── Main area ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
 
-        {/* Header */}
-        <header style={{ padding: '1.75rem 2rem 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', backgroundColor: '#fff', borderBottom: '1px solid #f3f4f6', paddingBottom: '1.25rem' }}>
+        {/* Topbar */}
+        <div style={{ borderBottom: `1px solid ${C.border}`, padding: '18px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: C.surface, flexShrink: 0 }}>
           <div>
-            <h1 style={{ fontSize: '1.55rem', fontWeight: 700, color: '#111', margin: 0, lineHeight: 1.15 }}>
-              {hi}, <em style={{ fontStyle: 'italic' }}>{first}.</em>
-            </h1>
-            <p style={{ color: '#9ca3af', fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0.35rem 0 0' }}>
-              {DAYS_LONG[jst.getDay()].toUpperCase()}, {MONTHS_LONG[jst.getMonth()].toUpperCase()} {jst.getDate()} · WEEK {week}
-            </p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0, marginTop: '0.1rem' }}>
-            <button
-              onClick={() => window.location.reload()}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#6b7280', fontSize: '0.72rem', background: 'none', border: '1px solid #e5e7eb', borderRadius: 6, padding: '0.35rem 0.65rem', cursor: 'pointer' }}
-            >
-              ↻ Refresh
-            </button>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: 'monospace', fontSize: '1.35rem', fontWeight: 700, color: '#111', lineHeight: 1, letterSpacing: '-0.01em' }}>{clock}</div>
-              <div style={{ fontSize: '0.58rem', color: '#9ca3af', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: '0.15rem' }}>JST · Tokyo</div>
+            <div style={{ fontFamily: F_SERIF, fontSize: 22, lineHeight: 1, letterSpacing: '-0.02em', color: C.text }}>
+              {hi}, <span style={{ fontStyle: 'italic' }}>{first}.</span>
+            </div>
+            <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 6 }}>
+              {dateStr.toUpperCase()}
             </div>
           </div>
-        </header>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <button
+              onClick={() => window.location.reload()}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999, border: `1px solid ${C.border}`, background: C.surface, color: C.text2, fontFamily: F_SANS, fontSize: 11.5, cursor: 'pointer' }}
+            >
+              <span>↻</span> Refresh
+            </button>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontFamily: F_MONO, fontSize: 22, color: C.text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{clock}</div>
+              <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.08em', marginTop: 3 }}>JST · Tokyo</div>
+            </div>
+          </div>
+        </div>
 
         {/* Page content */}
-        <div style={{ flex: 1, padding: '1.75rem 2rem 2.5rem' }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: '24px 28px 28px', background: C.bg }}>
           {page === 'home'     && <HomePage     user={user} memberData={memberData} leaveBalance={leaveBalance} apiUrl={apiUrl} />}
           {page === 'calendar' && <CalendarPage email={user.email} initialData={memberData} apiUrl={apiUrl} />}
           {page === 'leave'    && <LeavePage    email={user.email} leaveBalance={leaveBalance} initialLeaveHistory={memberData?.leaveHistory ?? []} apiUrl={apiUrl} />}
           {page === 'payroll'  && <PayrollPage  email={user.email} initialData={memberData} apiUrl={apiUrl} />}
         </div>
-      </main>
+      </div>
     </div>
   );
 }

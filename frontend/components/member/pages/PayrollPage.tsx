@@ -9,31 +9,39 @@ interface Props {
   apiUrl: string;
 }
 
+const C = {
+  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
+  border: '#e6e6e6', borderStrong: '#d4d4d4',
+  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
+  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
+  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
+  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
+  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
+};
+
+const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
+const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
+const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
+
 const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const MONTHS_LONG  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const DAYS         = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+const BAR_COLOR: Record<string, string> = {
+  present: '#16a34a', late: '#b45309', absent: '#dc2626', leave: '#7c3aed',
+};
 
 function getJST() {
   const jst = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
-  return { year: jst.getFullYear(), month: jst.getMonth() + 1, day: jst.getDate(), raw: jst };
+  return { year: jst.getFullYear(), month: jst.getMonth() + 1, day: jst.getDate() };
 }
 
-// Pay period: 25th → 24th
 function payPeriod(y: number, m: number, d: number) {
   let sm: number, sy: number;
-  if (d >= 25) { sm = m;          sy = y; }
+  if (d >= 25) { sm = m; sy = y; }
   else         { sm = m === 1 ? 12 : m-1; sy = m === 1 ? y-1 : y; }
   const em = sm === 12 ? 1 : sm + 1;
   const ey = sm === 12 ? sy + 1 : sy;
   return { startYear: sy, startMonth: sm, endYear: ey, endMonth: em };
-}
-
-function countWorkDays(sy: number, sm: number, sd: number, ey: number, em: number, ed: number): number {
-  let c = 0;
-  const d = new Date(sy, sm - 1, sd);
-  const end = new Date(ey, em - 1, ed);
-  while (d <= end) { const dow = d.getDay(); if (dow !== 0 && dow !== 6) c++; d.setDate(d.getDate() + 1); }
-  return c;
 }
 
 function workDayList(sy: number, sm: number, sd: number, ey: number, em: number, ed: number): Date[] {
@@ -44,13 +52,22 @@ function workDayList(sy: number, sm: number, sd: number, ey: number, em: number,
   return days;
 }
 
+function countWorkDays(sy: number, sm: number, sd: number, ey: number, em: number, ed: number): number {
+  return workDayList(sy, sm, sd, ey, em, ed).length;
+}
+
+function dateToUsStr(d: Date): string {
+  return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+}
+
 function parseHours(h: string | number): number {
   return typeof h === 'number' ? h : parseFloat(String(h)) || 0;
 }
 
-// M/D/YYYY ↔ Date matching
-function dateToUsStr(d: Date): string {
-  return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+function fmtHours(h: number): string {
+  const hrs = Math.floor(h);
+  const m   = Math.round((h - hrs) * 60);
+  return m > 0 ? `${hrs}h ${m}m` : `${hrs}h`;
 }
 
 export default function PayrollPage({ email, initialData, apiUrl }: Props) {
@@ -58,15 +75,13 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
   const [data2, setData2] = useState<MemberData | null>(null);
   const [busy,  setBusy]  = useState(false);
 
-  const jst  = getJST();
-  const pp   = payPeriod(jst.year, jst.month, jst.day);
+  const jst = getJST();
+  const pp  = payPeriod(jst.year, jst.month, jst.day);
 
-  // Fetch months needed for pay period
   useEffect(() => {
     const needBoth = !(pp.startMonth === jst.month && pp.startYear === jst.year);
     const fetches: Promise<void>[] = [];
 
-    // Always ensure current month is loaded
     if (!data1 || data1.month !== jst.month || data1.year !== jst.year) {
       fetches.push(
         fetch(`${apiUrl}/member-data?email=${encodeURIComponent(email)}&month=${jst.month}&year=${jst.year}`, { credentials: 'include' })
@@ -74,7 +89,6 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
       );
     }
 
-    // If period started previous month, fetch that too
     if (needBoth) {
       fetches.push(
         fetch(`${apiUrl}/member-data?email=${encodeURIComponent(email)}&month=${pp.startMonth}&year=${pp.startYear}`, { credentials: 'include' })
@@ -88,210 +102,250 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
     }
   }, []);
 
-  // Merge calendars from both months
-  const allCal: CalendarDay[] = [
+  const allCal: (CalendarDay & { _month?: number; _year?: number })[] = [
     ...(data2?.calendar ?? []).map(d => ({ ...d, _month: pp.startMonth, _year: pp.startYear })),
     ...(data1?.calendar ?? []).map(d => ({ ...d, _month: jst.month, _year: jst.year })),
-  ] as CalendarDay[];
+  ];
 
-  // All working days in pay period
   const today    = new Date(jst.year, jst.month - 1, jst.day);
   const allWDs   = workDayList(pp.startYear, pp.startMonth, 25, pp.endYear, pp.endMonth, 24);
   const totalWDs = allWDs.length;
   const reqHours = totalWDs * 8;
 
-  // Map calendar records by date string
-  const calMap: Record<string, CalendarDay & { _month?: number; _year?: number }> = {};
-  (allCal as (CalendarDay & { _month?: number; _year?: number })[]).forEach(d => {
-    calMap[d.date] = d;
-  });
+  const calMap: Record<string, typeof allCal[0]> = {};
+  allCal.forEach(d => { calMap[d.date] = d; });
 
-  // Hours this period (past + today)
-  let hoursThisPeriod = 0;
-  let daysOnTime = 0, lateDays = 0, absentDays = 0, leaveDays = 0;
-  let totalLunchMins = 0, lunchCount = 0;
-
+  let hoursThisPeriod = 0, daysOnTime = 0, lateDays = 0, absentDays = 0, leaveDays = 0;
   const periodDays = allWDs.filter(d => d <= today);
   periodDays.forEach(d => {
-    const key = dateToUsStr(d);
-    const rec = calMap[key];
+    const rec = calMap[dateToUsStr(d)];
     if (rec) {
-      const h = parseHours(rec.totalHours);
-      hoursThisPeriod += h;
-      if (rec.status === 'present') daysOnTime++;
-      else if (rec.status === 'late') lateDays++;
-      else if (rec.status === 'absent') absentDays++;
-      else if (rec.status === 'leave') leaveDays++;
+      hoursThisPeriod += parseHours(rec.totalHours);
+      if (rec.status === 'present')      daysOnTime++;
+      else if (rec.status === 'late')    lateDays++;
+      else if (rec.status === 'absent')  absentDays++;
+      else if (rec.status === 'leave')   leaveDays++;
     }
   });
 
-  const doneDays = periodDays.length;
-  const leftDays = allWDs.filter(d => d > today).length;
+  const doneDays  = periodDays.length;
+  const leftDays  = allWDs.filter(d => d > today).length;
   const avgPerDay = doneDays > 0 ? hoursThisPeriod / doneDays : 0;
   const projected = hoursThisPeriod + avgPerDay * leftDays;
   const overUnder = projected - reqHours;
   const pct       = reqHours > 0 ? Math.min(100, (hoursThisPeriod / reqHours) * 100) : 0;
+  const projPct   = reqHours > 0 ? Math.min(100, (projected / reqHours) * 100) : 0;
 
-  // Format hours as "Xh Ym"
-  function fmtHours(h: number): string {
-    const hrs = Math.floor(h);
-    const m   = Math.round((h - hrs) * 60);
-    return m > 0 ? `${hrs}h ${m}m` : `${hrs}h`;
-  }
+  const dayOfPeriod = countWorkDays(pp.startYear, pp.startMonth, 25, jst.year, jst.month, jst.day);
+  const startLabel  = `${MONTHS_SHORT[pp.startMonth-1]} 25`;
+  const endLabel    = `${MONTHS_SHORT[pp.endMonth-1]} 24`;
+  const ledgerDays  = allWDs.filter(d => d <= today).slice(-10);
 
-  // Day of pay period (day N of M)
-  const dayOfPeriod  = countWorkDays(pp.startYear, pp.startMonth, 25, jst.year, jst.month, jst.day);
-
-  // Period label
-  const startLabel = `${MONTHS_SHORT[pp.startMonth-1]} 25`;
-  const endLabel   = `${MONTHS_SHORT[pp.endMonth-1]} 24, ${pp.endYear}`;
-
-  // Daily ledger (all working days in period up to today)
-  const ledgerDays = allWDs.filter(d => d <= today).slice(-14); // show last 14
-
-  const label: React.CSSProperties = { fontSize: '0.62rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase' as const, letterSpacing: '0.1em' };
-  const card: React.CSSProperties  = { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: 14, padding: '1.25rem' };
-
-  const BAR_COLOR: Record<string, string> = { present: '#22c55e', late: '#f59e0b', absent: '#ef4444', leave: '#8b5cf6' };
+  const hFull = Math.floor(hoursThisPeriod);
+  const mPart = Math.round((hoursThisPeriod - hFull) * 60);
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: 800, color: '#111', margin: 0, lineHeight: 1.1 }}>Payroll.</h2>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span style={{ ...label }}>
-            Cycle 25 → 24 · day {dayOfPeriod} of {totalWDs}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1280 }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Payroll.</div>
+          <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
+            Hours tracker · pay period {startLabel} – {endLabel}, {pp.endYear}
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999, border: `1px solid ${C.border}`, background: C.surface, fontFamily: F_MONO, fontSize: 11, color: C.text2, letterSpacing: '0.04em' }}>
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: C.green }} />
+            Cycle 25→24 · day {dayOfPeriod} of {totalWDs}
           </span>
         </div>
       </div>
-      <p style={{ ...label, marginBottom: '1.5rem' }}>
-        Hours tracker · Pay period {startLabel} – {endLabel}
-      </p>
 
-      {busy && <p style={{ fontSize: '0.8rem', color: '#9ca3af', marginBottom: '1rem' }}>Loading payroll data…</p>}
+      {busy && <div style={{ fontSize: 12.5, color: C.text3, fontFamily: F_MONO }}>Loading payroll data…</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '1.25rem', marginBottom: '1.25rem' }}>
+      {/* Hero: progress + projection */}
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px' }}>
 
-        {/* ── Main hours card ── */}
-        <div style={card}>
-          <div style={{ ...label, marginBottom: '0.75rem' }}>Hours this period</div>
+          {/* Left: big hours */}
+          <div style={{ padding: '26px 30px', borderRight: `1px solid ${C.border}` }}>
+            <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Hours this period</div>
 
-          {/* Big number */}
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem', marginBottom: '0.5rem' }}>
-            <span style={{ fontFamily: 'monospace', fontSize: '3rem', fontWeight: 800, color: '#111', lineHeight: 1, letterSpacing: '-0.02em' }}>
-              {fmtHours(hoursThisPeriod)}
-            </span>
-            <span style={{ fontSize: '1rem', color: '#9ca3af', fontWeight: 400 }}>/ {reqHours}h required</span>
+            {/* Big serif number */}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14 }}>
+              <div style={{ fontFamily: F_SERIF, fontSize: 96, lineHeight: 0.85, color: C.text, letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums' }}>
+                {hFull}<span style={{ fontSize: 56, color: C.text2 }}>h</span>
+              </div>
+              {mPart > 0 && (
+                <div style={{ fontFamily: F_SERIF, fontSize: 48, color: C.text2, letterSpacing: '-0.03em', lineHeight: 0.9, fontVariantNumeric: 'tabular-nums' }}>
+                  {mPart}<span style={{ fontSize: 28 }}>m</span>
+                </div>
+              )}
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontFamily: F_SERIF, fontSize: 22, color: C.text3, letterSpacing: '-0.015em', lineHeight: 1 }}>/ {reqHours}h</div>
+                <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 4 }}>Required</div>
+              </div>
+            </div>
+
+            {/* Status badge */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 999, background: C.accentSoft, border: `1px solid ${C.accentBorder}`, color: C.accent, fontSize: 12, fontWeight: 500, marginBottom: 20, fontFamily: F_SANS }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.accent }} />
+              {Math.round(pct)}% of target · {fmtHours(Math.max(0, reqHours - hoursThisPeriod))} to go
+            </div>
+
+            {/* Gradient progress bar */}
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ position: 'relative', height: 10, background: C.border, borderRadius: 999, overflow: 'visible' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${C.accent}, ${C.green})`, borderRadius: 999 }} />
+                {/* Projection ghost */}
+                {projPct > pct && (
+                  <div style={{ position: 'absolute', top: 0, left: `${pct}%`, height: '100%', width: `${projPct - pct}%`, background: `repeating-linear-gradient(-45deg, ${C.green}44 0 4px, transparent 4px 8px)`, borderRadius: 999 }} />
+                )}
+                {/* Target marker */}
+                <div style={{ position: 'absolute', top: -4, left: '100%', width: 2, height: 18, background: C.text, borderRadius: 1, transform: 'translateX(-1px)' }} />
+                <div style={{ position: 'absolute', top: -20, left: '100%', fontFamily: F_MONO, fontSize: 9.5, color: C.text2, letterSpacing: '0.08em', textTransform: 'uppercase', transform: 'translateX(-50%)' }}>Target</div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.04em' }}>
+                <span>{startLabel} · start</span>
+                <span style={{ color: C.accent }}>● Today</span>
+                <span>cutoff · {endLabel}</span>
+              </div>
+            </div>
+
+            {/* Chips */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 14 }}>
+              <Chip tint={C.green} label={`${doneDays} days done`} />
+              <Chip tint={C.text3} label={`${leftDays} days left`} hollow />
+              {avgPerDay > 0 && <Chip tint={C.accent} label={`avg ${avgPerDay.toFixed(1)}h/day`} hollow />}
+            </div>
           </div>
 
-          {/* Progress bar */}
-          <div style={{ marginBottom: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-              <span style={{ fontSize: '0.72rem', color: pct >= 100 ? '#16a34a' : '#9ca3af' }}>
-                {pct >= 100 ? 'Target reached!' : `${pct.toFixed(0)}% of target · ${fmtHours(reqHours - hoursThisPeriod)} to go`}
-              </span>
-              <span style={{ ...label }}>Target</span>
-            </div>
-            <div style={{ height: 8, backgroundColor: '#f3f4f6', borderRadius: 999, position: 'relative', overflow: 'visible' }}>
-              <div style={{ height: '100%', width: `${pct}%`, backgroundColor: pct >= 100 ? '#22c55e' : '#111', borderRadius: 999 }} />
-              {/* Today marker */}
-              {pct > 0 && pct < 100 && (
-                <div style={{ position: 'absolute', left: `${pct}%`, top: -3, bottom: -3, width: 2, backgroundColor: '#6b7280', borderRadius: 1 }} />
+          {/* Right: projection */}
+          <div style={{ padding: '24px 26px', background: C.surface2, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Projection</div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <div style={{ fontFamily: F_SERIF, fontSize: 44, lineHeight: 0.9, color: C.text, letterSpacing: '-0.025em', fontVariantNumeric: 'tabular-nums' }}>
+                  {Math.floor(projected)}<span style={{ color: C.text2 }}>h</span>
+                </div>
+                <div style={{ fontFamily: F_MONO, fontSize: 12.5, color: overUnder >= 0 ? C.green : C.red, letterSpacing: '0.04em' }}>
+                  {overUnder >= 0 ? '+' : ''}{fmtHours(Math.abs(overUnder))} {overUnder >= 0 ? 'over' : 'under'}
+                </div>
+              </div>
+              {avgPerDay > 0 && (
+                <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.04em', marginTop: 6, lineHeight: 1.5 }}>
+                  At {avgPerDay.toFixed(1)}h/day average, you{overUnder >= 0 ? "'ll finish ahead" : ' may fall short'}.
+                </div>
               )}
             </div>
-          </div>
 
-          {/* Period markers */}
-          <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.7rem', color: '#9ca3af', flexWrap: 'wrap' }}>
-            <span>● {doneDays} day{doneDays !== 1 ? 's' : ''} done</span>
-            <span>● {leftDays} left</span>
-            <span>● avg {avgPerDay.toFixed(1)}h / day</span>
-          </div>
+            <div style={{ height: 1, background: C.border, margin: '18px 0' }} />
 
-          <div style={{ marginTop: '0.75rem', padding: '0.6rem 0.85rem', backgroundColor: '#f9fafb', borderRadius: 8, fontSize: '0.7rem', color: '#6b7280' }}>
-            All hours calculated in JST · lunch excluded · pay period runs the 25th → 24th of each month
-          </div>
-        </div>
-
-        {/* ── Projection + breakdown ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-
-          {/* Projection */}
-          <div style={card}>
-            <div style={{ ...label, marginBottom: '0.5rem' }}>Projection</div>
-            <div style={{ fontFamily: 'monospace', fontSize: '1.6rem', fontWeight: 800, color: '#111', lineHeight: 1 }}>
-              {fmtHours(projected)}
-            </div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: overUnder >= 0 ? '#16a34a' : '#dc2626', marginTop: '0.25rem' }}>
-              {overUnder >= 0 ? '+' : ''}{fmtHours(Math.abs(overUnder))} {overUnder >= 0 ? 'over' : 'under'} target
-            </div>
-            {overUnder >= 0 && avgPerDay > 0 && (
-              <p style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: '0.5rem', lineHeight: 1.5 }}>
-                At {avgPerDay.toFixed(1)}h/day you&apos;ll finish ahead.
-              </p>
-            )}
-          </div>
-
-          {/* Period breakdown */}
-          <div style={card}>
-            <div style={{ ...label, marginBottom: '0.75rem' }}>Period breakdown</div>
+            <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Period breakdown</div>
             {[
-              { lbl: 'Regular hours',  val: fmtHours(hoursThisPeriod) },
-              { lbl: 'Days on time',   val: `${daysOnTime} / ${doneDays}` },
-              { lbl: 'Late days',      val: lateDays },
-              { lbl: 'Absent days',    val: absentDays },
-              { lbl: 'Leave taken',    val: `${leaveDays} days` },
-            ].map(({ lbl: l, val }) => (
-              <div key={l} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0', borderBottom: '1px solid #f3f4f6', fontSize: '0.82rem' }}>
-                <span style={{ color: '#6b7280' }}>{l}</span>
-                <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#111' }}>{val}</span>
+              { lbl: 'Regular hours', v: fmtHours(hoursThisPeriod), tint: C.green  },
+              { lbl: 'Days on time',  v: `${daysOnTime} / ${doneDays}`, tint: C.green  },
+              { lbl: 'Late days',     v: String(lateDays),           tint: lateDays  > 0 ? C.accent : C.text2 },
+              { lbl: 'Absent days',   v: String(absentDays),         tint: absentDays > 0 ? C.red   : C.text2 },
+              { lbl: 'Leave taken',   v: `${leaveDays} days`,        tint: leaveDays > 0 ? C.purple : C.text2 },
+            ].map((r, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '5px 0' }}>
+                <span style={{ fontSize: 12, color: C.text2, fontFamily: F_SANS }}>{r.lbl}</span>
+                <span style={{ fontFamily: F_MONO, fontSize: 12, color: r.tint, fontVariantNumeric: 'tabular-nums' }}>{r.v}</span>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Note row */}
+        <div style={{ padding: '10px 24px', borderTop: `1px solid ${C.border}`, background: C.bg, display: 'flex', alignItems: 'center', gap: 10, fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.04em' }}>
+          <span style={{ color: C.accent }}>ⓘ</span>
+          <span>All hours in JST · lunch excluded · pay period runs the <span style={{ color: C.text2 }}>25th → 24th</span> of each month</span>
+        </div>
       </div>
 
       {/* Daily ledger */}
-      <div style={card}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.25rem' }}>
-          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#111' }}>Daily ledger</div>
-          <span style={{ ...label }}>Day-by-day hours this period</span>
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+          <div>
+            <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text, letterSpacing: '-0.015em' }}>Daily ledger</div>
+            <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 3 }}>Day-by-day hours · this period</div>
+          </div>
+          <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.04em' }}>
+            8h at 80% ▏ mark
+          </span>
         </div>
-        <div style={{ marginTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-          {ledgerDays.length === 0 && (
-            <p style={{ fontSize: '0.82rem', color: '#9ca3af' }}>No data for this period yet.</p>
-          )}
-          {ledgerDays.map(d => {
-            const key  = dateToUsStr(d);
-            const rec  = calMap[key];
-            const hrs  = rec ? parseHours(rec.totalHours) : 0;
-            const isNow = d.toDateString() === new Date(jst.year, jst.month-1, jst.day).toDateString();
-            const barW  = Math.min(100, (hrs / 10) * 100);
-            const bColor = rec ? (BAR_COLOR[rec.status] ?? '#e5e7eb') : '#e5e7eb';
-            const dayLabel = DAYS[(d.getDay() + 6) % 7]; // Mon=0
-            const cin  = rec?.clockIn  ?? '—';
-            const cout = rec?.clockOut ?? '—';
 
+        {ledgerDays.length === 0 && <p style={{ fontSize: 12.5, color: C.text3 }}>No data for this period yet.</p>}
+
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {ledgerDays.map((d, i) => {
+            const key    = dateToUsStr(d);
+            const rec    = calMap[key];
+            const hrs    = rec ? parseHours(rec.totalHours) : 0;
+            const isNow  = d.toDateString() === today.toDateString();
+            const barW   = Math.min(100, (hrs / 10) * 100);
+            const tint   = isNow ? C.accent : rec ? (BAR_COLOR[rec.status] ?? C.border) : C.border;
+            const dayLbl = DAYS[(d.getDay() + 6) % 7];
+            const cin    = rec?.clockIn  !== '-' ? rec?.clockIn  : null;
+            const cout   = rec?.clockOut !== '-' ? rec?.clockOut : null;
             return (
-              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.55rem 0', borderBottom: '1px solid #f9fafb' }}>
+              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 4px', borderBottom: i < ledgerDays.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+                {/* Day */}
                 <div style={{ width: 56, flexShrink: 0 }}>
-                  <div style={{ fontSize: '0.82rem', fontWeight: isNow ? 700 : 500, color: isNow ? '#111' : '#374151' }}>{dayLabel} {isNow ? <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#22c55e', textTransform: 'uppercase', letterSpacing: '0.06em' }}>NOW</span> : ''}</div>
-                  <div style={{ fontSize: '0.65rem', color: '#9ca3af', fontFamily: 'monospace' }}>{MONTHS_SHORT[d.getMonth()]} {d.getDate()}</div>
+                  <div style={{ fontSize: 12.5, fontWeight: isNow ? 600 : 500, color: isNow ? C.accent : C.text, lineHeight: 1.1 }}>
+                    {dayLbl} {isNow && <span style={{ fontFamily: F_MONO, fontSize: 8.5, letterSpacing: '0.06em', color: C.accent }}>NOW</span>}
+                  </div>
+                  <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, marginTop: 1 }}>{MONTHS_SHORT[d.getMonth()]} {d.getDate()}</div>
                 </div>
-                <div style={{ fontSize: '0.72rem', color: '#9ca3af', fontFamily: 'monospace', width: 90, flexShrink: 0 }}>
-                  {cin !== '—' ? `${cin} → ${cout}` : '—'}
+                {/* Clock in/out */}
+                <div style={{ width: 96, flexShrink: 0, fontFamily: F_MONO, fontSize: 11, color: C.text2 }}>
+                  {cin ? <>{cin} <span style={{ color: C.text3 }}>→</span> {cout ?? '—'}</> : <span style={{ color: C.text3 }}>—</span>}
                 </div>
-                <div style={{ flex: 1, height: 6, backgroundColor: '#f3f4f6', borderRadius: 999, overflow: 'hidden' }}>
-                  {hrs > 0 && <div style={{ height: '100%', width: `${barW}%`, backgroundColor: bColor, borderRadius: 999 }} />}
+                {/* Bar */}
+                <div style={{ flex: 1, position: 'relative', height: 12, background: C.surface2, borderRadius: 4, overflow: 'hidden' }}>
+                  {hrs > 0 && <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${barW}%`, background: tint, borderRadius: 4 }} />}
+                  <div style={{ position: 'absolute', top: -1, bottom: -1, left: '80%', width: 1, background: C.borderStrong, opacity: 0.5 }} />
                 </div>
-                <div style={{ fontFamily: 'monospace', fontSize: '0.82rem', fontWeight: 700, color: hrs > 0 ? '#111' : '#d1d5db', width: 40, textAlign: 'right', flexShrink: 0 }}>
+                {/* Hours */}
+                <div style={{ width: 56, flexShrink: 0, textAlign: 'right', fontFamily: F_MONO, fontSize: 12.5, color: hrs > 0 ? tint : C.text3, fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
                   {hrs > 0 ? `${hrs.toFixed(2)}h` : '—'}
                 </div>
               </div>
             );
           })}
+          {/* Total row */}
+          {ledgerDays.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 4px 4px', borderTop: `1.5px solid ${C.text}`, marginTop: 4 }}>
+              <div style={{ width: 56, flexShrink: 0, fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Total</div>
+              <div style={{ width: 96, flexShrink: 0 }} />
+              <div style={{ flex: 1 }} />
+              <div style={{ fontFamily: F_MONO, fontSize: 14, color: C.text, fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                {fmtHours(hoursThisPeriod)}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+function Chip({ tint, label, hollow }: { tint: string; label: string; hollow?: boolean }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '4px 11px', borderRadius: 999,
+      background: hollow ? 'transparent' : `${tint}18`,
+      border: `1px solid ${hollow ? '#e6e6e6' : tint + '44'}`,
+      color: tint, fontSize: 11.5,
+      fontFamily: "'Geist', system-ui, sans-serif",
+      fontWeight: 500,
+    }}>
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: tint }} />
+      {label}
+    </span>
   );
 }

@@ -10,6 +10,30 @@ interface Props {
   apiUrl: string;
 }
 
+const C = {
+  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
+  border: '#e6e6e6', borderStrong: '#d4d4d4',
+  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
+  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
+  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
+  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
+  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
+  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
+};
+
+const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
+const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
+const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
+
+const STATUS_COLOR: Record<string, string> = {
+  present: '#16a34a',
+  late:    '#b45309',
+  absent:  '#dc2626',
+  leave:   '#7c3aed',
+};
+
+const LEAVE_TYPES = ['Vacation', 'Sick', 'Personal', 'Other'];
+
 function getJST() {
   const jst = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
   return {
@@ -36,7 +60,7 @@ function fmtSecs(s: number): string {
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
 }
 
-// Get Mon–Sun dates for current week as M/D/YYYY (matching CalendarDay.date)
+// Returns Mon–Sun (7 days) for the week containing jstDate
 function weekDates(jstDate: string) {
   const [y, mo, d] = jstDate.split('-').map(Number);
   const date = new Date(y, mo - 1, d);
@@ -47,36 +71,29 @@ function weekDates(jstDate: string) {
   return Array.from({ length: 7 }, (_, i) => {
     const dd = new Date(mon);
     dd.setDate(mon.getDate() + i);
-    return { label: LABELS[i], dateStr: `${dd.getMonth()+1}/${dd.getDate()}/${dd.getFullYear()}`, isWeekend: i >= 5 };
+    const iso = `${dd.getFullYear()}-${String(dd.getMonth()+1).padStart(2,'0')}-${String(dd.getDate()).padStart(2,'0')}`;
+    const usStr = `${dd.getMonth()+1}/${dd.getDate()}/${dd.getFullYear()}`;
+    return { label: LABELS[i], iso, usStr, isWeekend: i >= 5, dateNum: dd.getDate(), monthLabel: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][dd.getMonth()] };
   });
 }
 
-const LEAVE_TYPES = ['Vacation', 'Sick', 'Personal', 'Other'];
-
-const STATUS_BAR: Record<string, string> = {
-  present: '#22c55e',
-  late:    '#f59e0b',
-  absent:  '#ef4444',
-  leave:   '#8b5cf6',
-};
-
 export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Props) {
-  const [loading, setLoading]       = useState(false);
-  const [msg, setMsg]               = useState<string | null>(null);
-  const [err, setErr]               = useState<string | null>(null);
-  const [onLunch, setOnLunch]       = useState(memberData?.onLunch ?? false);
-  const [onBreak, setOnBreak]       = useState(memberData?.onBreak ?? false);
-  const [today, setToday]           = useState<CalendarDay | null>(
+  const [loading,    setLoading]   = useState(false);
+  const [msg,        setMsg]       = useState<string | null>(null);
+  const [err,        setErr]       = useState<string | null>(null);
+  const [onLunch,    setOnLunch]   = useState(memberData?.onLunch ?? false);
+  const [onBreak,    setOnBreak]   = useState(memberData?.onBreak ?? false);
+  const [today,      setToday]     = useState<CalendarDay | null>(
     memberData ? findToday(memberData.calendar) : null
   );
-  const [elapsed, setElapsed]       = useState(0);
-  const [entryType, setEntryType]   = useState<'auto'|'web'>('web');
+  const [elapsed,    setElapsed]   = useState(0);
+  const [entryType,  setEntryType] = useState<'auto'|'web'>('web');
 
   // Leave form
   const [leaveDate,   setLeaveDate]   = useState('');
   const [leaveType,   setLeaveType]   = useState(LEAVE_TYPES[0]);
   const [leaveReason, setLeaveReason] = useState('');
-  const [lLeading,    setLLoading]    = useState(false);
+  const [lLoading,    setLLoading]    = useState(false);
   const [lMsg,        setLMsg]        = useState<string | null>(null);
   const [lErr,        setLErr]        = useState<string | null>(null);
 
@@ -84,7 +101,6 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   const working = !!today && today.clockIn !== '-' && today.clockOut === '-';
   const done    = !!today && today.clockIn !== '-' && today.clockOut !== '-';
 
-  // Elapsed timer
   useEffect(() => {
     if (!working) return;
     function calc() {
@@ -120,10 +136,10 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   }
 
   const { date, time, hour, minute } = getJST();
-  function clockIn()  { doAction({ action: 'clock-in',  entry_type: entryType, local_time: time, date, jst_hour: hour, jst_minute: minute }); }
-  function clockOut() { doAction({ action: 'clock-out', local_time: time, date }); }
-  function lunchToggle() { doAction({ action: onLunch ? 'lunch-in'  : 'lunch-out',  local_time: time, date }); }
-  function breakToggle() { doAction({ action: onBreak ? 'break-in'  : 'break-out',  local_time: time, date }); }
+  function clockIn()    { doAction({ action: 'clock-in',  entry_type: entryType, local_time: time, date, jst_hour: hour, jst_minute: minute }); }
+  function clockOut()   { doAction({ action: 'clock-out', local_time: time, date }); }
+  function lunchToggle(){ doAction({ action: onLunch ? 'lunch-in' : 'lunch-out', local_time: time, date }); }
+  function breakToggle(){ doAction({ action: onBreak ? 'break-in' : 'break-out', local_time: time, date }); }
 
   async function submitLeave(e: React.FormEvent) {
     e.preventDefault();
@@ -137,223 +153,266 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     finally  { setLLoading(false); }
   }
 
-  // Hours worked
   const hoursWorked = working ? elapsed / 3600 : done ? parseFloat(String(today?.totalHours ?? 0)) || 0 : 0;
   const targetH     = 8;
   const pct         = Math.min(100, (hoursWorked / targetH) * 100);
 
-  // Weekly bars
-  const jstNow       = getJST();
+  // Weekly rows
+  const jstNow   = getJST();
+  const wd       = weekDates(jstNow.date);
+  const calendar = memberData?.calendar ?? [];
   const jstDateParts = jstNow.date.split('-');
-  const todayStr     = `${parseInt(jstDateParts[1])}/${parseInt(jstDateParts[2])}/${jstDateParts[0]}`;
-  const wd           = weekDates(jstNow.date);
-  const calendar     = memberData?.calendar ?? [];
+  const todayUsStr = `${parseInt(jstDateParts[1])}/${parseInt(jstDateParts[2])}/${jstDateParts[0]}`;
 
-  const bars = wd.map(({ label, dateStr, isWeekend }) => {
-    const rec   = calendar.find(c => c.date === dateStr);
-    const isNow = dateStr === todayStr;
-    const hrs   = isNow && working ? hoursWorked : (rec && !rec.isWeekend ? parseFloat(String(rec.totalHours || 0)) || 0 : 0);
-    const color = isNow ? '#111' : (rec ? (STATUS_BAR[rec.status] ?? '#d1d5db') : (isWeekend ? '#f3f4f6' : '#e5e7eb'));
-    const h     = Math.min(100, (hrs / 10) * 100);
-    return { label, hrs, h, color, isNow, isWeekend };
+  const weekRows = wd.map(({ label, usStr, isWeekend, dateNum, monthLabel }) => {
+    const rec    = calendar.find(c => c.date === usStr);
+    const isNow  = usStr === todayUsStr;
+    const hrs    = isNow && working ? hoursWorked : (rec && !rec.isWeekend ? parseFloat(String(rec.totalHours || 0)) || 0 : 0);
+    const status = rec?.status ?? (isWeekend ? 'weekend' : '');
+    const tint   = isNow ? C.accent : (status === 'present' ? C.green : status === 'late' ? C.accent : status === 'absent' ? C.red : status === 'leave' ? C.purple : C.border);
+    return { label, usStr, dateNum, monthLabel, isWeekend, isNow, rec, hrs, status, tint };
   });
 
-  /* ── Styles ── */
-  const card: React.CSSProperties  = { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: 16, padding: '1.5rem' };
-  const label: React.CSSProperties = { fontSize: '0.62rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase' as const, letterSpacing: '0.1em' };
-  const inp: React.CSSProperties   = { width: '100%', padding: '0.45rem 0.65rem', border: '1px solid #e5e7eb', borderRadius: 7, fontSize: '0.82rem', color: '#111', backgroundColor: '#fff', boxSizing: 'border-box' as const };
-  function btn(bg: string, color = '#fff', border = 'none'): React.CSSProperties {
-    return { padding: '0.55rem 1.1rem', backgroundColor: bg, color, border, borderRadius: 8, fontSize: '0.82rem', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 };
-  }
+  const inp: React.CSSProperties = {
+    width: '100%', padding: '8px 10px', border: `1px solid ${C.border}`, borderRadius: 8,
+    fontSize: 12.5, color: C.text, background: C.bg, boxSizing: 'border-box', fontFamily: F_SANS,
+  };
 
   return (
-    <div>
-      {msg && <div style={{ marginBottom: '1rem', padding: '0.65rem 0.875rem', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, fontSize: '0.8rem', color: '#16a34a' }}>{msg}</div>}
-      {err && <div style={{ marginBottom: '1rem', padding: '0.65rem 0.875rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, fontSize: '0.8rem', color: '#dc2626' }}>{err}</div>}
+    <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
 
-      <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
+      {/* ── Left column ── */}
+      <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-        {/* ── Left column ── */}
-        <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        {msg && <div style={{ padding: '10px 14px', background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 10, fontSize: 13, color: C.green }}>{msg}</div>}
+        {err && <div style={{ padding: '10px 14px', background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 10, fontSize: 13, color: C.red }}>{err}</div>}
 
-          {/* Status card */}
-          <div style={card}>
-            {/* Badge row */}
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.85rem' }}>
-              {notIn  && <Badge bg="#f3f4f6" color="#6b7280" dot="#9ca3af">Not clocked in</Badge>}
-              {working && <Badge bg="#f0fdf4" color="#16a34a" dot="#22c55e" pulse>Working</Badge>}
-              {done   && <Badge bg="#eff6ff" color="#3b82f6" dot="#3b82f6">Done for today</Badge>}
-              {onLunch && working && <Badge bg="#fffbeb" color="#d97706" dot="#f59e0b">On lunch</Badge>}
-              {onBreak && working && <Badge bg="#f5f3ff" color="#7c3aed" dot="#8b5cf6">On break</Badge>}
+        {/* Hero status card */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '26px 28px' }}>
+
+          {/* Status badge */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+            {notIn   && <StatusBadge bg={C.surface2} color={C.text3} dot={C.text3}>Not clocked in</StatusBadge>}
+            {working && <StatusBadge bg={C.greenSoft} color={C.green} dot={C.green} pulse>Working</StatusBadge>}
+            {done    && <StatusBadge bg={C.blueSoft}  color={C.blue}  dot={C.blue}>Done for today</StatusBadge>}
+            {onLunch && working && <StatusBadge bg={C.accentSoft} color={C.accent} dot={C.accent}>On lunch</StatusBadge>}
+            {onBreak && working && <StatusBadge bg={C.purpleSoft} color={C.purple} dot={C.purple}>On break</StatusBadge>}
+          </div>
+
+          {/* Serif status headline */}
+          <div style={{ fontFamily: F_SERIF, fontSize: 36, lineHeight: 1.05, letterSpacing: '-0.02em', color: C.text, marginBottom: 6 }}>
+            {notIn   && 'Ready to start your day.'}
+            {working && <><span style={{ fontStyle: 'normal' }}>Working since </span><span style={{ fontStyle: 'italic' }}>{today!.clockIn}.</span></>}
+            {done    && <><span style={{ fontStyle: 'normal' }}>Done at </span><span style={{ fontStyle: 'italic' }}>{today!.clockOut}.</span></>}
+          </div>
+
+          {/* Live timer or total */}
+          {working && (
+            <div style={{ fontFamily: F_MONO, fontSize: 84, fontWeight: 400, color: C.text, letterSpacing: '-0.04em', lineHeight: 0.85, marginBottom: 22, fontVariantNumeric: 'tabular-nums' }}>
+              {fmtSecs(elapsed)}
             </div>
+          )}
+          {done && today?.totalHours && (
+            <div style={{ fontFamily: F_MONO, fontSize: 56, fontWeight: 400, color: C.text, letterSpacing: '-0.03em', lineHeight: 0.9, marginBottom: 22, fontVariantNumeric: 'tabular-nums' }}>
+              {String(today.totalHours)}<span style={{ fontSize: 28, color: C.text2 }}>h</span>
+            </div>
+          )}
+          {notIn && (
+            <div style={{ height: 16 }} />
+          )}
 
-            {/* Status heading */}
-            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#111', margin: '0 0 0.3rem', lineHeight: 1.1 }}>
-              {notIn   && 'Ready to start your day.'}
-              {working && `Working since ${today!.clockIn}.`}
-              {done    && `Done at ${today!.clockOut}.`}
-            </h2>
-
-            {/* Live timer or total */}
-            {working && (
-              <div style={{ fontFamily: 'monospace', fontSize: '2.75rem', fontWeight: 800, color: '#111', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: '1.25rem' }}>
-                {fmtSecs(elapsed)}
+          {/* Progress bar */}
+          {(working || done) && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ position: 'relative', height: 6, background: C.border, borderRadius: 999, overflow: 'hidden', marginBottom: 8 }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${C.accent}, ${C.green})`, borderRadius: 999, transition: 'width 1s linear' }} />
               </div>
-            )}
-            {done && today?.totalHours && (
-              <div style={{ fontFamily: 'monospace', fontSize: '1.5rem', fontWeight: 700, color: '#374151', lineHeight: 1, marginBottom: '1.25rem' }}>
-                {String(today.totalHours)}h total
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em' }}>
+                <span style={{ color: pct >= 100 ? C.green : C.text3 }}>{pct >= 100 ? 'Target reached!' : `${(targetH - hoursWorked).toFixed(1)}h to go`}</span>
+                <span>TARGET {targetH}h</span>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Progress bar */}
-            {(working || done) && (
-              <div style={{ marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                  <span style={{ ...label, color: pct >= 100 ? '#16a34a' : '#9ca3af' }}>
-                    {pct >= 100 ? 'Target reached!' : `${(targetH - hoursWorked).toFixed(1)}h to go`}
-                  </span>
-                  <span style={{ ...label }}>TARGET {targetH}h</span>
-                </div>
-                <div style={{ height: 6, backgroundColor: '#f3f4f6', borderRadius: 999, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${pct}%`, backgroundColor: pct >= 100 ? '#22c55e' : '#111', borderRadius: 999, transition: 'width 1s linear' }} />
-                </div>
-                <div style={{ marginTop: '0.35rem', fontSize: '0.68rem', color: '#9ca3af' }}>
-                  {hoursWorked.toFixed(2)}h worked
-                </div>
-              </div>
-            )}
-
-            {/* Entry type toggle */}
-            {notIn && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                <span style={label}>Entry</span>
+          {/* Auto / Web toggle */}
+          {notIn && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+              <span style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Entry</span>
+              <div style={{ display: 'inline-flex', background: C.surface2, borderRadius: 999, padding: 3, border: `1px solid ${C.border}` }}>
                 {(['auto','web'] as const).map(t => (
                   <button key={t} onClick={() => setEntryType(t)}
-                    style={{ padding: '0.3rem 0.65rem', backgroundColor: entryType === t ? '#111' : '#f3f4f6', color: entryType === t ? '#fff' : '#6b7280', border: 'none', borderRadius: 999, fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', cursor: 'pointer' }}>
+                    style={{ padding: '5px 14px', background: entryType === t ? C.text : 'transparent', color: entryType === t ? '#fafafa' : C.text3, border: 'none', borderRadius: 999, fontSize: 11.5, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.04em', transition: 'all 0.15s' }}>
                     {t}
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {notIn && (
+              <ActionBtn onClick={clockIn} disabled={loading} primary>Clock in</ActionBtn>
             )}
-
-            {/* Action buttons */}
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              {notIn && (
-                <button onClick={clockIn} disabled={loading} style={btn('#111')}>Clock in</button>
-              )}
-              {working && (
-                <>
-                  <button onClick={clockOut}    disabled={loading} style={btn('#dc2626')}>Clock out</button>
-                  <button onClick={lunchToggle} disabled={loading} style={btn('#fff', '#374151', '1px solid #e5e7eb')}>{onLunch ? 'Lunch in' : 'Lunch'}</button>
-                  <button onClick={breakToggle} disabled={loading} style={btn('#fff', '#374151', '1px solid #e5e7eb')}>{onBreak ? 'Break in' : 'Break'}</button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Weekly bar chart */}
-          <div style={card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1rem' }}>
-              <div>
-                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#111' }}>This week</div>
-                <div style={{ ...label, marginTop: '0.15rem' }}>Daily hours</div>
-              </div>
-              <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.65rem', color: '#9ca3af' }}>
-                {[['#22c55e','On time'],['#f59e0b','Late'],['#ef4444','Absent']].map(([c,l]) => (
-                  <span key={l} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <span style={{ width: 7, height: 7, borderRadius: 2, backgroundColor: c, display: 'inline-block' }} />{l}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', height: 90 }}>
-              {bars.map(({ label: lbl, hrs, h, color, isNow, isWeekend }) => (
-                <div key={lbl} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', height: '100%' }}>
-                  <div style={{ fontSize: '0.6rem', fontFamily: 'monospace', color: '#9ca3af', height: 14, display: 'flex', alignItems: 'flex-end' }}>
-                    {hrs > 0 ? hrs.toFixed(1) : ''}
-                  </div>
-                  <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'flex-end' }}>
-                    <div style={{ width: '100%', backgroundColor: color, borderRadius: 5, height: `${Math.max(h, hrs > 0 ? 8 : 3)}%`, opacity: isWeekend && hrs === 0 ? 0.3 : 1, minHeight: isWeekend ? 0 : 3, transition: 'height 0.3s ease' }} />
-                  </div>
-                  <div style={{ fontSize: '0.65rem', fontWeight: isNow ? 700 : 400, color: isNow ? '#111' : '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.04em', paddingBottom: 2 }}>{lbl}</div>
-                </div>
-              ))}
-            </div>
+            {working && (
+              <>
+                <ActionBtn onClick={clockOut} disabled={loading} danger>Clock out</ActionBtn>
+                <ActionBtn onClick={lunchToggle} disabled={loading}>{onLunch ? '🍱 Lunch in' : '🍱 Lunch'}</ActionBtn>
+                <ActionBtn onClick={breakToggle} disabled={loading}>{onBreak ? '☕ Break in' : '☕ Break'}</ActionBtn>
+              </>
+            )}
           </div>
         </div>
 
-        {/* ── Right column ── */}
-        <div style={{ width: 245, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-
-          {/* Quick leave form */}
-          <div style={card}>
-            <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#111', marginBottom: '0.2rem' }}>Request leave</div>
-            <div style={{ ...label, marginBottom: '1rem' }}>Quick request</div>
-
-            {lMsg && <div style={{ marginBottom: '0.75rem', padding: '0.5rem 0.7rem', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 7, fontSize: '0.75rem', color: '#16a34a' }}>{lMsg}</div>}
-            {lErr && <div style={{ marginBottom: '0.75rem', padding: '0.5rem 0.7rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 7, fontSize: '0.75rem', color: '#dc2626' }}>{lErr}</div>}
-
-            <form onSubmit={submitLeave}>
-              <div style={{ marginBottom: '0.7rem' }}>
-                <label style={{ ...label, display: 'block', marginBottom: '0.3rem' }}>Type</label>
-                <select value={leaveType} onChange={e => setLeaveType(e.target.value)} style={inp}>
-                  {LEAVE_TYPES.map(t => <option key={t}>{t}</option>)}
-                </select>
-              </div>
-              <div style={{ marginBottom: '0.7rem' }}>
-                <label style={{ ...label, display: 'block', marginBottom: '0.3rem' }}>Date</label>
-                <input type="date" value={leaveDate} onChange={e => setLeaveDate(e.target.value)} required style={inp} />
-              </div>
-              <div style={{ marginBottom: '0.85rem' }}>
-                <label style={{ ...label, display: 'block', marginBottom: '0.3rem' }}>Reason</label>
-                <textarea value={leaveReason} onChange={e => setLeaveReason(e.target.value)} required rows={2} style={{ ...inp, resize: 'vertical' }} />
-              </div>
-              <button type="submit" disabled={lLeading} style={{ ...btn('#111'), width: '100%', textAlign: 'center' as const, justifyContent: 'center' }}>
-                {lLeading ? 'Submitting…' : '+ Request leave'}
-              </button>
-            </form>
-          </div>
-
-          {/* Heads up — leave balance */}
-          {leaveBalance && (
-            <div style={card}>
-              <div style={{ ...label, marginBottom: '0.85rem' }}>Heads up</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.45rem' }}>
-                <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>Available</span>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#22c55e' }}>{Math.max(0, leaveBalance.remaining)} days</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
-                <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>Used</span>
-                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151' }}>{leaveBalance.used} / {leaveBalance.total}</span>
-              </div>
-              <div style={{ height: 5, backgroundColor: '#f3f4f6', borderRadius: 999 }}>
-                <div style={{ height: '100%', width: `${Math.min(100, (leaveBalance.used / (leaveBalance.total || 1)) * 100)}%`, backgroundColor: '#111', borderRadius: 999 }} />
-              </div>
-              {leaveBalance.remaining <= 5 && leaveBalance.remaining > 0 && (
-                <p style={{ fontSize: '0.72rem', color: '#d97706', marginTop: '0.65rem', lineHeight: 1.5 }}>
-                  Only {leaveBalance.remaining} day{leaveBalance.remaining !== 1 ? 's' : ''} remaining this year.
-                </p>
-              )}
-              {leaveBalance.remaining <= 0 && (
-                <p style={{ fontSize: '0.72rem', color: '#dc2626', marginTop: '0.65rem', lineHeight: 1.5 }}>
-                  No leave balance remaining.
-                </p>
-              )}
+        {/* Weekly timesheet rows */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+            <div>
+              <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text, letterSpacing: '-0.015em' }}>This week</div>
+              <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 3 }}>Daily hours</div>
             </div>
-          )}
+            <div style={{ display: 'flex', gap: 12, fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.04em' }}>
+              <span><span style={{ color: C.green }}>●</span> On time</span>
+              <span><span style={{ color: C.accent }}>●</span> Late</span>
+              <span><span style={{ color: C.red }}>●</span> Absent</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {weekRows.map(({ label, dateNum, monthLabel, isWeekend, isNow, rec, hrs, status, tint }, i) => {
+              const barW = Math.min(100, (hrs / 10) * 100);
+              const cin  = rec?.clockIn  !== '-' ? rec?.clockIn  : null;
+              const cout = rec?.clockOut !== '-' ? rec?.clockOut : null;
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 4px', borderBottom: i < 6 ? `1px solid ${C.border}` : 'none', opacity: isWeekend && hrs === 0 ? 0.4 : 1 }}>
+                  {/* Day */}
+                  <div style={{ width: 48, flexShrink: 0 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: isNow ? 600 : 500, color: isNow ? C.accent : C.text, lineHeight: 1.1 }}>
+                      {label} {isNow && <span style={{ fontFamily: F_MONO, fontSize: 8.5, letterSpacing: '0.06em', color: C.accent }}>NOW</span>}
+                    </div>
+                    <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, marginTop: 1 }}>{monthLabel} {dateNum}</div>
+                  </div>
+                  {/* Clock in/out */}
+                  <div style={{ width: 96, flexShrink: 0, fontFamily: F_MONO, fontSize: 11, color: C.text2 }}>
+                    {isWeekend ? <span style={{ color: C.text3 }}>Weekend</span> : cin ? <>{cin} <span style={{ color: C.text3 }}>→</span> {cout ?? '—'}</> : <span style={{ color: C.text3 }}>—</span>}
+                  </div>
+                  {/* Bar */}
+                  <div style={{ flex: 1, position: 'relative', height: 12, background: C.surface2, borderRadius: 4, overflow: 'hidden' }}>
+                    {hrs > 0 && (
+                      <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${barW}%`, background: tint, borderRadius: 4 }} />
+                    )}
+                    {/* 8h marker at 80% */}
+                    <div style={{ position: 'absolute', top: -1, bottom: -1, left: '80%', width: 1, background: C.borderStrong, opacity: 0.5 }} />
+                  </div>
+                  {/* Hours */}
+                  <div style={{ width: 48, flexShrink: 0, textAlign: 'right', fontFamily: F_MONO, fontSize: 12, color: hrs > 0 ? tint : C.text3, fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
+                    {hrs > 0 ? `${hrs.toFixed(2)}h` : '—'}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Right column ── */}
+      <div style={{ width: 256, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        {/* Today's anatomy */}
+        {(working || done) && today && (
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
+            <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Today&apos;s anatomy</div>
+            {[
+              { lbl: 'Clock in',  val: today.clockIn  !== '-' ? today.clockIn  : '—', tint: C.green },
+              { lbl: 'Clock out', val: today.clockOut !== '-' ? today.clockOut : working ? '—' : '—', tint: C.text2 },
+              { lbl: 'Status',    val: today.status.charAt(0).toUpperCase() + today.status.slice(1), tint: STATUS_COLOR[today.status] ?? C.text2 },
+              { lbl: 'Net hours', val: working ? `${(elapsed/3600).toFixed(2)}h` : String(today.totalHours) + 'h', tint: C.text },
+            ].map(({ lbl, val, tint }) => (
+              <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '6px 0', borderBottom: `1px solid ${C.border}` }}>
+                <span style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.04em' }}>{lbl}</span>
+                <span style={{ fontFamily: F_MONO, fontSize: 12.5, color: tint, fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>{val}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Leave balance */}
+        {leaveBalance && (
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
+            <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Leave balance</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+              <span style={{ fontFamily: F_SERIF, fontSize: 38, color: C.text, letterSpacing: '-0.025em', lineHeight: 1 }}>{leaveBalance.used}</span>
+              <span style={{ fontFamily: F_SERIF, fontSize: 22, color: C.text3, letterSpacing: '-0.015em' }}>/ {leaveBalance.total}</span>
+            </div>
+            <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.green, letterSpacing: '0.04em', marginBottom: 12 }}>
+              {Math.max(0, leaveBalance.remaining)} days available
+            </div>
+            <div style={{ height: 4, background: C.border, borderRadius: 999 }}>
+              <div style={{ height: '100%', width: `${Math.min(100, (leaveBalance.used / (leaveBalance.total || 1)) * 100)}%`, background: leaveBalance.remaining <= 5 ? C.accent : C.text, borderRadius: 999 }} />
+            </div>
+            {leaveBalance.remaining <= 5 && leaveBalance.remaining > 0 && (
+              <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.accent, marginTop: 8, letterSpacing: '0.02em' }}>
+                Only {leaveBalance.remaining} day{leaveBalance.remaining !== 1 ? 's' : ''} remaining.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Leave request form */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
+          <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text, letterSpacing: '-0.015em', marginBottom: 4 }}>
+            Need a day off?
+          </div>
+          <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 16 }}>Quick leave request</div>
+
+          {lMsg && <div style={{ marginBottom: 10, padding: '8px 10px', background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 8, fontSize: 12, color: C.green }}>{lMsg}</div>}
+          {lErr && <div style={{ marginBottom: 10, padding: '8px 10px', background: C.redSoft,   border: `1px solid ${C.redBorder}`,   borderRadius: 8, fontSize: 12, color: C.red }}>{lErr}</div>}
+
+          <form onSubmit={submitLeave}>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Type</label>
+              <select value={leaveType} onChange={e => setLeaveType(e.target.value)} style={inp}>
+                {LEAVE_TYPES.map(t => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Date</label>
+              <input type="date" value={leaveDate} onChange={e => setLeaveDate(e.target.value)} required style={inp} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Reason</label>
+              <textarea value={leaveReason} onChange={e => setLeaveReason(e.target.value)} required rows={2} style={{ ...inp, resize: 'vertical' }} />
+            </div>
+            <button type="submit" disabled={lLoading} style={{ width: '100%', padding: '9px 16px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 9, fontSize: 13, fontFamily: F_SANS, fontWeight: 500, cursor: lLoading ? 'not-allowed' : 'pointer', opacity: lLoading ? 0.6 : 1 }}>
+              {lLoading ? 'Submitting…' : '+ Request leave'}
+            </button>
+          </form>
         </div>
       </div>
     </div>
   );
 }
 
-/* Helper badge component */
-function Badge({ bg, color, dot, pulse, children }: { bg: string; color: string; dot: string; pulse?: boolean; children: React.ReactNode }) {
+function StatusBadge({ bg, color, dot, pulse, children }: { bg: string; color: string; dot: string; pulse?: boolean; children: React.ReactNode }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', backgroundColor: bg, borderRadius: 999, padding: '0.3rem 0.75rem', fontSize: '0.75rem', fontWeight: 600, color }}>
-      <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: dot, display: 'inline-block', flexShrink: 0 }} />
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: bg, borderRadius: 999, padding: '5px 12px', fontSize: 12, fontWeight: 500, color, fontFamily: "'Geist', system-ui, sans-serif" }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: dot, display: 'inline-block', flexShrink: 0, ...(pulse ? { animation: 'pulse 1.5s infinite' } : {}) }} />
       {children}
     </span>
+  );
+}
+
+function ActionBtn({ onClick, disabled, primary, danger, children }: { onClick: () => void; disabled?: boolean; primary?: boolean; danger?: boolean; children: React.ReactNode }) {
+  const bg     = danger ? 'transparent' : primary ? '#0a0a0a' : 'transparent';
+  const color  = danger ? '#dc2626' : primary ? '#fafafa' : '#525252';
+  const border = danger ? '1px solid rgba(220,38,38,0.3)' : primary ? 'none' : '1px solid #e6e6e6';
+  const bgHov  = danger ? 'rgba(220,38,38,0.08)' : primary ? '#1a1a1a' : '#f5f5f5';
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{ padding: '9px 18px', background: bg, color, border, borderRadius: 9, fontSize: 13, fontFamily: "'Geist', system-ui, sans-serif", fontWeight: 500, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}
+    >
+      {children}
+    </button>
   );
 }
