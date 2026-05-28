@@ -44,9 +44,11 @@ export interface LeaveRecord {
   status: string;
 }
 
-export interface Todo {
+export interface PlanEvent {
   id: number;
-  text: string;
+  title: string;
+  start_time: string;
+  end_time: string;
   completed: boolean;
   created_by: string | null;
   created_at: string;
@@ -66,7 +68,7 @@ export interface MemberData {
   breakStart?: string | null;
   breakEnd?: string | null;
   leaveHistory: LeaveRecord[];
-  todosByDate?: Record<string, number>;
+  planEventsByDate?: Record<string, number>;
 }
 
 export interface MemberDashboardProps {
