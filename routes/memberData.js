@@ -27,11 +27,15 @@ router.get('/', async (req, res) => {
     { data: allLeave },
     { data: lunchToday },
     { data: breakToday },
+    { data: monthTodos },
   ] = await Promise.all([
     supabase.from('attendance').select('*').eq('email', email),
     supabase.from('leave_log').select('*').eq('email', email),
     supabase.from('lunch_log').select('*').eq('name', officialName).eq('date', today).maybeSingle(),
     supabase.from('break_log').select('*').eq('name', officialName).eq('date', today).maybeSingle(),
+    supabase.from('todos').select('date').eq('user_id', req.user.user_id)
+      .gte('date', `${yearNum}-${String(monthNum).padStart(2,'0')}-01`)
+      .lte('date', `${yearNum}-${String(monthNum).padStart(2,'0')}-${String(new Date(yearNum, monthNum, 0).getDate()).padStart(2,'0')}`),
   ]);
 
   const monthAtt = (allAttendance || []).filter(a => {
@@ -80,12 +84,19 @@ router.get('/', async (req, res) => {
     status: l.status,
   }));
 
+  const todosByDate = {};
+  for (const row of (monthTodos || [])) {
+    const d = String(row.date).slice(0, 10);
+    todosByDate[d] = (todosByDate[d] || 0) + 1;
+  }
+
   res.json({
     month: monthNum,
     year: yearNum,
     email,
     calendar,
     summary,
+    todosByDate,
     onLunch: !!(lunchToday && !lunchToday.lunch_in),
     onBreak: !!(breakToday && !breakToday.break_in),
     hadLunch: !!(lunchToday),
