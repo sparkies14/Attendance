@@ -81,6 +81,7 @@ export default function LoginPage() {
       if (!res.ok) {
         setError(data.error ?? 'Sign in failed.');
       } else {
+        await fetch('/api/set-cookie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: data.token }) });
         redirectByRole(data.user?.role ?? '');
       }
     } catch {
@@ -143,6 +144,7 @@ export default function LoginPage() {
           if (!res.ok) {
             setError(data.error ?? 'Google sign-in failed.');
           } else {
+            await fetch('/api/set-cookie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: data.token }) });
             redirectByRole(data.user?.role ?? '');
           }
         } catch {
