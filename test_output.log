@@ -1,0 +1,55 @@
+
+> anosupo-attendance-server@1.0.0 test
+> jest
+
+PASS tests/tardyCounter.test.js
+PASS tests/rules.test.js
+PASS tests/audit.test.js
+PASS tests/cron.test.js
+  ● Console
+
+    console.log
+      AWOL check 2026-05-27: 1 inserted, 0 skipped
+
+      at log (lib/cron.js:43:11)
+
+    console.log
+      AWOL check 2026-05-27: 0 inserted, 1 skipped
+
+      at log (lib/cron.js:43:11)
+
+    console.log
+      AWOL check 2026-05-27: 1 inserted, 1 skipped
+
+      at log (lib/cron.js:43:11)
+
+    console.log
+      AWOL check 2026-05-27: 1 inserted, 0 skipped
+
+      at log (lib/cron.js:43:11)
+
+    console.log
+      AWOL check 2026-05-27: 1 inserted, 0 skipped
+
+      at log (lib/cron.js:43:11)
+
+    console.log
+      AWOL check 2026-06-01: 0 inserted, 0 skipped
+
+      at log (lib/cron.js:43:11)
+
+PASS tests/leaveBalance.lib.test.js
+PASS tests/policyConfig.test.js
+PASS tests/middleware.test.js
+PASS tests/leaveBalance.test.js
+PASS tests/discipline.test.js
+PASS tests/leaveEvidence.test.js
+PASS tests/appeals.test.js
+PASS tests/reports.test.js
+PASS tests/auth.test.js
+
+Test Suites: 13 passed, 13 total
+Tests:       255 passed, 255 total
+Snapshots:   0 total
+Time:        2.386 s
+Ran all test suites.
