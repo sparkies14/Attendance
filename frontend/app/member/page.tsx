@@ -21,6 +21,9 @@ function buildMockData(month: number, year: number): { user: UserProfile; leaveB
   const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
   const todayDay = today.getDate();
 
+  // Days that are late (1-indexed weekday numbers within the month)
+  const LATE_DAYS = new Set([3, 8, 14, 19, 23]);
+
   const calendar = Array.from({ length: daysInMonth }, (_, i) => {
     const day = i + 1;
     const dow = new Date(year, month - 1, day).getDay();
@@ -32,19 +35,23 @@ function buildMockData(month: number, year: number): { user: UserProfile; leaveB
       return { day, date: dateStr, status: 'weekend', clockIn: '-', clockOut: '-', totalHours: '-', isWeekend };
     }
     if (day === todayDay) {
-      return { day, date: dateStr, status: 'present', clockIn: '08:55', clockOut: '-', totalHours: '-', isWeekend: false };
+      return { day, date: dateStr, status: 'present', clockIn: '08:52', clockOut: '-', totalHours: '-', isWeekend: false };
     }
-    // sprinkle some statuses
-    const roll = day % 7;
-    if (roll === 3) return { day, date: dateStr, status: 'late', clockIn: '09:32', clockOut: '18:05', totalHours: 8.38, isWeekend: false };
-    if (roll === 6) return { day, date: dateStr, status: 'absent', clockIn: '-', clockOut: '-', totalHours: 0, isWeekend: false };
-    if (roll === 1 && day < todayDay - 5) return { day, date: dateStr, status: 'leave', clockIn: '-', clockOut: '-', totalHours: 0, isWeekend: false };
-    return { day, date: dateStr, status: 'present', clockIn: '08:45', clockOut: '17:45', totalHours: 9.0, isWeekend: false };
+    if (LATE_DAYS.has(day)) {
+      const mins = 10 + (day % 5) * 4; // vary lateness: 10–26 min late
+      const inH = 9, inM = mins;
+      const clockIn = `${String(inH).padStart(2,'0')}:${String(inM).padStart(2,'0')}`;
+      return { day, date: dateStr, status: 'late', clockIn, clockOut: '18:10', totalHours: +(8.5 - mins / 60).toFixed(2), isWeekend: false };
+    }
+    // Everyone else: on time, slight variation in hours
+    const extraMins = (day * 7) % 25;
+    const totalHours = +(9 + extraMins / 60).toFixed(2);
+    return { day, date: dateStr, status: 'present', clockIn: '08:45', clockOut: '17:52', totalHours, isWeekend: false };
   });
 
   const present = calendar.filter(d => !d.isWeekend && d.status === 'present').length;
   const late    = calendar.filter(d => d.status === 'late').length;
-  const absent  = calendar.filter(d => d.status === 'absent').length;
+  const absent  = 0;
   const pending = 0;
 
   return {
@@ -62,9 +69,9 @@ function buildMockData(month: number, year: number): { user: UserProfile; leaveB
       name: 'Jocel Reyes',
       hire_year: 2023,
       grantsEarned: 15,
-      used: 4,
+      used: 2,
       adjustments: 0,
-      balance: 11,
+      balance: 13,
     },
     memberData: {
       month,
