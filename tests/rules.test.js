@@ -35,8 +35,8 @@ describe('calendarDayStatus', () => {
     expect(calendarDayStatus(null, false)).toBe('absent'));
   test('status=Pending → pending', () =>
     expect(calendarDayStatus({ status: 'Pending', clock_out: null, late_status: '' }, false)).toBe('pending'));
-  test('has clock_out value → clocked-out', () =>
-    expect(calendarDayStatus({ status: 'Approved', clock_out: '18:00', late_status: 'ON TIME' }, false)).toBe('clocked-out'));
+  test('has clock_out, ON TIME → present', () =>
+    expect(calendarDayStatus({ status: 'Approved', clock_out: '18:00', late_status: 'ON TIME' }, false)).toBe('present'));
   test('clock_out is empty string → present (not clocked-out)', () =>
     expect(calendarDayStatus({ status: 'Approved', clock_out: '', late_status: 'ON TIME' }, false)).toBe('present'));
   test('approved, no clock_out, MINOR TARDY → late', () =>
