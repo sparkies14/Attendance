@@ -426,8 +426,17 @@
           <button class="btn btn-primary" style="font-size:12px;padding:5px 10px" onclick="openAssignTaskForm()">+ Assign task</button>
         </div>
         <div id="tasks-assign-form" style="display:none;margin-bottom:10px">
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <input id="tasks-assign-input" style="flex:1;padding:7px 10px;font-size:13px;border:1px solid var(--border);border-radius:8px;font-family:inherit" placeholder="What are you doing? (e.g. Meeting with AT)">
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:10px;color:var(--text3);font-weight:600;width:36px;flex-shrink:0">FROM</span>
+            <input id="tasks-assign-start" type="time" value="09:00" style="padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit">
+            <span style="color:var(--text3)">→</span>
+            <span style="font-size:10px;color:var(--text3);font-weight:600;width:20px;flex-shrink:0">TO</span>
+            <input id="tasks-assign-end" type="time" value="10:00" style="padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;font-family:inherit">
+          </div>
           <div style="display:flex;gap:6px">
-            <input id="tasks-assign-input" style="flex:1;padding:7px 10px;font-size:13px;border:1px solid var(--border);border-radius:8px;font-family:inherit" placeholder="Task description…">
             <button class="btn btn-primary" style="font-size:12px" onclick="submitAssignTask()">Save</button>
             <button class="btn" style="font-size:12px" onclick="closeAssignTaskForm()">Cancel</button>
           </div>
@@ -1284,10 +1293,10 @@ function closeMemberTasksModal() {
 
 async function loadTasksDots() {
   try {
-    const res = await apiFetch(`${API_BASE}/todos/admin/month?user_id=${_tasksUserId}&month=${_tasksMonth}&year=${_tasksYear}`);
+    const res = await apiFetch(`${API_BASE}/plan-events/admin/month?user_id=${_tasksUserId}&month=${_tasksMonth}&year=${_tasksYear}`);
     if (res.ok) {
-      const { todosByDate } = await res.json();
-      _tasksDots = todosByDate || {};
+      const { planEventsByDate } = await res.json();
+      _tasksDots = planEventsByDate || {};
     } else {
       _tasksDots = {};
     }
@@ -1338,22 +1347,25 @@ async function loadDayTasks() {
   const listEl = document.getElementById('tasks-day-list');
   listEl.innerHTML = '<p style="font-size:12px;color:var(--text3)">Loading…</p>';
   try {
-    const res = await apiFetch(`${API_BASE}/todos/admin?user_id=${_tasksUserId}&date=${_tasksSelDate}`);
+    const res = await apiFetch(`${API_BASE}/plan-events/admin?user_id=${_tasksUserId}&date=${_tasksSelDate}`);
     const data = await res.json();
-    if (!res.ok) { listEl.innerHTML = `<p style="font-size:12px;color:var(--red)">${escapeHtml(data.error || 'Error loading tasks.')}</p>`; return; }
-    renderDayTasks(data.todos || []);
+    if (!res.ok) { listEl.innerHTML = `<p style="font-size:12px;color:var(--red)">${escapeHtml(data.error || 'Error loading events.')}</p>`; return; }
+    renderDayTasks(data.events || []);
   } catch (e) {
     listEl.innerHTML = `<p style="font-size:12px;color:var(--red)">${escapeHtml(e.message)}</p>`;
   }
 }
 
-function renderDayTasks(todos) {
+function renderDayTasks(events) {
   const listEl = document.getElementById('tasks-day-list');
-  if (!todos.length) { listEl.innerHTML = '<p style="font-size:12px;color:var(--text3)">No tasks for this day.</p>'; return; }
-  listEl.innerHTML = todos.map(t => `
-    <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:8px;background:#fafaf8;border:1px solid var(--border);opacity:${t.completed ? 0.6 : 1}">
-      <button onclick="adminToggleTodo(${t.id}, ${!t.completed})" style="width:16px;height:16px;border-radius:4px;border:${t.completed ? 'none' : '1.5px solid #ccc'};background:${t.completed ? 'var(--accent)' : 'transparent'};color:white;font-size:10px;flex-shrink:0;margin-top:1px;cursor:pointer">${t.completed ? '✓' : ''}</button>
-      <span style="flex:1;font-size:13px;color:var(--text);line-height:1.4;text-decoration:${t.completed ? 'line-through' : 'none'}">${escapeHtml(t.text)}${t.created_by ? `<span style="font-size:10px;color:var(--text3);margin-left:6px">(assigned by ${escapeHtml(t.created_by)})</span>` : ''}</span>
+  if (!events.length) { listEl.innerHTML = '<p style="font-size:12px;color:var(--text3)">No plan events for this day.</p>'; return; }
+  listEl.innerHTML = events.map(t => `
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:9px 11px;border-radius:9px;background:#fafaf8;border:1px solid var(--border);opacity:${t.completed ? 0.55 : 1}">
+      <button onclick="adminToggleTodo(${t.id}, ${!t.completed})" style="width:16px;height:16px;border-radius:4px;border:${t.completed ? 'none' : '1.5px solid #ccc'};background:${t.completed ? 'var(--accent)' : 'transparent'};color:white;font-size:10px;flex-shrink:0;margin-top:2px;cursor:pointer">${t.completed ? '✓' : ''}</button>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10.5px;color:#6d28d9;letter-spacing:0.03em;margin-bottom:2px">${escapeHtml(t.start_time)} – ${escapeHtml(t.end_time)}</div>
+        <div style="font-size:13px;color:var(--text);line-height:1.3;text-decoration:${t.completed ? 'line-through' : 'none'}">${escapeHtml(t.title)}${t.created_by ? `<span style="font-size:10px;color:var(--text3);margin-left:6px">(by ${escapeHtml(t.created_by)})</span>` : ''}</div>
+      </div>
       <button onclick="adminDeleteTodo(${t.id})" style="background:none;border:none;cursor:pointer;font-size:13px;color:#ccc;padding:0 2px">×</button>
     </div>
   `).join('');
@@ -1361,14 +1373,14 @@ function renderDayTasks(todos) {
 
 async function adminToggleTodo(id, completed) {
   try {
-    const res = await apiFetch(`${API_BASE}/todos/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ completed }) });
+    const res = await apiFetch(`${API_BASE}/plan-events/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ completed }) });
     if (res.ok) await loadDayTasks();
   } catch {}
 }
 
 async function adminDeleteTodo(id) {
   try {
-    const res = await apiFetch(`${API_BASE}/todos/${id}`, { method: 'DELETE' });
+    const res = await apiFetch(`${API_BASE}/plan-events/${id}`, { method: 'DELETE' });
     if (res.ok) {
       await loadDayTasks();
       await loadTasksDots();
@@ -1392,11 +1404,15 @@ async function submitAssignTask() {
   const text  = document.getElementById('tasks-assign-input').value.trim();
   const errEl = document.getElementById('tasks-assign-error');
   errEl.textContent = '';
-  if (!text) { errEl.textContent = 'Task text is required.'; return; }
+  if (!text) { errEl.textContent = 'Event title is required.'; return; }
+  const start_time = document.getElementById('tasks-assign-start').value;
+  const end_time   = document.getElementById('tasks-assign-end').value;
+  if (!start_time || !end_time) { errEl.textContent = 'Start and end time are required.'; return; }
+  if (end_time <= start_time)   { errEl.textContent = 'End time must be after start time.'; return; }
   try {
-    const res = await apiFetch(`${API_BASE}/todos/admin`, {
+    const res = await apiFetch(`${API_BASE}/plan-events/admin`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: _tasksUserId, date: _tasksSelDate, text }),
+      body: JSON.stringify({ user_id: _tasksUserId, date: _tasksSelDate, title: text, start_time, end_time }),
     });
     const data = await res.json();
     if (!res.ok) { errEl.textContent = data.error || 'Failed to assign task.'; return; }
@@ -1443,10 +1459,10 @@ async function fetchTeamTasks() {
   document.getElementById('tasks-week-label').textContent =
     `Week of ${parseInt(m1)}/${parseInt(d1)}/${y1} – ${parseInt(m2)}/${parseInt(d2)}/${y2}`;
   try {
-    const res = await apiFetch(`${API_BASE}/todos/admin/week?week_start=${_weekStart}`);
+    const res = await apiFetch(`${API_BASE}/plan-events/admin/week?week_start=${_weekStart}`);
     const data = await res.json();
     if (!res.ok) { gridEl.innerHTML = `<p style="padding:16px;color:var(--red)">${escapeHtml(data.error || 'Error loading.')}</p>`; return; }
-    renderWeekGrid(data.members || [], data.todos || [], days, todayISO);
+    renderWeekGrid(data.members || [], data.events || [], days, todayISO);
   } catch (e) {
     gridEl.innerHTML = `<p style="padding:16px;color:var(--red)">${escapeHtml(e.message)}</p>`;
   }
@@ -1454,7 +1470,7 @@ async function fetchTeamTasks() {
 
 const TEAM_DOW = ['Mon','Tue','Wed','Thu','Fri','Sat'];
 
-function renderWeekGrid(members, todos, days, todayISO) {
+function renderWeekGrid(members, events, days, todayISO) {
   const gridEl = document.getElementById('tasks-week-grid');
   const isWkEnd = (iso) => { const d = new Date(iso).getDay(); return d === 0 || d === 6; };
 
@@ -1481,10 +1497,10 @@ function renderWeekGrid(members, todos, days, todayISO) {
       const isToday = iso === todayISO;
       const isWknd  = isWkEnd(iso);
       const cls     = isToday ? 'wg-cell today-col' : isWknd ? 'wg-cell weekend-col' : 'wg-cell';
-      const dayTodos = todos.filter(t => t.user_id === m.id && String(t.date).slice(0, 10) === iso);
-      const pills = dayTodos.map(t =>
-        `<div class="wg-todo-pill ${t.completed ? 'done' : ''}" title="${escapeHtml(t.text)}" onclick="openMemberTasksModal('${m.id}', ${JSON.stringify(m.name)})">
-          <span class="pip"></span><span class="wg-pill-text">${escapeHtml(t.text)}</span>
+      const dayEvents = events.filter(e => e.user_id === m.id && String(e.date).slice(0, 10) === iso);
+      const pills = dayEvents.map(e =>
+        `<div class="wg-todo-pill ${e.completed ? 'done' : ''}" title="${escapeHtml(e.title)}" onclick="openMemberTasksModal('${m.id}', ${JSON.stringify(m.name)})">
+          <span class="pip"></span><span class="wg-pill-text">${escapeHtml(e.start_time)} ${escapeHtml(e.title)}</span>
         </div>`
       ).join('');
       html += `<div class="${cls}">${pills}</div>`;
