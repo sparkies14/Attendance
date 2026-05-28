@@ -44,6 +44,14 @@ export interface LeaveRecord {
   status: string;
 }
 
+export interface Todo {
+  id: number;
+  text: string;
+  completed: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+
 export interface MemberData {
   month: number;
   year: number;
@@ -54,6 +62,7 @@ export interface MemberData {
   onBreak: boolean;
   hadLunch: boolean;
   leaveHistory: LeaveRecord[];
+  todosByDate?: Record<string, number>;
 }
 
 export interface MemberDashboardProps {

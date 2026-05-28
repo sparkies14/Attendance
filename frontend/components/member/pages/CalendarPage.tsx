@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { MemberData, CalendarDay } from '../MemberDashboard';
+import type { MemberData, CalendarDay, Todo } from '../MemberDashboard';
 
 interface Props {
   email: string;
@@ -76,9 +76,16 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
   const [appMsg,   setAppMsg]   = useState<string | null>(null);
   const [appErr,   setAppErr]   = useState<string | null>(null);
   const [appBusy,  setAppBusy]  = useState(false);
+  const [todos,       setTodos]       = useState<Todo[]>([]);
+  const [todosBusy,   setTodosBusy]   = useState(false);
+  const [todoErr,     setTodoErr]     = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addText,     setAddText]     = useState('');
+  const [addBusy,     setAddBusy]     = useState(false);
 
   async function navigate(m: number, y: number) {
     setNavErr(null); setBusy(true); setSelected(null); setAppDay(null);
+    setTodos([]); setShowAddForm(false); setTodoErr(null);
     try {
       const r = await fetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${m}&year=${y}`, { credentials: 'include' });
       if (r.ok) { setData(await r.json()); setMonth(m); setYear(y); }
@@ -100,6 +107,49 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
       else { setAppMsg('Appeal submitted.'); setAppDay(null); setAppText(''); }
     } catch { setAppErr('Network error.'); }
     finally  { setAppBusy(false); }
+  }
+
+  async function fetchTodos(isoDate: string) {
+    setTodosBusy(true); setTodoErr(null); setTodos([]);
+    try {
+      const r = await fetch(`${apiUrl}/todos?date=${isoDate}`, { credentials: 'include' });
+      if (r.ok) setTodos((await r.json()).todos ?? []);
+      else setTodoErr('Could not load tasks.');
+    } catch { setTodoErr('Network error.'); }
+    finally  { setTodosBusy(false); }
+  }
+
+  async function addTodo(isoDate: string) {
+    if (!addText.trim()) return;
+    setAddBusy(true);
+    try {
+      const r = await fetch(`${apiUrl}/todos`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', body: JSON.stringify({ date: isoDate, text: addText.trim() }),
+      });
+      if (r.ok) {
+        const { todo } = await r.json();
+        setTodos(prev => [...prev, todo]);
+        setAddText(''); setShowAddForm(false);
+      } else { setTodoErr('Could not save task.'); }
+    } catch { setTodoErr('Network error.'); }
+    finally  { setAddBusy(false); }
+  }
+
+  async function toggleTodo(id: number, completed: boolean) {
+    const r = await fetch(`${apiUrl}/todos/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', body: JSON.stringify({ completed }),
+    });
+    if (r.ok) {
+      const { todo } = await r.json();
+      setTodos(prev => prev.map(t => t.id === id ? todo : t));
+    }
+  }
+
+  async function deleteTodo(id: number) {
+    const r = await fetch(`${apiUrl}/todos/${id}`, { method: 'DELETE', credentials: 'include' });
+    if (r.ok) setTodos(prev => prev.filter(t => t.id !== id));
   }
 
   const calendar     = data?.calendar ?? [];
@@ -177,7 +227,16 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                   return (
                     <div
                       key={cell.day}
-                      onClick={() => { if (canSelect) setSelected(isSel ? null : cell); }}
+                      onClick={() => {
+                        if (!canSelect) return;
+                        if (isSel) {
+                          setSelected(null); setTodos([]); setShowAddForm(false); setTodoErr(null);
+                        } else {
+                          setSelected(cell);
+                          fetchTodos(toISO(cell.date));
+                          setShowAddForm(false); setTodoErr(null);
+                        }
+                      }}
                       style={{
                         position: 'relative',
                         padding: '8px 6px 6px',
@@ -213,6 +272,14 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                           {parseFloat(String(cell.totalHours)).toFixed(1)}h
                         </div>
                       )}
+                      {/* Todo dot */}
+                      {!cell.isWeekend && (data?.todosByDate?.[toISO(cell.date)] ?? 0) > 0 && (
+                        <div style={{
+                          position: 'absolute', bottom: 5, right: 6,
+                          width: 5, height: 5, borderRadius: '50%',
+                          background: isToday ? 'rgba(255,255,255,0.6)' : '#7c3aed',
+                        }} />
+                      )}
                     </div>
                   );
                 })}
@@ -227,6 +294,10 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                   {v.label}
                 </span>
               ))}
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.04em' }}>
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#7c3aed', display: 'inline-block' }} />
+                Has tasks
+              </span>
             </div>
           </div>
 
