@@ -1,5 +1,7 @@
 'use client';
 
+import { clientFetch } from '@/lib/clientFetch';
+
 import { useState } from 'react';
 import type { MemberData, CalendarDay } from '../MemberDashboard';
 
@@ -45,9 +47,9 @@ export default function AttendanceTab({ email, initialData, apiUrl }: Props) {
     setNavError(null);
     setLoading(true);
     try {
-      const res = await fetch(
+      const res = await clientFetch(
         `${apiUrl}/member-data?email=${encodeURIComponent(email)}&month=${newMonth}&year=${newYear}`,
-        { credentials: 'include' }
+        { }
       );
       if (res.ok) {
         const d = await res.json();
@@ -81,10 +83,9 @@ export default function AttendanceTab({ email, initialData, apiUrl }: Props) {
     setAppealMsg(null);
     setAppealErr(null);
     try {
-      const res = await fetch(`${apiUrl}/appeals`, {
+      const res = await clientFetch(`${apiUrl}/appeals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ target_type: 'attendance', target_id: toISO(appealDay.date), reason: appealText }),
       });
       const d = await res.json();

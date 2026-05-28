@@ -1,5 +1,7 @@
 'use client';
 
+import { clientFetch } from '@/lib/clientFetch';
+
 import { useState, useEffect } from 'react';
 import type { LeaveBalance, LeaveRecord } from '../MemberDashboard';
 
@@ -83,7 +85,7 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
     const month = jst.getMonth() + 1;
     const year  = jst.getFullYear();
     setLoading(true);
-    fetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${month}&year=${year}`, { credentials: 'include' })
+    clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${month}&year=${year}`, { })
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.leaveHistory) setHistory(d.leaveHistory); })
       .catch(() => {})
@@ -94,13 +96,13 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
     e.preventDefault();
     setFormLoading(true); setFormMsg(null); setFormErr(null);
     try {
-      const res  = await fetch(`${apiUrl}/webhook/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'leave', date: leaveDate, leave_type: leaveType, reason: leaveReason }) });
+      const res  = await clientFetch(`${apiUrl}/webhook/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'leave', date: leaveDate, leave_type: leaveType, reason: leaveReason }) });
       const data = await res.json();
       if (!res.ok) { setFormErr(data.error ?? 'Request failed.'); }
       else {
         setFormMsg('Leave request submitted.');
         setLeaveDate(''); setLeaveReason(''); setShowForm(false);
-        const r = await fetch(`${apiUrl}/leaves?email=${encodeURIComponent(email)}`, { credentials: 'include' });
+        const r = await clientFetch(`${apiUrl}/leaves?email=${encodeURIComponent(email)}`, { });
         if (r.ok) { const d = await r.json(); setHistory(d?.leaves ?? d?.leaveHistory ?? d ?? history); }
       }
     } catch { setFormErr('Network error.'); }

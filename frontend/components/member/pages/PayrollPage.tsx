@@ -1,5 +1,7 @@
 'use client';
 
+import { clientFetch } from '@/lib/clientFetch';
+
 import { useState, useEffect } from 'react';
 import type { MemberData, CalendarDay } from '../MemberDashboard';
 
@@ -84,14 +86,14 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
 
     if (!data1 || data1.month !== jst.month || data1.year !== jst.year) {
       fetches.push(
-        fetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${jst.month}&year=${jst.year}`, { credentials: 'include' })
+        clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${jst.month}&year=${jst.year}`, { })
           .then(r => r.ok ? r.json() : null).then(d => { if (d) setData1(d); }).catch(() => {})
       );
     }
 
     if (needBoth) {
       fetches.push(
-        fetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${pp.startMonth}&year=${pp.startYear}`, { credentials: 'include' })
+        clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${pp.startMonth}&year=${pp.startYear}`, { })
           .then(r => r.ok ? r.json() : null).then(d => { if (d) setData2(d); }).catch(() => {})
       );
     }

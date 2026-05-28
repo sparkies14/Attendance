@@ -1,5 +1,7 @@
 'use client';
 
+import { clientFetch } from '@/lib/clientFetch';
+
 import { useState, useEffect } from 'react';
 
 interface Appeal {
@@ -38,7 +40,7 @@ export default function AppealsTab({ apiUrl }: Props) {
   const [formErr,     setFormErr]     = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${apiUrl}/appeals`, { credentials: 'include' })
+    clientFetch(`${apiUrl}/appeals`, { })
       .then(r => { if (!r.ok) throw new Error('Server error'); return r.json(); })
       .then(d => { setAppeals(d.appeals ?? []); setLoading(false); })
       .catch(() => { setFetchErr('Failed to load appeals.'); setLoading(false); });
@@ -50,10 +52,9 @@ export default function AppealsTab({ apiUrl }: Props) {
     setFormMsg(null);
     setFormErr(null);
     try {
-      const res = await fetch(`${apiUrl}/appeals`, {
+      const res = await clientFetch(`${apiUrl}/appeals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ target_type: formType, target_id: formTarget, reason: formReason }),
       });
       const data = await res.json();
@@ -65,7 +66,7 @@ export default function AppealsTab({ apiUrl }: Props) {
         setFormReason('');
         setShowForm(false);
         try {
-          const refreshRes = await fetch(`${apiUrl}/appeals`, { credentials: 'include' });
+          const refreshRes = await clientFetch(`${apiUrl}/appeals`, { });
           if (refreshRes.ok) {
             const d = await refreshRes.json();
             setAppeals(d.appeals ?? []);

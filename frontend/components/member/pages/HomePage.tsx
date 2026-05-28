@@ -1,5 +1,7 @@
 'use client';
 
+import { clientFetch } from '@/lib/clientFetch';
+
 import { useState, useEffect } from 'react';
 import type { UserProfile, MemberData, LeaveBalance, CalendarDay } from '../MemberDashboard';
 
@@ -118,13 +120,13 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   async function doAction(body: Record<string, unknown>) {
     setLoading(true); setMsg(null); setErr(null);
     try {
-      const res  = await fetch(`${apiUrl}/webhook/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
+      const res  = await clientFetch(`${apiUrl}/webhook/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) { setErr(data.error ?? 'Action failed.'); }
       else {
         setMsg(data.message ?? 'Done.');
         const jst = getJST();
-        const r = await fetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(user.email)}&month=${parseInt(jst.date.split('-')[1])}&year=${parseInt(jst.date.split('-')[0])}`, { credentials: 'include' });
+        const r = await clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(user.email)}&month=${parseInt(jst.date.split('-')[1])}&year=${parseInt(jst.date.split('-')[0])}`, { });
         if (r.ok) {
           const d = await r.json();
           setToday(findToday(d.calendar));
@@ -147,7 +149,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     e.preventDefault();
     setLLoading(true); setLMsg(null); setLErr(null);
     try {
-      const res  = await fetch(`${apiUrl}/webhook/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'leave', date: leaveDate, leave_type: leaveType, reason: leaveReason }) });
+      const res  = await clientFetch(`${apiUrl}/webhook/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'leave', date: leaveDate, leave_type: leaveType, reason: leaveReason }) });
       const data = await res.json();
       if (!res.ok) { setLErr(data.error ?? 'Request failed.'); }
       else { setLMsg('Leave request submitted.'); setLeaveDate(''); setLeaveReason(''); }

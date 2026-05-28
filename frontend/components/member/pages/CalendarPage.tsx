@@ -1,5 +1,7 @@
 'use client';
 
+import { clientFetch } from '@/lib/clientFetch';
+
 import { useState } from 'react';
 import type { MemberData, CalendarDay, Todo } from '../MemberDashboard';
 
@@ -87,7 +89,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
     setNavErr(null); setBusy(true); setSelected(null); setAppDay(null);
     setTodos([]); setShowAddForm(false); setTodoErr(null);
     try {
-      const r = await fetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${m}&year=${y}`, { credentials: 'include' });
+      const r = await clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${m}&year=${y}`, { });
       if (r.ok) { setData(await r.json()); setMonth(m); setYear(y); }
       else setNavErr('Failed to load data.');
     } finally { setBusy(false); }
@@ -101,7 +103,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
     if (!appDay) return;
     setAppBusy(true); setAppMsg(null); setAppErr(null);
     try {
-      const r = await fetch(`${apiUrl}/appeals`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ target_type: 'attendance', target_id: toISO(appDay.date), reason: appText }) });
+      const r = await clientFetch(`${apiUrl}/appeals`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target_type: 'attendance', target_id: toISO(appDay.date), reason: appText }) });
       const d = await r.json();
       if (!r.ok) setAppErr(d.error ?? 'Appeal failed.');
       else { setAppMsg('Appeal submitted.'); setAppDay(null); setAppText(''); }
@@ -112,7 +114,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
   async function fetchTodos(isoDate: string) {
     setTodosBusy(true); setTodoErr(null); setTodos([]);
     try {
-      const r = await fetch(`${apiUrl}/todos?date=${isoDate}`, { credentials: 'include' });
+      const r = await clientFetch(`${apiUrl}/todos?date=${isoDate}`, { });
       if (r.ok) setTodos((await r.json()).todos ?? []);
       else setTodoErr('Could not load tasks.');
     } catch { setTodoErr('Network error.'); }
@@ -123,9 +125,8 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
     if (!addText.trim()) return;
     setAddBusy(true);
     try {
-      const r = await fetch(`${apiUrl}/todos`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', body: JSON.stringify({ date: isoDate, text: addText.trim() }),
+      const r = await clientFetch(`${apiUrl}/todos`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: isoDate, text: addText.trim() }),
       });
       if (r.ok) {
         const { todo } = await r.json();
@@ -138,9 +139,8 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
 
   async function toggleTodo(id: number, completed: boolean) {
     try {
-      const r = await fetch(`${apiUrl}/todos/${id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', body: JSON.stringify({ completed }),
+      const r = await clientFetch(`${apiUrl}/todos/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ completed }),
       });
       if (r.ok) {
         const { todo } = await r.json();
@@ -151,7 +151,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
 
   async function deleteTodo(id: number) {
     try {
-      const r = await fetch(`${apiUrl}/todos/${id}`, { method: 'DELETE', credentials: 'include' });
+      const r = await clientFetch(`${apiUrl}/todos/${id}`, { method: 'DELETE' });
       if (r.ok) setTodos(prev => prev.filter(t => t.id !== id));
       else setTodoErr('Could not delete task.');
     } catch { setTodoErr('Network error.'); }

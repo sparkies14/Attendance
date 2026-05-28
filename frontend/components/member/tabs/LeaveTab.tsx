@@ -1,5 +1,7 @@
 'use client';
 
+import { clientFetch } from '@/lib/clientFetch';
+
 import { useState } from 'react';
 import type { LeaveBalance, LeaveRecord } from '../MemberDashboard';
 
@@ -34,10 +36,9 @@ export default function LeaveTab({ email, leaveBalance, initialLeaveHistory, api
     setMessage(null);
     setError(null);
     try {
-      const res = await fetch(`${apiUrl}/attendance`, {
+      const res = await clientFetch(`${apiUrl}/attendance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ action: 'leave', date, leave_type: leaveType, reason }),
       });
       const data = await res.json();
@@ -49,9 +50,9 @@ export default function LeaveTab({ email, leaveBalance, initialLeaveHistory, api
         setReason('');
         setShowForm(false);
         const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
-        const refreshRes = await fetch(
+        const refreshRes = await clientFetch(
           `${apiUrl}/member-data?email=${encodeURIComponent(email)}&month=${now.getMonth()+1}&year=${now.getFullYear()}`,
-          { credentials: 'include' }
+          { }
         );
         if (refreshRes.ok) {
           const d = await refreshRes.json();

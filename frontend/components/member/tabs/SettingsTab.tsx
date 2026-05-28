@@ -1,5 +1,7 @@
 'use client';
 
+import { clientFetch } from '@/lib/clientFetch';
+
 import { useState, useEffect, useRef } from 'react';
 import type { UserProfile } from '../MemberDashboard';
 
@@ -56,10 +58,9 @@ export default function SettingsTab({ user, apiUrl }: Props) {
     try {
       const body: Record<string, string> = { new_password: newPw };
       if (user.hasPassword) body.current_password = currentPw;
-      const res = await fetch(`${apiUrl}/auth/change-password`, {
+      const res = await clientFetch(`${apiUrl}/auth/change-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify(body),
       });
       const data = await res.json();
@@ -87,10 +88,9 @@ export default function SettingsTab({ user, apiUrl }: Props) {
         setGoogleLoading(true);
         setGoogleErr(null);
         try {
-          const res = await fetch(`${apiUrl}/auth/link-google`, {
+          const res = await clientFetch(`${apiUrl}/auth/link-google`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
             body: JSON.stringify({ credential }),
           });
           const data = await res.json();

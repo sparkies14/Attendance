@@ -1,5 +1,7 @@
 'use client';
 
+import { clientFetch } from '@/lib/clientFetch';
+
 import { useState } from 'react';
 import type { MemberData, CalendarDay } from '../MemberDashboard';
 
@@ -41,10 +43,9 @@ export default function TodayTab({ email, memberData, apiUrl }: Props) {
     setMessage(null);
     setError(null);
     try {
-      const res = await fetch(`${apiUrl}/attendance`, {
+      const res = await clientFetch(`${apiUrl}/attendance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify(body),
       });
       const data = await res.json();
@@ -53,9 +54,9 @@ export default function TodayTab({ email, memberData, apiUrl }: Props) {
       } else {
         setMessage(data.message ?? 'Done.');
         const jst = getJST();
-        const refreshRes = await fetch(
+        const refreshRes = await clientFetch(
           `${apiUrl}/member-data?email=${encodeURIComponent(email)}&month=${parseInt(jst.date.split('-')[1])}&year=${parseInt(jst.date.split('-')[0])}`,
-          { headers: { 'Content-Type': 'application/json' }, credentials: 'include' }
+          { headers: { 'Content-Type': 'application/json' } }
         );
         if (refreshRes.ok) {
           const refreshData = await refreshRes.json();

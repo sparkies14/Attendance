@@ -1,5 +1,7 @@
 'use client';
 
+import { clientFetch } from '@/lib/clientFetch';
+
 import { useState, useEffect } from 'react';
 
 interface DisciplineRecord {
@@ -28,7 +30,7 @@ export default function DisciplineTab({ email, apiUrl }: Props) {
   const [appealed, setAppealed]     = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    fetch(`${apiUrl}/discipline?email=${encodeURIComponent(email)}`, { credentials: 'include' })
+    clientFetch(`${apiUrl}/discipline?email=${encodeURIComponent(email)}`, { })
       .then(r => { if (!r.ok) throw new Error('Server error'); return r.json(); })
       .then(d => { setRecords(d.records ?? []); setLoading(false); })
       .catch(() => { setError('Failed to load records.'); setLoading(false); });
@@ -39,10 +41,9 @@ export default function DisciplineTab({ email, apiUrl }: Props) {
     setAppealLoading(true);
     setAppealErr(prev => { const n = {...prev}; delete n[recordId]; return n; });
     try {
-      const res = await fetch(`${apiUrl}/appeals`, {
+      const res = await clientFetch(`${apiUrl}/appeals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ target_type: 'discipline', target_id: recordId, reason: appealText }),
       });
       const data = await res.json();

@@ -126,6 +126,7 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
 
   async function signOut() {
     try { await fetch('/api/logout', { method: 'POST' }); } catch {}
+    localStorage.removeItem('att_token');
     window.location.replace('/login');
   }
 
