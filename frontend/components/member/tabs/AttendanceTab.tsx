@@ -30,6 +30,7 @@ export default function AttendanceTab({ email, initialData, apiUrl }: Props) {
   const [year,  setYear]  = useState(initialData?.year  ?? now.getFullYear());
   const [data,  setData]  = useState<MemberData | null>(initialData);
   const [loading, setLoading] = useState(false);
+  const [navError, setNavError] = useState<string | null>(null);
 
   const [appealDay,   setAppealDay]   = useState<CalendarDay | null>(null);
   const [appealText,  setAppealText]  = useState('');
@@ -38,6 +39,10 @@ export default function AttendanceTab({ email, initialData, apiUrl }: Props) {
   const [appealLoading, setAppealLoading] = useState(false);
 
   async function navigate(newMonth: number, newYear: number) {
+    setAppealDay(null);
+    setAppealMsg(null);
+    setAppealErr(null);
+    setNavError(null);
     setLoading(true);
     try {
       const res = await fetch(
@@ -49,6 +54,8 @@ export default function AttendanceTab({ email, initialData, apiUrl }: Props) {
         setData(d);
         setMonth(newMonth);
         setYear(newYear);
+      } else {
+        setNavError('Failed to load attendance data.');
       }
     } finally {
       setLoading(false);
@@ -116,11 +123,15 @@ export default function AttendanceTab({ email, initialData, apiUrl }: Props) {
       {/* Month navigation */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
         <button onClick={prevMonth} disabled={loading} style={{ background: 'none', border: '1px solid #d1d5db', borderRadius: 6, padding: '0.3rem 0.7rem', cursor: 'pointer', fontFamily: 'monospace', fontSize: '0.75rem' }}>←</button>
-        <span style={{ fontFamily: 'Georgia, serif', fontSize: '1rem', color: '#111' }}>
+        <span style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: 700, color: '#111' }}>
           {MONTH_NAMES[month - 1]} {year}
         </span>
         <button onClick={nextMonth} disabled={loading} style={{ background: 'none', border: '1px solid #d1d5db', borderRadius: 6, padding: '0.3rem 0.7rem', cursor: 'pointer', fontFamily: 'monospace', fontSize: '0.75rem' }}>→</button>
       </div>
+
+      {navError && (
+        <p style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#dc2626', marginBottom: '0.75rem' }}>{navError}</p>
+      )}
 
       {/* Day headers */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
@@ -145,7 +156,7 @@ export default function AttendanceTab({ email, initialData, apiUrl }: Props) {
                 style={{ padding: '0.4rem 0.2rem', textAlign: 'center', borderRadius: 6, cursor: canAppeal ? 'pointer' : 'default', backgroundColor: appealDay?.day === cell.day ? '#f0fdf4' : 'transparent', border: appealDay?.day === cell.day ? '1px solid #bbf7d0' : '1px solid transparent' }}
                 onClick={() => { if (canAppeal) { setAppealDay(cell); setAppealMsg(null); setAppealErr(null); } }}
               >
-                <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#374151' }}>{cell.day}</div>
+                <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: cell.isWeekend ? '#9ca3af' : '#374151' }}>{cell.day}</div>
                 {!cell.isWeekend && <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: color, margin: '2px auto 0' }} />}
               </div>
             );
@@ -163,11 +174,17 @@ export default function AttendanceTab({ email, initialData, apiUrl }: Props) {
         </div>
       )}
 
+      {/* Appeal success message */}
+      {appealMsg && (
+        <div style={{ marginTop: '1rem', padding: '0.65rem', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, fontFamily: 'monospace', fontSize: '0.8rem', color: '#16a34a' }}>
+          {appealMsg}
+        </div>
+      )}
+
       {/* Appeal form */}
       {appealDay && (
         <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 10 }}>
           <p style={labelStyle}>Appeal — {appealDay.date}</p>
-          {appealMsg && <p style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#16a34a', margin: '0.5rem 0' }}>{appealMsg}</p>}
           {appealErr && <p style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#dc2626', margin: '0.5rem 0' }}>{appealErr}</p>}
           <form onSubmit={submitAppeal}>
             <textarea
