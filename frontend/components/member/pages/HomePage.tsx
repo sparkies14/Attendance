@@ -83,6 +83,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   const [err,        setErr]       = useState<string | null>(null);
   const [onLunch,    setOnLunch]   = useState(memberData?.onLunch ?? false);
   const [onBreak,    setOnBreak]   = useState(memberData?.onBreak ?? false);
+  const [hadLunch,   setHadLunch]  = useState(memberData?.hadLunch ?? false);
   const [today,      setToday]     = useState<CalendarDay | null>(
     memberData ? findToday(memberData.calendar) : null
   );
@@ -129,6 +130,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
           setToday(findToday(d.calendar));
           setOnLunch(d.onLunch);
           setOnBreak(d.onBreak);
+          setHadLunch(d.hadLunch ?? false);
         }
       }
     } catch { setErr('Network error. Please try again.'); }
@@ -323,7 +325,8 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
             <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Today&apos;s anatomy</div>
             {[
               { lbl: 'Clock in',  val: today.clockIn  !== '-' ? today.clockIn  : '—', tint: C.green },
-              { lbl: 'Clock out', val: today.clockOut !== '-' ? today.clockOut : working ? '—' : '—', tint: C.text2 },
+              { lbl: 'Lunch',     val: onLunch ? 'In progress' : hadLunch ? 'Taken' : '—', tint: onLunch ? C.accent : hadLunch ? C.green : C.text3 },
+              { lbl: 'Clock out', val: today.clockOut !== '-' ? today.clockOut : '—', tint: C.text2 },
               { lbl: 'Status',    val: today.status.charAt(0).toUpperCase() + today.status.slice(1), tint: STATUS_COLOR[today.status] ?? C.text2 },
               { lbl: 'Net hours', val: working ? `${(elapsed/3600).toFixed(2)}h` : String(today.totalHours) + 'h', tint: C.text },
             ].map(({ lbl, val, tint }) => (

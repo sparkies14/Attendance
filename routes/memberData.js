@@ -88,6 +88,7 @@ router.get('/', async (req, res) => {
     summary,
     onLunch: !!(lunchToday && !lunchToday.lunch_in),
     onBreak: !!(breakToday && !breakToday.break_in),
+    hadLunch: !!(lunchToday),
     leaveHistory,
   });
 });

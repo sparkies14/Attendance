@@ -52,6 +52,7 @@ export interface MemberData {
   summary: { present: number; late: number; absent: number; pending: number };
   onLunch: boolean;
   onBreak: boolean;
+  hadLunch: boolean;
   leaveHistory: LeaveRecord[];
 }
 

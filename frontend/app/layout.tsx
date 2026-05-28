@@ -1,7 +1,6 @@
 import { Geist, Geist_Mono, Instrument_Serif } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
-import LocaleToggle from '@/components/LocaleToggle';
 import './globals.css';
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'swap' });
@@ -31,7 +30,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang={locale} className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable}`}>
       <body>
         <NextIntlClientProvider messages={messages}>
-          <LocaleToggle />
           {children}
         </NextIntlClientProvider>
       </body>

@@ -81,6 +81,7 @@ function buildMockData(month: number, year: number): { user: UserProfile; leaveB
       summary: { present, late, absent, pending },
       onLunch: false,
       onBreak: false,
+      hadLunch: true,
       leaveHistory: [
         { id: '1', date: `${month}/3/${year}`, leaveType: 'Vacation', reason: 'Family trip', status: 'Approved' },
         { id: '2', date: `${month}/10/${year}`, leaveType: 'Sick', reason: 'Fever', status: 'Approved' },
