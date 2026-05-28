@@ -86,6 +86,10 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   const [onLunch,    setOnLunch]   = useState(memberData?.onLunch ?? false);
   const [onBreak,    setOnBreak]   = useState(memberData?.onBreak ?? false);
   const [hadLunch,   setHadLunch]  = useState(memberData?.hadLunch ?? false);
+  const [lunchStart, setLunchStart] = useState<string | null>(memberData?.lunchStart ?? null);
+  const [lunchEnd,   setLunchEnd]   = useState<string | null>(memberData?.lunchEnd ?? null);
+  const [breakStart, setBreakStart] = useState<string | null>(memberData?.breakStart ?? null);
+  const [breakEnd,   setBreakEnd]   = useState<string | null>(memberData?.breakEnd ?? null);
   const [today,      setToday]     = useState<CalendarDay | null>(
     memberData ? findToday(memberData.calendar) : null
   );
@@ -133,6 +137,10 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
           setOnLunch(d.onLunch);
           setOnBreak(d.onBreak);
           setHadLunch(d.hadLunch ?? false);
+          setLunchStart(d.lunchStart ?? null);
+          setLunchEnd(d.lunchEnd ?? null);
+          setBreakStart(d.breakStart ?? null);
+          setBreakEnd(d.breakEnd ?? null);
         }
       }
     } catch { setErr('Network error. Please try again.'); }
@@ -254,16 +262,26 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
           )}
 
           {/* Action buttons */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             {notIn && (
               <ActionBtn onClick={clockIn} disabled={loading} primary>Clock in</ActionBtn>
             )}
             {working && (
               <>
                 <ActionBtn onClick={clockOut} disabled={loading} danger>Clock out</ActionBtn>
-                <ActionBtn onClick={lunchToggle} disabled={loading}>{onLunch ? '🍱 Lunch in' : '🍱 Lunch'}</ActionBtn>
-                <ActionBtn onClick={breakToggle} disabled={loading}>{onBreak ? '☕ Break in' : '☕ Break'}</ActionBtn>
+                <ActionBtn onClick={lunchToggle} disabled={loading} active={onLunch} activeColor={C.accent}>
+                  {onLunch ? '🍱 On Lunch — tap to return' : '🍱 Lunch'}
+                </ActionBtn>
+                <ActionBtn onClick={breakToggle} disabled={loading} active={onBreak} activeColor={C.purple}>
+                  {onBreak ? '☕ On Break — tap to return' : '☕ Break'}
+                </ActionBtn>
               </>
+            )}
+            {done && today && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 999, padding: '8px 16px', fontSize: 13, fontWeight: 500, color: C.green, fontFamily: F_SANS }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.green, display: 'inline-block' }} />
+                Clocked out at {today.clockOut}
+              </span>
             )}
           </div>
         </div>
@@ -327,7 +345,8 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
             <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Today&apos;s anatomy</div>
             {[
               { lbl: 'Clock in',  val: today.clockIn  !== '-' ? today.clockIn  : '—', tint: C.green },
-              { lbl: 'Lunch',     val: onLunch ? 'In progress' : hadLunch ? 'Taken' : '—', tint: onLunch ? C.accent : hadLunch ? C.green : C.text3 },
+              { lbl: 'Lunch',     val: lunchStart ? `${lunchStart} – ${lunchEnd ?? '…'}` : onLunch ? 'In progress' : hadLunch ? 'Taken' : '—', tint: onLunch ? C.accent : hadLunch ? C.green : C.text3 },
+              { lbl: 'Break',     val: breakStart ? `${breakStart} – ${breakEnd ?? '…'}` : onBreak ? 'In progress' : '—', tint: onBreak ? C.purple : breakStart ? C.text2 : C.text3 },
               { lbl: 'Clock out', val: today.clockOut !== '-' ? today.clockOut : '—', tint: C.text2 },
               { lbl: 'Status',    val: today.status.charAt(0).toUpperCase() + today.status.slice(1), tint: STATUS_COLOR[today.status] ?? C.text2 },
               { lbl: 'Net hours', val: working ? `${(elapsed/3600).toFixed(2)}h` : String(today.totalHours) + 'h', tint: C.text },
@@ -406,16 +425,15 @@ function StatusBadge({ bg, color, dot, pulse, children }: { bg: string; color: s
   );
 }
 
-function ActionBtn({ onClick, disabled, primary, danger, children }: { onClick: () => void; disabled?: boolean; primary?: boolean; danger?: boolean; children: React.ReactNode }) {
-  const bg     = danger ? 'transparent' : primary ? '#0a0a0a' : 'transparent';
-  const color  = danger ? '#dc2626' : primary ? '#fafafa' : '#525252';
-  const border = danger ? '1px solid rgba(220,38,38,0.3)' : primary ? 'none' : '1px solid #e6e6e6';
-  const bgHov  = danger ? 'rgba(220,38,38,0.08)' : primary ? '#1a1a1a' : '#f5f5f5';
+function ActionBtn({ onClick, disabled, primary, danger, active, activeColor, children }: { onClick: () => void; disabled?: boolean; primary?: boolean; danger?: boolean; active?: boolean; activeColor?: string; children: React.ReactNode }) {
+  const bg     = active ? `${activeColor}18` : danger ? 'transparent' : primary ? '#0a0a0a' : 'transparent';
+  const color  = active ? activeColor! : danger ? '#dc2626' : primary ? '#fafafa' : '#525252';
+  const border = active ? `1.5px solid ${activeColor}55` : danger ? '1px solid rgba(220,38,38,0.3)' : primary ? 'none' : '1px solid #e6e6e6';
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      style={{ padding: '9px 18px', background: bg, color, border, borderRadius: 9, fontSize: 13, fontFamily: "'Geist', system-ui, sans-serif", fontWeight: 500, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}
+      style={{ padding: '10px 20px', background: bg, color, border, borderRadius: 9, fontSize: 13.5, fontFamily: "'Geist', system-ui, sans-serif", fontWeight: active ? 600 : 500, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}
     >
       {children}
     </button>

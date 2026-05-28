@@ -61,6 +61,10 @@ export interface MemberData {
   onLunch: boolean;
   onBreak: boolean;
   hadLunch: boolean;
+  lunchStart?: string | null;
+  lunchEnd?: string | null;
+  breakStart?: string | null;
+  breakEnd?: string | null;
   leaveHistory: LeaveRecord[];
   todosByDate?: Record<string, number>;
 }
@@ -92,7 +96,7 @@ const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-mono
 
 const NAV: { id: Page; label: string; icon: string }[] = [
   { id: 'home',     label: 'Home',         icon: '◉' },
-  { id: 'calendar', label: 'Calendar',     icon: '▦' },
+  { id: 'calendar', label: 'Calendar · plan', icon: '▦' },
   { id: 'leave',    label: 'Leave history', icon: '⌇' },
   { id: 'payroll',  label: 'Payroll',      icon: '¥' },
 ];

@@ -98,9 +98,13 @@ router.get('/', async (req, res) => {
     calendar,
     summary,
     todosByDate,
-    onLunch: !!(lunchToday && !lunchToday.lunch_in),
-    onBreak: !!(breakToday && !breakToday.break_in),
-    hadLunch: !!(lunchToday),
+    onLunch:    !!(lunchToday && !lunchToday.lunch_in),
+    onBreak:    !!(breakToday && !breakToday.break_in),
+    hadLunch:   !!(lunchToday),
+    lunchStart: lunchToday?.lunch_out || null,
+    lunchEnd:   (lunchToday?.lunch_in && lunchToday.lunch_in !== '') ? lunchToday.lunch_in : null,
+    breakStart: breakToday?.break_out || null,
+    breakEnd:   (breakToday?.break_in && breakToday.break_in !== '') ? breakToday.break_in : null,
     leaveHistory,
   });
 });

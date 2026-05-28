@@ -176,7 +176,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
       {/* Serif heading */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>
-          My calendar.
+          My calendar · plan.
         </div>
         <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
           Attendance history · {MONTHS[month-1].toUpperCase()} {year}
