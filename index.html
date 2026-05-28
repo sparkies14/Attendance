@@ -372,8 +372,8 @@ body {
   }
 
   function redirectByRole(role) {
-    if (role === 'owner' || role === 'admin') window.location.replace('dashboard.html');
-    else if (role === 'member') window.location.replace('member.html');
+    if (role === 'owner' || role === 'admin') window.location.replace('http://localhost:3001/insights');
+    else if (role === 'member') window.location.replace('http://localhost:3001/member');
   }
 
   function persistSession(token, user) {
