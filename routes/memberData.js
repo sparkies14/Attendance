@@ -18,9 +18,10 @@ router.get('/', async (req, res) => {
   }
 
   const { data: user } = await supabase
-    .from('users').select('name').eq('email', email).maybeSingle();
+    .from('users').select('name, id').eq('email', email).maybeSingle();
   if (!user) return res.status(400).json({ error: 'Member not found.' });
   const officialName = user.name;
+  const userId = user.id;
 
   const [
     { data: allAttendance },
@@ -33,7 +34,7 @@ router.get('/', async (req, res) => {
     supabase.from('leave_log').select('*').eq('email', email),
     supabase.from('lunch_log').select('*').eq('name', officialName).eq('date', today).maybeSingle(),
     supabase.from('break_log').select('*').eq('name', officialName).eq('date', today).maybeSingle(),
-    supabase.from('todos').select('date').eq('user_id', req.user.user_id)
+    supabase.from('todos').select('date').eq('user_id', userId)
       .gte('date', `${yearNum}-${String(monthNum).padStart(2,'0')}-01`)
       .lte('date', `${yearNum}-${String(monthNum).padStart(2,'0')}-${String(new Date(yearNum, monthNum, 0).getDate()).padStart(2,'0')}`),
   ]);

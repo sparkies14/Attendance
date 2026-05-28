@@ -137,19 +137,24 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
   }
 
   async function toggleTodo(id: number, completed: boolean) {
-    const r = await fetch(`${apiUrl}/todos/${id}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      credentials: 'include', body: JSON.stringify({ completed }),
-    });
-    if (r.ok) {
-      const { todo } = await r.json();
-      setTodos(prev => prev.map(t => t.id === id ? todo : t));
-    }
+    try {
+      const r = await fetch(`${apiUrl}/todos/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', body: JSON.stringify({ completed }),
+      });
+      if (r.ok) {
+        const { todo } = await r.json();
+        setTodos(prev => prev.map(t => t.id === id ? todo : t));
+      } else { setTodoErr('Could not update task.'); }
+    } catch { setTodoErr('Network error.'); }
   }
 
   async function deleteTodo(id: number) {
-    const r = await fetch(`${apiUrl}/todos/${id}`, { method: 'DELETE', credentials: 'include' });
-    if (r.ok) setTodos(prev => prev.filter(t => t.id !== id));
+    try {
+      const r = await fetch(`${apiUrl}/todos/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (r.ok) setTodos(prev => prev.filter(t => t.id !== id));
+      else setTodoErr('Could not delete task.');
+    } catch { setTodoErr('Network error.'); }
   }
 
   const calendar     = data?.calendar ?? [];
