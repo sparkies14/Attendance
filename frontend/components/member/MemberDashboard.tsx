@@ -50,6 +50,8 @@ export interface PlanEvent {
   start_time: string;
   end_time: string;
   completed: boolean;
+  priority: 'p1' | 'p2' | 'p3';
+  tag: string | null;
   created_by: string | null;
   created_at: string;
 }

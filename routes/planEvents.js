@@ -4,8 +4,10 @@ const supabase    = require('../lib/supabase');
 const requireAuth = require('../middleware/requireAuth');
 const requireRole = require('../middleware/requireRole');
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^\d{2}:\d{2}$/;
+const DATE_RE     = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_RE     = /^\d{2}:\d{2}$/;
+const VALID_PRIO  = new Set(['p1', 'p2', 'p3']);
+const SELECT_COLS = 'id, title, start_time, end_time, completed, priority, tag, created_by, created_at';
 
 router.use(requireAuth);
 
@@ -16,7 +18,7 @@ router.get('/', async (req, res) => {
   }
   const { data, error } = await supabase
     .from('plan_events')
-    .select('id, title, start_time, end_time, completed, created_by, created_at')
+    .select(SELECT_COLS)
     .eq('user_id', req.user.user_id)
     .eq('date', date)
     .order('start_time', { ascending: true });
@@ -25,16 +27,17 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { date, title, start_time, end_time } = req.body || {};
+  const { date, title, start_time, end_time, priority = 'p2', tag } = req.body || {};
   if (!date || !DATE_RE.test(date)) return res.status(400).json({ error: 'date must be YYYY-MM-DD.' });
   if (!title || !title.trim()) return res.status(400).json({ error: 'title is required.' });
   if (!start_time || !TIME_RE.test(start_time)) return res.status(400).json({ error: 'start_time must be HH:MM.' });
   if (!end_time || !TIME_RE.test(end_time)) return res.status(400).json({ error: 'end_time must be HH:MM.' });
   if (end_time <= start_time) return res.status(400).json({ error: 'end_time must be after start_time.' });
+  if (!VALID_PRIO.has(priority)) return res.status(400).json({ error: 'priority must be p1, p2, or p3.' });
   const { data, error } = await supabase
     .from('plan_events')
-    .insert({ user_id: req.user.user_id, date, title: title.trim(), start_time, end_time })
-    .select('id, title, start_time, end_time, completed, created_by, created_at')
+    .insert({ user_id: req.user.user_id, date, title: title.trim(), start_time, end_time, priority, tag: tag?.trim() || null })
+    .select(SELECT_COLS)
     .single();
   if (error) return res.status(500).json({ error: error.message });
   return res.status(201).json({ event: data });
@@ -43,8 +46,8 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: 'Invalid id.' });
-  const { title, start_time, end_time, completed } = req.body || {};
-  if (title === undefined && start_time === undefined && end_time === undefined && completed === undefined) {
+  const { title, start_time, end_time, completed, priority, tag } = req.body || {};
+  if (title === undefined && start_time === undefined && end_time === undefined && completed === undefined && priority === undefined && tag === undefined) {
     return res.status(400).json({ error: 'At least one field required.' });
   }
   const { data: existing, error: fetchErr } = await supabase
@@ -53,11 +56,14 @@ router.patch('/:id', async (req, res) => {
   if (!existing) return res.status(404).json({ error: 'Event not found.' });
   const isAdmin = req.user.role === 'admin' || req.user.role === 'owner';
   if (!isAdmin && existing.user_id !== req.user.user_id) return res.status(403).json({ error: 'Forbidden.' });
+  if (priority !== undefined && !VALID_PRIO.has(priority)) return res.status(400).json({ error: 'priority must be p1, p2, or p3.' });
   const updates = { updated_at: new Date().toISOString() };
   if (title !== undefined) updates.title = title.trim();
   if (start_time !== undefined) updates.start_time = start_time;
   if (end_time !== undefined) updates.end_time = end_time;
   if (completed !== undefined) updates.completed = Boolean(completed);
+  if (priority !== undefined) updates.priority = priority;
+  if (tag !== undefined) updates.tag = tag?.trim() || null;
   const resolvedStart = updates.start_time ?? existing.start_time;
   const resolvedEnd   = updates.end_time   ?? existing.end_time;
   if (resolvedEnd <= resolvedStart) return res.status(400).json({ error: 'end_time must be after start_time.' });
@@ -65,7 +71,7 @@ router.patch('/:id', async (req, res) => {
     .from('plan_events')
     .update(updates)
     .eq('id', id)
-    .select('id, title, start_time, end_time, completed, created_by, created_at, updated_at')
+    .select(SELECT_COLS + ', updated_at')
     .single();
   if (error) return res.status(500).json({ error: error.message });
   return res.json({ event: data });
@@ -91,7 +97,7 @@ router.get('/admin', requireRole('owner', 'admin'), async (req, res) => {
   if (!date || !DATE_RE.test(date)) return res.status(400).json({ error: 'date must be YYYY-MM-DD.' });
   const { data, error } = await supabase
     .from('plan_events')
-    .select('id, title, start_time, end_time, completed, created_by, created_at')
+    .select(SELECT_COLS)
     .eq('user_id', user_id)
     .eq('date', date)
     .order('start_time', { ascending: true });
@@ -100,17 +106,18 @@ router.get('/admin', requireRole('owner', 'admin'), async (req, res) => {
 });
 
 router.post('/admin', requireRole('owner', 'admin'), async (req, res) => {
-  const { user_id, date, title, start_time, end_time } = req.body || {};
+  const { user_id, date, title, start_time, end_time, priority = 'p2', tag } = req.body || {};
   if (!user_id) return res.status(400).json({ error: 'user_id is required.' });
   if (!date || !DATE_RE.test(date)) return res.status(400).json({ error: 'date must be YYYY-MM-DD.' });
   if (!title || !title.trim()) return res.status(400).json({ error: 'title is required.' });
   if (!start_time || !TIME_RE.test(start_time)) return res.status(400).json({ error: 'start_time must be HH:MM.' });
   if (!end_time || !TIME_RE.test(end_time)) return res.status(400).json({ error: 'end_time must be HH:MM.' });
   if (end_time <= start_time) return res.status(400).json({ error: 'end_time must be after start_time.' });
+  if (!VALID_PRIO.has(priority)) return res.status(400).json({ error: 'priority must be p1, p2, or p3.' });
   const { data, error } = await supabase
     .from('plan_events')
-    .insert({ user_id, date, title: title.trim(), start_time, end_time, created_by: req.user.email })
-    .select('id, title, start_time, end_time, completed, created_by, created_at')
+    .insert({ user_id, date, title: title.trim(), start_time, end_time, priority, tag: tag?.trim() || null, created_by: req.user.email })
+    .select(SELECT_COLS)
     .single();
   if (error) return res.status(500).json({ error: error.message });
   return res.status(201).json({ event: data });
@@ -127,7 +134,7 @@ router.get('/admin/week', requireRole('owner', 'admin'), async (req, res) => {
   const [{ data: members, error: mErr }, { data: events, error: eErr }] = await Promise.all([
     supabase.from('users').select('id, name, email').eq('status', 'Active').order('name'),
     supabase.from('plan_events')
-      .select('id, user_id, date, title, start_time, end_time, completed, created_by')
+      .select('id, user_id, date, title, start_time, end_time, completed, priority, tag, created_by')
       .gte('date', week_start)
       .lte('date', endStr)
       .order('start_time', { ascending: true }),
