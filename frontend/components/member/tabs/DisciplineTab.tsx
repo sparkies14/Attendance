@@ -23,13 +23,13 @@ export default function DisciplineTab({ email, apiUrl }: Props) {
   const [appealId, setAppealId]     = useState<string | null>(null);
   const [appealText, setAppealText] = useState('');
   const [appealMsg,  setAppealMsg]  = useState<Record<string, string>>({});
-  const [appealErr,  setAppealErr]  = useState<string | null>(null);
+  const [appealErr,  setAppealErr]  = useState<Record<string, string>>({});
   const [appealLoading, setAppealLoading] = useState(false);
   const [appealed, setAppealed]     = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetch(`${apiUrl}/discipline?email=${encodeURIComponent(email)}`, { credentials: 'include' })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('Server error'); return r.json(); })
       .then(d => { setRecords(d.records ?? []); setLoading(false); })
       .catch(() => { setError('Failed to load records.'); setLoading(false); });
   }, [apiUrl, email]);
@@ -37,7 +37,7 @@ export default function DisciplineTab({ email, apiUrl }: Props) {
   async function submitAppeal(e: React.FormEvent, recordId: string) {
     e.preventDefault();
     setAppealLoading(true);
-    setAppealErr(null);
+    setAppealErr(prev => { const n = {...prev}; delete n[recordId]; return n; });
     try {
       const res = await fetch(`${apiUrl}/appeals`, {
         method: 'POST',
@@ -47,7 +47,7 @@ export default function DisciplineTab({ email, apiUrl }: Props) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setAppealErr(data.error ?? 'Appeal failed.');
+        setAppealErr(prev => ({ ...prev, [recordId]: data.error ?? 'Appeal failed.' }));
       } else {
         setAppealMsg(prev => ({ ...prev, [recordId]: 'Appeal submitted.' }));
         setAppealed(prev => new Set(prev).add(recordId));
@@ -55,7 +55,7 @@ export default function DisciplineTab({ email, apiUrl }: Props) {
         setAppealText('');
       }
     } catch {
-      setAppealErr('Network error. Please try again.');
+      setAppealErr(prev => ({ ...prev, [recordId]: 'Network error. Please try again.' }));
     } finally {
       setAppealLoading(false);
     }
@@ -101,13 +101,13 @@ export default function DisciplineTab({ email, apiUrl }: Props) {
                 <p style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#16a34a', marginBottom: '0.5rem' }}>{appealMsg[r.id]}</p>
               )}
               {!r.voided && !appealed.has(r.id) && appealId !== r.id && (
-                <button onClick={() => { setAppealId(r.id); setAppealErr(null); }} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: 999, fontFamily: 'monospace', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer' }}>
+                <button onClick={() => { setAppealId(r.id); setAppealErr(prev => { const n = {...prev}; delete n[r.id]; return n; }); }} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: 999, fontFamily: 'monospace', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer' }}>
                   Appeal
                 </button>
               )}
               {appealId === r.id && (
                 <form onSubmit={e => submitAppeal(e, r.id)} style={{ marginTop: '0.5rem' }}>
-                  {appealErr && <p style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#dc2626', marginBottom: '0.4rem' }}>{appealErr}</p>}
+                  {appealErr[r.id] && <p style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#dc2626', marginBottom: '0.4rem' }}>{appealErr[r.id]}</p>}
                   <textarea
                     value={appealText}
                     onChange={e => setAppealText(e.target.value)}
@@ -120,7 +120,7 @@ export default function DisciplineTab({ email, apiUrl }: Props) {
                     <button type="submit" disabled={appealLoading} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#111', color: '#fff', border: 'none', borderRadius: 999, fontFamily: 'monospace', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', cursor: appealLoading ? 'not-allowed' : 'pointer' }}>
                       {appealLoading ? 'Submitting…' : 'Submit'}
                     </button>
-                    <button type="button" onClick={() => { setAppealId(null); setAppealErr(null); }} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: 999, fontFamily: 'monospace', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer' }}>
+                    <button type="button" onClick={() => { setAppealId(null); setAppealErr(prev => { const n = {...prev}; delete n[r.id]; return n; }); setAppealText(''); }} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: 999, fontFamily: 'monospace', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer' }}>
                       Cancel
                     </button>
                   </div>
