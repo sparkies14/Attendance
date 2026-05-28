@@ -64,10 +64,14 @@ export default function AppealsTab({ apiUrl }: Props) {
         setFormTarget('');
         setFormReason('');
         setShowForm(false);
-        const refreshRes = await fetch(`${apiUrl}/appeals`, { credentials: 'include' });
-        if (refreshRes.ok) {
-          const d = await refreshRes.json();
-          setAppeals(d.appeals ?? []);
+        try {
+          const refreshRes = await fetch(`${apiUrl}/appeals`, { credentials: 'include' });
+          if (refreshRes.ok) {
+            const d = await refreshRes.json();
+            setAppeals(d.appeals ?? []);
+          }
+        } catch {
+          // refresh failure is non-critical; submit already succeeded
         }
       }
     } catch {
@@ -111,7 +115,7 @@ export default function AppealsTab({ apiUrl }: Props) {
 
       {!showForm && (
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => { setShowForm(true); setFormMsg(null); }}
           style={{ marginBottom: '1.5rem', padding: '0.55rem 1.1rem', backgroundColor: '#111', color: '#fff', border: 'none', borderRadius: 999, fontFamily: 'monospace', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer' }}
         >
           New Appeal
