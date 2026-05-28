@@ -3,7 +3,7 @@ import { jwtVerify } from 'jose';
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get('att_token')?.value;
-  if (!token) return redirectToLogin();
+  if (!token) return redirectToLogin(req);
 
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
@@ -19,13 +19,12 @@ export async function middleware(req: NextRequest) {
 
     return NextResponse.next({ request: { headers: requestHeaders } });
   } catch {
-    return redirectToLogin();
+    return redirectToLogin(req);
   }
 }
 
-function redirectToLogin() {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
-  return NextResponse.redirect(new URL(base + '/index.html'));
+function redirectToLogin(req: NextRequest) {
+  return NextResponse.redirect(new URL('/login', req.url));
 }
 
 export const config = {
