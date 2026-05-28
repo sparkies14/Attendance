@@ -199,3 +199,102 @@ describe('DELETE /:id', () => {
     expect(res.status).toBe(200);
   });
 });
+
+/* ─── GET /admin ─── */
+describe('GET /admin', () => {
+  test('403 for member role', async () => {
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .get('/admin?user_id=user-2&date=2026-05-29');
+    expect(res.status).toBe(403);
+  });
+
+  test('400 when user_id missing', async () => {
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .get('/admin?date=2026-05-29');
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/user_id/i);
+  });
+
+  test('200 returns events for the user', async () => {
+    supabase.from.mockReturnValueOnce(c([EVENT]));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .get('/admin?user_id=user-2&date=2026-05-29');
+    expect(res.status).toBe(200);
+    expect(res.body.events).toHaveLength(1);
+  });
+});
+
+/* ─── POST /admin ─── */
+describe('POST /admin', () => {
+  test('403 for member role', async () => {
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .post('/admin').send({ user_id: 'user-2', date: '2026-05-29', title: 'Task', start_time: '09:00', end_time: '10:00' });
+    expect(res.status).toBe(403);
+  });
+
+  test('400 when user_id missing', async () => {
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/admin').send({ date: '2026-05-29', title: 'Task', start_time: '09:00', end_time: '10:00' });
+    expect(res.status).toBe(400);
+  });
+
+  test('201 creates event for a member', async () => {
+    supabase.from.mockReturnValueOnce(c({ ...EVENT, created_by: 'admin@test.com' }));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .post('/admin').send({ user_id: 'user-2', date: '2026-05-29', title: 'Meeting', start_time: '09:00', end_time: '10:00' });
+    expect(res.status).toBe(201);
+    expect(res.body.event.created_by).toBe('admin@test.com');
+  });
+});
+
+/* ─── GET /admin/week ─── */
+describe('GET /admin/week', () => {
+  test('403 for member role', async () => {
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .get('/admin/week?week_start=2026-05-25');
+    expect(res.status).toBe(403);
+  });
+
+  test('400 when week_start missing', async () => {
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .get('/admin/week');
+    expect(res.status).toBe(400);
+  });
+
+  test('200 returns members and events', async () => {
+    supabase.from
+      .mockReturnValueOnce(c([{ id: 'user-1', name: 'Ana', email: 'ana@test.com' }]))
+      .mockReturnValueOnce(c([EVENT]));
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .get('/admin/week?week_start=2026-05-25');
+    expect(res.status).toBe(200);
+    expect(res.body.members).toHaveLength(1);
+    expect(res.body.events).toHaveLength(1);
+  });
+});
+
+/* ─── GET /admin/month ─── */
+describe('GET /admin/month', () => {
+  test('403 for member role', async () => {
+    const res = await request(makeApp('member', 'ana@test.com'))
+      .get('/admin/month?user_id=user-1&month=5&year=2026');
+    expect(res.status).toBe(403);
+  });
+
+  test('400 when user_id missing', async () => {
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .get('/admin/month?month=5&year=2026');
+    expect(res.status).toBe(400);
+  });
+
+  test('200 returns planEventsByDate counts', async () => {
+    supabase.from.mockReturnValueOnce(
+      c([{ date: '2026-05-05' }, { date: '2026-05-05' }, { date: '2026-05-13' }])
+    );
+    const res = await request(makeApp('admin', 'admin@test.com'))
+      .get('/admin/month?user_id=user-1&month=5&year=2026');
+    expect(res.status).toBe(200);
+    expect(res.body.planEventsByDate['2026-05-05']).toBe(2);
+    expect(res.body.planEventsByDate['2026-05-13']).toBe(1);
+  });
+});

@@ -85,4 +85,78 @@ router.delete('/:id', async (req, res) => {
   return res.json({ ok: true });
 });
 
+router.get('/admin', requireRole('owner', 'admin'), async (req, res) => {
+  const { user_id, date } = req.query;
+  if (!user_id) return res.status(400).json({ error: 'user_id is required.' });
+  if (!date || !DATE_RE.test(date)) return res.status(400).json({ error: 'date must be YYYY-MM-DD.' });
+  const { data, error } = await supabase
+    .from('plan_events')
+    .select('id, title, start_time, end_time, completed, created_by, created_at')
+    .eq('user_id', user_id)
+    .eq('date', date)
+    .order('start_time', { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  return res.json({ events: data });
+});
+
+router.post('/admin', requireRole('owner', 'admin'), async (req, res) => {
+  const { user_id, date, title, start_time, end_time } = req.body || {};
+  if (!user_id) return res.status(400).json({ error: 'user_id is required.' });
+  if (!date || !DATE_RE.test(date)) return res.status(400).json({ error: 'date must be YYYY-MM-DD.' });
+  if (!title || !title.trim()) return res.status(400).json({ error: 'title is required.' });
+  if (!start_time || !TIME_RE.test(start_time)) return res.status(400).json({ error: 'start_time must be HH:MM.' });
+  if (!end_time || !TIME_RE.test(end_time)) return res.status(400).json({ error: 'end_time must be HH:MM.' });
+  if (end_time <= start_time) return res.status(400).json({ error: 'end_time must be after start_time.' });
+  const { data, error } = await supabase
+    .from('plan_events')
+    .insert({ user_id, date, title: title.trim(), start_time, end_time, created_by: req.user.email })
+    .select('id, title, start_time, end_time, completed, created_by, created_at')
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  return res.status(201).json({ event: data });
+});
+
+router.get('/admin/week', requireRole('owner', 'admin'), async (req, res) => {
+  const { week_start } = req.query;
+  if (!week_start || !DATE_RE.test(week_start)) {
+    return res.status(400).json({ error: 'week_start must be YYYY-MM-DD.' });
+  }
+  const end = new Date(week_start);
+  end.setDate(end.getDate() + 5);
+  const endStr = end.toISOString().slice(0, 10);
+  const [{ data: members, error: mErr }, { data: events, error: eErr }] = await Promise.all([
+    supabase.from('users').select('id, name, email').eq('status', 'Active').order('name'),
+    supabase.from('plan_events')
+      .select('id, user_id, date, title, start_time, end_time, completed, created_by')
+      .gte('date', week_start)
+      .lte('date', endStr)
+      .order('start_time', { ascending: true }),
+  ]);
+  if (mErr) return res.status(500).json({ error: mErr.message });
+  if (eErr) return res.status(500).json({ error: eErr.message });
+  return res.json({ members: members || [], events: events || [] });
+});
+
+router.get('/admin/month', requireRole('owner', 'admin'), async (req, res) => {
+  const { user_id, month, year } = req.query;
+  if (!user_id) return res.status(400).json({ error: 'user_id is required.' });
+  const m = parseInt(month), y = parseInt(year);
+  if (isNaN(m) || isNaN(y)) return res.status(400).json({ error: 'month and year must be numbers.' });
+  const mm = String(m).padStart(2, '0');
+  const startDate = `${y}-${mm}-01`;
+  const lastDay = new Date(y, m, 0).getDate();
+  const endDate = `${y}-${mm}-${String(lastDay).padStart(2, '0')}`;
+  const { data, error } = await supabase
+    .from('plan_events').select('date')
+    .eq('user_id', user_id)
+    .gte('date', startDate)
+    .lte('date', endDate);
+  if (error) return res.status(500).json({ error: error.message });
+  const counts = {};
+  for (const row of (data || [])) {
+    counts[row.date] = (counts[row.date] || 0) + 1;
+  }
+  return res.json({ planEventsByDate: counts });
+});
+
 module.exports = router;
