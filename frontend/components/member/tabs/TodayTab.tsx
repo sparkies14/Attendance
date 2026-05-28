@@ -202,9 +202,9 @@ export default function TodayTab({ email, memberData, apiUrl }: Props) {
         </div>
       )}
 
-      {!memberData && (
-        <p style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#6b7280' }}>
-          Unable to load today&apos;s data.
+      {!memberData && notClockedIn && (
+        <p style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.5rem' }}>
+          No attendance record for today yet.
         </p>
       )}
     </div>
