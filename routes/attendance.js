@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const supabase = require('../lib/supabase');
 const { sendMessage, CHANNELS } = require('../lib/discord');
-const { classifyLateStatus, timeToMinutes, calcNetHours } = require('../lib/rules');
+const { classifyLateStatus, timeToMinutes, calcNetHours, calcRawHours } = require('../lib/rules');
 const requireAuth = require('../middleware/requireAuth');
 
 router.use(requireAuth);
@@ -38,13 +38,36 @@ router.post('/', async (req, res) => {
   }
 
   if (action === 'clock-in') {
-    const { data: dup } = await supabase
-      .from('attendance').select('id').eq('email', email).eq('date', date).maybeSingle();
-    if (dup) return res.status(400).json({ error: 'You already clocked in today. Use Clock Out instead.' });
+    const { data: existing } = await supabase
+      .from('attendance')
+      .select('id, clock_in, clock_out, last_clock_in, accumulated_hours')
+      .eq('email', email).eq('date', date).maybeSingle();
 
+    if (existing) {
+      // Already clocked in (no clock_out yet) — block
+      if (!existing.clock_out || existing.clock_out === '') {
+        return res.status(400).json({ error: 'You are already clocked in.' });
+      }
+
+      // Re-clock-in: closed segment exists, accumulate its raw hours
+      const segmentFrom = existing.last_clock_in || existing.clock_in;
+      const rawSegmentHours = calcRawHours(segmentFrom, existing.clock_out);
+      const new_accumulated = (existing.accumulated_hours || 0) + rawSegmentHours;
+
+      const { error } = await supabase.from('attendance')
+        .update({ last_clock_in: local_time, clock_out: '', accumulated_hours: new_accumulated })
+        .eq('id', existing.id);
+      if (error) return res.status(500).json({ error: error.message });
+      await sendMessage(CHANNELS.clockLogs,
+        `🟡 **Re-Clock In** — ${officialName} | ${date} ${local_time} (resumed)`);
+      return res.json({ success: true, message: 'Re-clock in recorded!' });
+    }
+
+    // First clock-in of the day
     const { error } = await supabase.from('attendance').insert({
       email, name: officialName, date,
       clock_in: local_time, clock_out: '', total_hours: 0,
+      last_clock_in: local_time, accumulated_hours: 0,
       entry_type, status: 'Approved', late_status, reason: '', fingerprint, role,
     });
     if (error) return res.status(500).json({ error: error.message });
@@ -55,10 +78,19 @@ router.post('/', async (req, res) => {
 
   if (action === 'clock-out') {
     const { data: row } = await supabase
-      .from('attendance').select('id, clock_in').eq('email', email).eq('date', date).maybeSingle();
+      .from('attendance')
+      .select('id, clock_in, clock_out, last_clock_in, accumulated_hours')
+      .eq('email', email).eq('date', date).maybeSingle();
     if (!row) return res.status(400).json({ error: 'No clock-in record found for today.' });
+    if (row.clock_out && row.clock_out !== '') {
+      return res.status(400).json({ error: 'You have already clocked out today.' });
+    }
 
-    const total_hours = calcNetHours(row.clock_in, local_time);
+    const segmentFrom = row.last_clock_in || row.clock_in;
+    const current_raw_hours = calcRawHours(segmentFrom, local_time);
+    const total_raw_hours = (row.accumulated_hours || 0) + current_raw_hours;
+    const total_hours = Math.max(0, Math.round((total_raw_hours - 1) * 100) / 100);
+
     const { error } = await supabase.from('attendance')
       .update({ clock_out: local_time, total_hours, status: 'Approved' })
       .eq('id', row.id);
