@@ -388,10 +388,13 @@ export default function ApprovalsPage({ dashboard, filterKind }: Props) {
 
   // Auto-select first item when data loads
   useEffect(() => {
-    if (!selectedId && allRequests.length > 0) {
-      setSelectedId(allRequests[0].id);
-    }
-  }, [allRequests.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    setSelectedId(prev => {
+      if (!prev && allRequests.length > 0) return allRequests[0].id;
+      // keep selection if the item still exists, otherwise select first
+      if (prev && !allRequests.find(r => r.id === prev) && allRequests.length > 0) return allRequests[0].id;
+      return prev;
+    });
+  }, [allRequests]);
 
   // Filter by tab
   const tabFiltered: RequestItem[] = activeTab === 'leave'
@@ -412,7 +415,8 @@ export default function ApprovalsPage({ dashboard, filterKind }: Props) {
   // Group by urgency
   const dueToday  = visible.filter((r) => r.urgency === 'today');
 
-  // Selected item
+  // Selected item — selectedIdx is derived from current visible array each render,
+  // so indices automatically update when search/filter changes
   const selectedItem = visible.find((r) => r.id === selectedId) ?? visible[0] ?? null;
   const selectedIdx = selectedItem ? visible.indexOf(selectedItem) : 0;
 
