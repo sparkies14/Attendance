@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage';
 import CalendarPage from './pages/CalendarPage';
 import LeavePage from './pages/LeavePage';
 import PayrollPage from './pages/PayrollPage';
+import AccountPage from './pages/AccountPage';
 
 export interface UserProfile {
   id: number;
@@ -82,7 +83,7 @@ export interface MemberDashboardProps {
   apiUrl: string;
 }
 
-type Page = 'home' | 'calendar' | 'leave' | 'payroll';
+type Page = 'home' | 'calendar' | 'leave' | 'payroll' | 'account';
 
 // Design tokens (light mode — sidebar always dark)
 const C = {
@@ -105,6 +106,7 @@ const NAV: { id: Page; label: string; icon: string }[] = [
   { id: 'calendar', label: 'Calendar · plan', icon: '▦' },
   { id: 'leave',    label: 'Leave history', icon: '⌇' },
   { id: 'payroll',  label: 'Timesheet',    icon: '¥' },
+  { id: 'account',  label: 'Account',      icon: '○' },
 ];
 
 const DAYS_LONG   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -258,6 +260,7 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
           {page === 'calendar' && <CalendarPage email={user.email} initialData={memberData} apiUrl={apiUrl} />}
           {page === 'leave'    && <LeavePage    email={user.email} leaveBalance={leaveBalance} initialLeaveHistory={memberData?.leaveHistory ?? []} apiUrl={apiUrl} />}
           {page === 'payroll'  && <PayrollPage  email={user.email} initialData={memberData} apiUrl={apiUrl} />}
+          {page === 'account'  && <AccountPage  user={user} apiUrl={apiUrl} hireYear={leaveBalance?.hire_year} />}
         </div>
       </div>
     </div>
