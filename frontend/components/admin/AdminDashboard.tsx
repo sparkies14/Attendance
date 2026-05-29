@@ -6,6 +6,29 @@ import ApprovalsPage from './pages/ApprovalsPage';
 import CalendarPage from './pages/CalendarPage';
 import TeamPayrollPage from './pages/TeamPayrollPage';
 
+export interface PendingAttendance {
+  id: number;
+  email: string;
+  name: string;
+  date: string;
+  clock_in: string;
+  clock_out: string;
+  entry_type: string;
+  reason: string;
+  role: string;
+  late_status: string;
+}
+
+export interface PendingLeave {
+  id: number;
+  email: string;
+  name: string;
+  date: string;
+  leave_type: string;
+  reason: string;
+  status: string;
+}
+
 export interface DashboardData {
   date: string;
   summary: {
@@ -25,6 +48,8 @@ export interface DashboardData {
     totalHours: number | string;
     lateStatus: string;
   }[];
+  pendingApprovals: PendingAttendance[];
+  pendingLeave: PendingLeave[];
 }
 
 interface Props {
@@ -203,8 +228,8 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
         {/* Page content */}
         <div style={{ flex: 1, overflow: 'auto', padding: '24px 28px 28px', background: C.bg }}>
           {page === 'attendance' && <AttendancePage dashboard={dashboard} apiUrl={apiUrl} />}
-          {page === 'approvals'  && <ApprovalsPage  dashboard={dashboard} apiUrl={apiUrl} />}
-          {page === 'leave'      && <ApprovalsPage  dashboard={dashboard} apiUrl={apiUrl} filterKind="leave" />}
+          {page === 'approvals'  && <ApprovalsPage  dashboard={dashboard} apiUrl={apiUrl} token={token} />}
+          {page === 'leave'      && <ApprovalsPage  dashboard={dashboard} apiUrl={apiUrl} token={token} filterKind="leave" />}
           {page === 'calendar'   && <CalendarPage />}
           {page === 'payroll'    && <TeamPayrollPage dashboard={dashboard} apiUrl={apiUrl} />}
         </div>
