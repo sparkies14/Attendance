@@ -128,7 +128,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
       const { hour, minute } = getJST();
       const late = hour > 9 || (hour === 9 && minute > 10);
       setIsLate(late);
-      if (late) setEntryType('manual');
+      setEntryType(late ? 'manual' : 'auto');
     }
     checkLate();
     const id = setInterval(checkLate, 60_000);
@@ -342,6 +342,20 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.green, display: 'inline-block' }} />
                   Clocked out at {today.clockOut}
                 </span>
+                {isLate && (
+                  <div style={{ width: '100%', marginTop: 10 }}>
+                    <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>
+                      Reason to resume
+                    </label>
+                    <textarea
+                      value={manualReason}
+                      onChange={e => setManualReason(e.target.value)}
+                      rows={2}
+                      placeholder="Brief reason (required for approval)…"
+                      style={{ width: '100%', padding: '8px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12.5, color: C.text, background: C.bg, boxSizing: 'border-box' as const, fontFamily: F_SANS, resize: 'vertical' as const }}
+                    />
+                  </div>
+                )}
                 <ActionBtn onClick={clockIn} disabled={loading}>Resume</ActionBtn>
               </>
             )}
