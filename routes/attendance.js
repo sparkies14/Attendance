@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const supabase = require('../lib/supabase');
 const { sendMessage, CHANNELS } = require('../lib/discord');
-const { classifyLateStatus, timeToMinutes, calcNetHours, calcRawHours } = require('../lib/rules');
+const { classifyLateStatus, timeToMinutes, calcRawHours } = require('../lib/rules');
 const requireAuth = require('../middleware/requireAuth');
 
 router.use(requireAuth);
@@ -29,6 +29,7 @@ router.post('/', async (req, res) => {
     const { error } = await supabase.from('attendance').insert({
       email, name: officialName, date,
       clock_in: local_time, clock_out: '', total_hours: 0,
+      last_clock_in: local_time, accumulated_hours: 0,
       entry_type, status: 'Pending', late_status, reason, fingerprint, role,
     });
     if (error) return res.status(500).json({ error: error.message });

@@ -15,11 +15,12 @@ const router = require('../routes/attendance');
 // Chain builder: returns a chainable mock that ultimately resolves to { data, error }
 function c(data, error = null) {
   const result = { data, error };
+  let afterUpdate = false;
   const ch = {
     select:      jest.fn(() => ch),
-    eq:          jest.fn(() => ch),
+    eq:          jest.fn(() => afterUpdate ? Promise.resolve(result) : ch),
     insert:      jest.fn(() => Promise.resolve(result)),
-    update:      jest.fn(() => ch),
+    update:      jest.fn(() => { afterUpdate = true; return ch; }),
     delete:      jest.fn(() => ch),
     maybeSingle: jest.fn(() => Promise.resolve(result)),
     single:      jest.fn(() => Promise.resolve(result)),

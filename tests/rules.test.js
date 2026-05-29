@@ -1,4 +1,4 @@
-const { classifyLateStatus, timeToMinutes, calcNetHours, calendarDayStatus } = require('../lib/rules');
+const { classifyLateStatus, timeToMinutes, calcNetHours, calcRawHours, calendarDayStatus } = require('../lib/rules');
 
 describe('classifyLateStatus', () => {
   test('before 9:00 → ON TIME', () => expect(classifyLateStatus(8, 59)).toBe('ON TIME'));
@@ -24,6 +24,12 @@ describe('calcNetHours', () => {
   test('09:00 to 17:30 → 7.5h', () => expect(calcNetHours('09:00', '17:30')).toBe(7.5));
   test('09:15 to 18:15 → 8h', () => expect(calcNetHours('09:15', '18:15')).toBe(8));
   test('09:00 to 10:00 → 0 (exactly 1h work, minus 1h = 0)', () => expect(calcNetHours('09:00', '10:00')).toBe(0));
+});
+
+describe('calcRawHours', () => {
+  test("'09:00' to '11:00' → 2", () => expect(calcRawHours('09:00', '11:00')).toBe(2));
+  test("'09:00' to '09:00' → 0 (same time)", () => expect(calcRawHours('09:00', '09:00')).toBe(0));
+  test("'11:00' to '09:00' → 0 (reversed, clamped to 0)", () => expect(calcRawHours('11:00', '09:00')).toBe(0));
 });
 
 describe('calendarDayStatus', () => {
