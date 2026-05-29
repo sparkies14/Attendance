@@ -202,7 +202,7 @@ export default function TodayTab({ email, memberData, apiUrl }: Props) {
           <p>Total Hours: {todayRecord!.totalHours}</p>
           <div style={{ marginTop: '1rem' }}>
             <p style={labelStyle}>Resume</p>
-            <button onClick={clockIn} disabled={loading} style={btnStyle()}>Clock In Again</button>
+            <button onClick={clockIn} disabled={loading} style={btnStyle()}>Resume</button>
           </div>
         </div>
       )}
