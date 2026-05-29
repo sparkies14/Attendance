@@ -179,8 +179,8 @@ function CountryRow({ co, max }: { co: TardyCountry; max: number }) {
   const barW = max > 0 ? (co.total / max) * 100 : 0;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      <span style={{ width: 88, fontFamily: F_SANS, fontSize: 12, color: C.text2, fontWeight: 500, flexShrink: 0 }}>
-        {co.country} <span style={{ fontFamily: F_MONO, fontSize: 9.5, color: C.text3 }}>{co.country}</span>
+      <span style={{ width: 88, fontFamily: F_MONO, fontSize: 12, color: C.text2, fontWeight: 500, flexShrink: 0 }}>
+        {co.country}
       </span>
       <div style={{ flex: 1, height: 14, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 4, overflow: 'hidden' }}>
         <div style={{ display: 'flex', height: '100%', width: `${barW}%`, minWidth: 4 }}>
