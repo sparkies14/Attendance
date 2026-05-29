@@ -380,10 +380,11 @@ export default function InsightsPage({ apiUrl }: Props) {
     ]);
 
     if (cancelled()) return;
-    // In dev with no backend, fall back to mock data so the UI is always visible
+    // Use mock in dev when: all fetches failed (no backend) OR data came back but has no members
+    // This ensures the UI is always populated locally regardless of DB state
     const isDev = process.env.NODE_ENV === 'development';
-    const allFailed = !t && !l && !d && !a;
-    const useMock = isDev && allFailed;
+    const noMembers = (t?.members?.length ?? 0) === 0 && (l?.members?.length ?? 0) === 0;
+    const useMock = isDev && (!t || noMembers);
     setTardy(    { data: useMock ? { ...MOCK_TARDY, from: range.from, to: range.to } : t, loading: false, error: (!useMock && !t) ? 'Failed to load' : null });
     setLeave(    { data: useMock ? { ...MOCK_LEAVE, from: range.from, to: range.to } : l, loading: false, error: (!useMock && !l) ? 'Failed to load' : null });
     setDisc(     { data: useMock ? { ...MOCK_DISC,  from: range.from, to: range.to } : d, loading: false, error: (!useMock && !d) ? 'Failed to load' : null });
