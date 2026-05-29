@@ -243,7 +243,7 @@ function MiniStat({ label, v, tint, noBorder }: { label: string; v: number; tint
 function RangePicker({
   preset, range, onPreset, onRangeChange,
 }: {
-  preset: 'month' | '30d' | 'quarter';
+  preset: 'month' | '30d' | 'quarter' | 'custom';
   range: { from: string; to: string };
   onPreset: (p: 'month' | '30d' | 'quarter') => void;
   onRangeChange: (key: 'from' | 'to', val: string) => void;
@@ -257,7 +257,7 @@ function RangePicker({
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <div style={{ display: 'flex', gap: 4 }}>
         {pills.map((p) => {
-          const active = preset === p.id;
+          const active = preset !== 'custom' && preset === p.id;
           return (
             <button
               key={p.id}
@@ -302,7 +302,7 @@ function RangePicker({
 
 // ── Main page ────────────────────────────────────────────────────────────────
 export default function InsightsPage({ apiUrl }: Props) {
-  type Preset = 'month' | '30d' | 'quarter';
+  type Preset = 'month' | '30d' | 'quarter' | 'custom';
   const [preset, setPreset] = useState<Preset>('month');
   const [range, setRange]   = useState({ from: monthStart(), to: todayISO() });
 
@@ -314,7 +314,8 @@ export default function InsightsPage({ apiUrl }: Props) {
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
   // ── Fetch ──────────────────────────────────────────────────────────────
-  async function fetchAll() {
+  async function fetchAll(isCancelled?: () => boolean) {
+    const cancelled = isCancelled ?? (() => false);
     setTardy(s     => ({ ...s, loading: true, error: null }));
     setLeave(s     => ({ ...s, loading: true, error: null }));
     setDisc(s      => ({ ...s, loading: true, error: null }));
@@ -326,6 +327,8 @@ export default function InsightsPage({ apiUrl }: Props) {
       clientFetch(`${apiUrl}/reports/discipline?from=${range.from}&to=${range.to}`, {}).then(r => r.ok ? r.json() : null).catch(() => null),
       clientFetch(`${apiUrl}/reports/attention`, {}).then(r => r.ok ? r.json() : null).catch(() => null),
     ]);
+
+    if (cancelled()) return;
     setTardy(    { data: t, loading: false, error: t ? null : 'Failed to load' });
     setLeave(    { data: l, loading: false, error: l ? null : 'Failed to load' });
     setDisc(     { data: d, loading: false, error: d ? null : 'Failed to load' });
@@ -333,7 +336,9 @@ export default function InsightsPage({ apiUrl }: Props) {
   }
 
   useEffect(() => {
-    fetchAll();
+    let cancelled = false;
+    fetchAll(() => cancelled);
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range.from, range.to]);
 
@@ -341,17 +346,20 @@ export default function InsightsPage({ apiUrl }: Props) {
   async function downloadFile(path: string, filename: string) {
     try {
       const res = await clientFetch(`${apiUrl}${path}`, {});
+      if (!res.ok) throw new Error(`Export failed: ${res.status}`);
       const blob = await res.blob();
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = filename;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(a.href);
     } catch { /* silent */ }
   }
 
   // ── Preset handler ─────────────────────────────────────────────────────
-  function applyPreset(p: Preset) {
+  function applyPreset(p: 'month' | '30d' | 'quarter') {
     setPreset(p);
     const today = todayISO();
     if (p === 'month')   setRange({ from: monthStart(),   to: today });
@@ -372,19 +380,21 @@ export default function InsightsPage({ apiUrl }: Props) {
   const awolDays      = awolHalfSum * 0.5 + awolFullSum;
   const leaveInRange  = leaveMembers.reduce((s, m) => s + m.usedInRange, 0);
   const activeWarn    = discMembers.reduce((s, m) => s + m.active, 0);
-  const headcount     = Math.max(tardyMembers.length, 1);
+  // Use leaveMembers.length as best proxy for total team size
+  // (leave API returns all active members, unlike tardy which only has those with tardies)
+  const headcount     = Math.max(leaveMembers.length || tardyMembers.length, 1);
 
   // Working days approximation: count Mon–Fri in range
   const expectedClockins = (() => {
     let count = 0;
-    const d = new Date(range.from);
-    const end = new Date(range.to);
+    const d = new Date(range.from + 'T12:00:00+09:00');
+    const end = new Date(range.to + 'T12:00:00+09:00');
     while (d <= end) { const dow = d.getDay(); if (dow !== 0 && dow !== 6) count++; d.setDate(d.getDate()+1); }
     return count * headcount;
   })();
 
   const onTimeRate = expectedClockins > 0
-    ? (((expectedClockins - tardyTotal) / expectedClockins) * 100).toFixed(1)
+    ? ((Math.max(0, expectedClockins - tardyTotal) / expectedClockins) * 100).toFixed(1)
     : '—';
 
   // Sorted by total desc
@@ -392,7 +402,6 @@ export default function InsightsPage({ apiUrl }: Props) {
   const maxTardyTotal = sortedTardyMembers[0]?.total ?? 1;
   const maxCountryTotal = byCountry.length > 0 ? Math.max(...byCountry.map(c => c.total)) : 1;
 
-  const activeWarnTotal  = discMembers.reduce((s, m) => s + m.active, 0);
   const voidedTotal      = discMembers.reduce((s, m) => s + m.voided, 0);
   const inRangeTotal     = discMembers.reduce((s, m) => s + m.issuedInRange, 0);
 
@@ -424,7 +433,7 @@ export default function InsightsPage({ apiUrl }: Props) {
             preset={preset}
             range={range}
             onPreset={applyPreset}
-            onRangeChange={(key, val) => { setPreset('month'); setRange(r => ({ ...r, [key]: val })); }}
+            onRangeChange={(key, val) => { setPreset('custom'); setRange(r => ({ ...r, [key]: val })); }}
           />
           <div style={{ position: 'relative' }}>
             <button
@@ -674,7 +683,7 @@ export default function InsightsPage({ apiUrl }: Props) {
             ) : (
               <>
                 <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${C.border}` }}>
-                  <MiniStat label="Active"   v={activeWarnTotal} tint={C.red}    />
+                  <MiniStat label="Active"   v={activeWarn} tint={C.red}    />
                   <MiniStat label="Voided"   v={voidedTotal}     tint={C.text3}  />
                   <MiniStat label="In range" v={inRangeTotal}    tint={C.accent} noBorder />
                 </div>
