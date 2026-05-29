@@ -46,6 +46,17 @@ function payPeriod(y: number, m: number, d: number) {
   return { startYear: sy, startMonth: sm, endYear: ey, endMonth: em };
 }
 
+function shiftedPayPeriod(jstY: number, jstM: number, jstD: number, offset: number) {
+  const cur = payPeriod(jstY, jstM, jstD);
+  let sm = cur.startMonth + offset;
+  let sy = cur.startYear;
+  while (sm <= 0) { sm += 12; sy--; }
+  while (sm > 12) { sm -= 12; sy++; }
+  const em = sm === 12 ? 1 : sm + 1;
+  const ey = sm === 12 ? sy + 1 : sy;
+  return { startYear: sy, startMonth: sm, endYear: ey, endMonth: em };
+}
+
 function workDayList(sy: number, sm: number, sd: number, ey: number, em: number, ed: number): Date[] {
   const days: Date[] = [];
   const d = new Date(sy, sm - 1, sd);
@@ -72,29 +83,108 @@ function fmtHours(h: number): string {
   return m > 0 ? `${hrs}h ${m}m` : `${hrs}h`;
 }
 
+function buildMockCalendar(month: number, year: number): CalendarDay[] {
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+  const LATE_DAYS = new Set([3, 7, 12, 18, 22]);
+  const ABSENT_DAYS = new Set([5, 15]);
+  return Array.from({ length: daysInMonth }, (_, i) => {
+    const day = i + 1;
+    const dow = new Date(year, month - 1, day).getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const dateStr = `${month}/${day}/${year}`;
+    const isFuture = new Date(year, month - 1, day) > today;
+    if (isWeekend || isFuture) {
+      return { day, date: dateStr, status: 'weekend', clockIn: '-', clockOut: '-', totalHours: '-', isWeekend, lastClockIn: '-', accumulatedHours: 0 };
+    }
+    if (ABSENT_DAYS.has(day)) {
+      return { day, date: dateStr, status: 'absent', clockIn: '-', clockOut: '-', totalHours: '-', isWeekend: false, lastClockIn: '-', accumulatedHours: 0 };
+    }
+    if (LATE_DAYS.has(day)) {
+      const lateMin = 15 + (day % 5) * 5;
+      const cin = `09:${String(lateMin).padStart(2,'0')}`;
+      const hours = +(8.5 - lateMin / 60).toFixed(2);
+      return { day, date: dateStr, status: 'late', clockIn: cin, clockOut: '18:05', totalHours: hours, isWeekend: false, lastClockIn: cin, accumulatedHours: 0 };
+    }
+    const extraMins = (day * 7) % 30;
+    const totalHours = +(8.5 + extraMins / 60).toFixed(2);
+    return { day, date: dateStr, status: 'present', clockIn: '08:52', clockOut: '17:55', totalHours, isWeekend: false, lastClockIn: '08:52', accumulatedHours: 0 };
+  });
+}
+
 export default function PayrollPage({ email, initialData, apiUrl }: Props) {
   const [data1, setData1] = useState<MemberData | null>(initialData);
   const [data2, setData2] = useState<MemberData | null>(null);
   const [busy,  setBusy]  = useState(false);
+  const [periodOffset, setPeriodOffset] = useState(0);
 
   const jst = getJST();
-  const pp  = payPeriod(jst.year, jst.month, jst.day);
+  const pp  = shiftedPayPeriod(jst.year, jst.month, jst.day, periodOffset);
 
   useEffect(() => {
+    setData1(null);
+    setData2(null);
+
     const needBoth = !(pp.startMonth === jst.month && pp.startYear === jst.year);
     const fetches: Promise<void>[] = [];
 
-    if (!data1 || data1.month !== jst.month || data1.year !== jst.year) {
-      fetches.push(
-        clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${jst.month}&year=${jst.year}`, { })
-          .then(r => r.ok ? r.json() : null).then(d => { if (d) setData1(d); }).catch(() => {})
-      );
-    }
+    fetches.push(
+      clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${jst.month}&year=${jst.year}`, { })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d) {
+            setData1(d);
+          } else {
+            const mockData1: MemberData = {
+              month: jst.month, year: jst.year, email: '',
+              calendar: buildMockCalendar(jst.month, jst.year),
+              summary: { present: 0, late: 0, absent: 0, pending: 0 },
+              onLunch: false, onBreak: false, hadLunch: false,
+              leaveHistory: [],
+            };
+            setData1(mockData1);
+          }
+        })
+        .catch(() => {
+          const mockData1: MemberData = {
+            month: jst.month, year: jst.year, email: '',
+            calendar: buildMockCalendar(jst.month, jst.year),
+            summary: { present: 0, late: 0, absent: 0, pending: 0 },
+            onLunch: false, onBreak: false, hadLunch: false,
+            leaveHistory: [],
+          };
+          setData1(mockData1);
+        })
+    );
 
     if (needBoth) {
       fetches.push(
         clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${pp.startMonth}&year=${pp.startYear}`, { })
-          .then(r => r.ok ? r.json() : null).then(d => { if (d) setData2(d); }).catch(() => {})
+          .then(r => r.ok ? r.json() : null)
+          .then(d => {
+            if (d) {
+              setData2(d);
+            } else {
+              const mockData2: MemberData = {
+                month: pp.startMonth, year: pp.startYear, email: '',
+                calendar: buildMockCalendar(pp.startMonth, pp.startYear),
+                summary: { present: 0, late: 0, absent: 0, pending: 0 },
+                onLunch: false, onBreak: false, hadLunch: false,
+                leaveHistory: [],
+              };
+              setData2(mockData2);
+            }
+          })
+          .catch(() => {
+            const mockData2: MemberData = {
+              month: pp.startMonth, year: pp.startYear, email: '',
+              calendar: buildMockCalendar(pp.startMonth, pp.startYear),
+              summary: { present: 0, late: 0, absent: 0, pending: 0 },
+              onLunch: false, onBreak: false, hadLunch: false,
+              leaveHistory: [],
+            };
+            setData2(mockData2);
+          })
       );
     }
 
@@ -102,7 +192,7 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
       setBusy(true);
       Promise.all(fetches).finally(() => setBusy(false));
     }
-  }, []);
+  }, [periodOffset]);
 
   const allCal: (CalendarDay & { _month?: number; _year?: number })[] = [
     ...(data2?.calendar ?? []).map(d => ({ ...d, _month: pp.startMonth, _year: pp.startYear })),
@@ -158,10 +248,22 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={() => setPeriodOffset(o => Math.max(-5, o - 1))}
+            disabled={periodOffset <= -5}
+            style={{ padding: '6px 10px', background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 8, cursor: periodOffset <= -5 ? 'not-allowed' : 'pointer', color: C.text2, fontSize: 14, opacity: periodOffset <= -5 ? 0.4 : 1 }}
+          >←</button>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999, border: `1px solid ${C.border}`, background: C.surface, fontFamily: F_MONO, fontSize: 11, color: C.text2, letterSpacing: '0.04em' }}>
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: C.green }} />
-            Cycle 25→24 · day {dayOfPeriod} of {totalWDs}
+            {periodOffset < 0
+              ? `Cycle 25→24 · Closed period`
+              : `Cycle 25→24 · day ${dayOfPeriod} of ${totalWDs}`}
           </span>
+          <button
+            onClick={() => setPeriodOffset(o => Math.min(0, o + 1))}
+            disabled={periodOffset >= 0}
+            style={{ padding: '6px 10px', background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 8, cursor: periodOffset >= 0 ? 'not-allowed' : 'pointer', color: C.text2, fontSize: 14, opacity: periodOffset >= 0 ? 0.4 : 1 }}
+          >→</button>
         </div>
       </div>
 
