@@ -165,7 +165,11 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     finally  { setLLoading(false); }
   }
 
-  const hoursWorked = working ? elapsed / 3600 : done ? parseFloat(String(today?.totalHours ?? 0)) || 0 : 0;
+  const hoursWorked = working
+    ? (today?.accumulatedHours ?? 0) + elapsed / 3600
+    : done
+    ? parseFloat(String(today?.totalHours ?? 0)) || 0
+    : 0;
   const targetH     = 8;
   const pct         = Math.min(100, (hoursWorked / targetH) * 100);
 
@@ -214,7 +218,11 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
           {/* Serif status headline */}
           <div style={{ fontFamily: F_SERIF, fontSize: 36, lineHeight: 1.05, letterSpacing: '-0.02em', color: C.text, marginBottom: 6 }}>
             {notIn   && 'Ready to start your day.'}
-            {working && <><span style={{ fontStyle: 'normal' }}>Working since </span><span style={{ fontStyle: 'italic' }}>{today!.clockIn}.</span></>}
+            {working && (
+              today!.accumulatedHours > 0
+                ? <><span style={{ fontStyle: 'normal' }}>Resumed at </span><span style={{ fontStyle: 'italic' }}>{today!.lastClockIn}.</span></>
+                : <><span style={{ fontStyle: 'normal' }}>Working since </span><span style={{ fontStyle: 'italic' }}>{today!.clockIn}.</span></>
+            )}
             {done    && <><span style={{ fontStyle: 'normal' }}>Done at </span><span style={{ fontStyle: 'italic' }}>{today!.clockOut}.</span></>}
           </div>
 
@@ -353,7 +361,9 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
               { lbl: 'Break',     val: breakStart ? `${breakStart} – ${breakEnd ?? '…'}` : onBreak ? 'In progress' : '—', tint: onBreak ? C.purple : breakStart ? C.text2 : C.text3 },
               { lbl: 'Clock out', val: today.clockOut !== '-' ? today.clockOut : '—', tint: C.text2 },
               { lbl: 'Status',    val: today.status.charAt(0).toUpperCase() + today.status.slice(1), tint: STATUS_COLOR[today.status] ?? C.text2 },
-              { lbl: 'Net hours', val: working ? `${(elapsed/3600).toFixed(2)}h` : String(today.totalHours) + 'h', tint: C.text },
+              { lbl: 'Net hours', val: working
+  ? `${((today!.accumulatedHours ?? 0) + elapsed / 3600).toFixed(2)}h`
+  : String(today.totalHours) + 'h', tint: C.text },
             ].map(({ lbl, val, tint }) => (
               <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '6px 0', borderBottom: `1px solid ${C.border}` }}>
                 <span style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.04em' }}>{lbl}</span>
