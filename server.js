@@ -31,6 +31,8 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(express.static(__dirname));
 
+app.get('/health', (_, res) => res.json({ ok: true }));
+
 app.use('/auth',  require('./routes/auth'));
 app.use('/users', require('./routes/users'));
 app.use('/audit', require('./routes/audit'));
