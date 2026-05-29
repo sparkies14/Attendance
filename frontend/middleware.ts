@@ -19,7 +19,13 @@ export async function middleware(req: NextRequest) {
     requestHeaders.set('x-user-role',  String(payload.role ?? ''));
     requestHeaders.set('x-user-name',  String(payload.name ?? ''));
 
-    return NextResponse.next({ request: { headers: requestHeaders } });
+    const res = NextResponse.next({ request: { headers: requestHeaders } });
+
+    if (req.nextUrl.pathname.startsWith('/admin') && !['admin','owner'].includes(String(payload.role))) {
+      return NextResponse.redirect(new URL('/member', req.url));
+    }
+
+    return res;
   } catch {
     return redirectToLogin(req);
   }
@@ -30,5 +36,5 @@ function redirectToLogin(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/insights/:path*', '/help/:path*', '/member'],
+  matcher: ['/insights/:path*', '/help/:path*', '/member', '/admin'],
 };

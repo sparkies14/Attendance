@@ -60,7 +60,7 @@ export default function LoginPage() {
 
   function redirectByRole(role: string) {
     if (role === 'admin' || role === 'owner') {
-      router.push('/insights');
+      router.push('/admin');
     } else {
       router.push('/member');
     }
