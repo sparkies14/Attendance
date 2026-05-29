@@ -122,22 +122,25 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
   const pp  = shiftedPayPeriod(jst.year, jst.month, jst.day, periodOffset);
 
   useEffect(() => {
+    let cancelled = false;
     setData1(null);
     setData2(null);
+    setBusy(true);
 
-    const needBoth = !(pp.startMonth === jst.month && pp.startYear === jst.year);
+    const needBoth = pp.startMonth !== pp.endMonth || pp.startYear !== pp.endYear;
     const fetches: Promise<void>[] = [];
 
     fetches.push(
-      clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${jst.month}&year=${jst.year}`, { })
+      clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${pp.endMonth}&year=${pp.endYear}`, { })
         .then(r => r.ok ? r.json() : null)
         .then(d => {
+          if (cancelled) return;
           if (d) {
             setData1(d);
           } else {
             const mockData1: MemberData = {
-              month: jst.month, year: jst.year, email: '',
-              calendar: buildMockCalendar(jst.month, jst.year),
+              month: pp.endMonth, year: pp.endYear, email: '',
+              calendar: buildMockCalendar(pp.endMonth, pp.endYear),
               summary: { present: 0, late: 0, absent: 0, pending: 0 },
               onLunch: false, onBreak: false, hadLunch: false,
               leaveHistory: [],
@@ -146,9 +149,10 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
           }
         })
         .catch(() => {
+          if (cancelled) return;
           const mockData1: MemberData = {
-            month: jst.month, year: jst.year, email: '',
-            calendar: buildMockCalendar(jst.month, jst.year),
+            month: pp.endMonth, year: pp.endYear, email: '',
+            calendar: buildMockCalendar(pp.endMonth, pp.endYear),
             summary: { present: 0, late: 0, absent: 0, pending: 0 },
             onLunch: false, onBreak: false, hadLunch: false,
             leaveHistory: [],
@@ -162,6 +166,7 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
         clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${pp.startMonth}&year=${pp.startYear}`, { })
           .then(r => r.ok ? r.json() : null)
           .then(d => {
+            if (cancelled) return;
             if (d) {
               setData2(d);
             } else {
@@ -176,6 +181,7 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
             }
           })
           .catch(() => {
+            if (cancelled) return;
             const mockData2: MemberData = {
               month: pp.startMonth, year: pp.startYear, email: '',
               calendar: buildMockCalendar(pp.startMonth, pp.startYear),
@@ -188,15 +194,14 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
       );
     }
 
-    if (fetches.length > 0) {
-      setBusy(true);
-      Promise.all(fetches).finally(() => setBusy(false));
-    }
-  }, [periodOffset]);
+    Promise.all(fetches).finally(() => { if (!cancelled) setBusy(false); });
+
+    return () => { cancelled = true; };
+  }, [periodOffset, email, apiUrl]);
 
   const allCal: (CalendarDay & { _month?: number; _year?: number })[] = [
     ...(data2?.calendar ?? []).map(d => ({ ...d, _month: pp.startMonth, _year: pp.startYear })),
-    ...(data1?.calendar ?? []).map(d => ({ ...d, _month: jst.month, _year: jst.year })),
+    ...(data1?.calendar ?? []).map(d => ({ ...d, _month: pp.endMonth, _year: pp.endYear })),
   ];
 
   const today    = new Date(jst.year, jst.month - 1, jst.day);
