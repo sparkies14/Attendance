@@ -94,7 +94,9 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     memberData ? findToday(memberData.calendar) : null
   );
   const [elapsed,    setElapsed]   = useState(0);
-  const [entryType,  setEntryType] = useState<'auto'|'web'>('web');
+  const [entryType,  setEntryType] = useState<'auto'|'manual'>('auto');
+  const [isLate,     setIsLate]    = useState(false);
+  const [manualReason, setManualReason] = useState('');
 
   // Leave form
   const [leaveDate,   setLeaveDate]   = useState('');
@@ -121,6 +123,18 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     return () => clearInterval(id);
   }, [working, today?.clockIn, today?.lastClockIn]);
 
+  useEffect(() => {
+    function checkLate() {
+      const { hour, minute } = getJST();
+      const late = hour > 9 || (hour === 9 && minute > 10);
+      setIsLate(late);
+      if (late) setEntryType('manual');
+    }
+    checkLate();
+    const id = setInterval(checkLate, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   async function doAction(body: Record<string, unknown>) {
     setLoading(true); setMsg(null); setErr(null);
     try {
@@ -129,6 +143,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
       if (!res.ok) { setErr(data.error ?? 'Action failed.'); }
       else {
         setMsg(data.message ?? 'Done.');
+        setManualReason('');
         const jst = getJST();
         const r = await clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(user.email)}&month=${parseInt(jst.date.split('-')[1])}&year=${parseInt(jst.date.split('-')[0])}`, { });
         if (r.ok) {
@@ -148,7 +163,21 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   }
 
   const { date, time, hour, minute } = getJST();
-  function clockIn()    { doAction({ action: 'clock-in',  entry_type: entryType, local_time: time, date, jst_hour: hour, jst_minute: minute }); }
+  function clockIn() {
+    if (entryType === 'manual' && !manualReason.trim()) {
+      setErr('Please enter a reason for manual clock-in.');
+      return;
+    }
+    doAction({
+      action: 'clock-in',
+      entry_type: entryType,
+      local_time: time,
+      date,
+      jst_hour: hour,
+      jst_minute: minute,
+      ...(entryType === 'manual' ? { reason: manualReason } : {}),
+    });
+  }
   function clockOut()   { doAction({ action: 'clock-out', local_time: time, date }); }
   function lunchToggle(){ doAction({ action: onLunch ? 'lunch-in' : 'lunch-out', local_time: time, date }); }
   function breakToggle(){ doAction({ action: onBreak ? 'break-in' : 'break-out', local_time: time, date }); }
@@ -254,18 +283,40 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
             </div>
           )}
 
-          {/* Auto / Web toggle */}
+          {/* Auto / Manual toggle */}
           {notIn && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
-              <span style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Entry</span>
-              <div style={{ display: 'inline-flex', background: C.surface2, borderRadius: 999, padding: 3, border: `1px solid ${C.border}` }}>
-                {(['auto','web'] as const).map(t => (
-                  <button key={t} onClick={() => setEntryType(t)}
-                    style={{ padding: '5px 14px', background: entryType === t ? C.text : 'transparent', color: entryType === t ? '#fafafa' : C.text3, border: 'none', borderRadius: 999, fontSize: 11.5, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.04em', transition: 'all 0.15s' }}>
-                    {t}
-                  </button>
-                ))}
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Entry</span>
+                {isLate ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '5px 12px', background: C.accentSoft, color: C.accent, border: `1px solid ${C.accentBorder}`, borderRadius: 999, fontSize: 11.5, fontFamily: F_SANS, fontWeight: 500, letterSpacing: '0.04em' }}>
+                    Past 9:10 — manual entry required
+                  </span>
+                ) : (
+                  <div style={{ display: 'inline-flex', background: C.surface2, borderRadius: 999, padding: 3, border: `1px solid ${C.border}` }}>
+                    {(['auto','manual'] as const).map(t => (
+                      <button key={t} onClick={() => setEntryType(t)}
+                        style={{ padding: '5px 14px', background: entryType === t ? C.text : 'transparent', color: entryType === t ? '#fafafa' : C.text3, border: 'none', borderRadius: 999, fontSize: 11.5, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.04em', transition: 'all 0.15s' }}>
+                        {t.charAt(0).toUpperCase() + t.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
+              {entryType === 'manual' && (
+                <div style={{ marginTop: 12, marginBottom: 2 }}>
+                  <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>
+                    Reason for manual entry
+                  </label>
+                  <textarea
+                    value={manualReason}
+                    onChange={e => setManualReason(e.target.value)}
+                    rows={2}
+                    placeholder="Brief reason (required for approval)…"
+                    style={{ width: '100%', padding: '8px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12.5, color: C.text, background: C.bg, boxSizing: 'border-box' as const, fontFamily: F_SANS, resize: 'vertical' as const }}
+                  />
+                </div>
+              )}
             </div>
           )}
 
