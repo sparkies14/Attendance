@@ -3,6 +3,57 @@
 import { useState, useEffect } from 'react';
 import { clientFetch } from '@/lib/clientFetch';
 
+// ── Dev mock data (same shape as real API responses) ───────────────────────
+const MOCK_TARDY = {
+  from: '', to: '',
+  members: [
+    { name: 'Sofia Cruz',    email: 'sofia@anosupo.ai',    country: 'PH', minor: 2, major: 2, awolHalf: 1, awolFull: 1, total: 6 },
+    { name: 'Priya Iyer',    email: 'priya@anosupo.ai',    country: 'PH', minor: 3, major: 1, awolHalf: 1, awolFull: 0, total: 5 },
+    { name: 'Hana Watanabe', email: 'hana@anosupo.ai',     country: 'JP', minor: 1, major: 2, awolHalf: 0, awolFull: 1, total: 4 },
+    { name: 'Kenji Tanaka',  email: 'kenji@anosupo.ai',    country: 'JP', minor: 2, major: 1, awolHalf: 0, awolFull: 0, total: 3 },
+    { name: 'Aki Sato',      email: 'aki@anosupo.ai',      country: 'JP', minor: 1, major: 0, awolHalf: 0, awolFull: 0, total: 1 },
+    { name: 'Jorge Diaz',    email: 'jorge@anosupo.ai',    country: 'PH', minor: 0, major: 1, awolHalf: 0, awolFull: 0, total: 1 },
+    { name: 'Yuki Mori',     email: 'yuki@anosupo.ai',     country: 'JP', minor: 1, major: 0, awolHalf: 0, awolFull: 0, total: 1 },
+    { name: 'Marisol Reyes', email: 'marisol@anosupo.ai',  country: 'PH', minor: 0, major: 0, awolHalf: 0, awolFull: 0, total: 0 },
+    { name: 'Jorge Brown',   email: 'ethan@anosupo.ai',    country: 'PH', minor: 0, major: 0, awolHalf: 0, awolFull: 0, total: 0 },
+    { name: 'Daniel Kim',    email: 'daniel@anosupo.ai',   country: 'JP', minor: 0, major: 0, awolHalf: 0, awolFull: 0, total: 0 },
+  ],
+  byCountry: [
+    { country: 'JP', minor: 5, major: 3, awolHalf: 0, awolFull: 2, total: 10 },
+    { country: 'PH', minor: 5, major: 4, awolHalf: 2, awolFull: 1, total: 12 },
+  ],
+};
+const MOCK_LEAVE = {
+  from: '', to: '',
+  members: [
+    { name: 'Priya Iyer',    email: 'priya@anosupo.ai',    entitled: 15, used: 8, remaining: 7,  usedInRange: 1 },
+    { name: 'Jorge Diaz',    email: 'jorge@anosupo.ai',    entitled: 12, used: 6, remaining: 6,  usedInRange: 2 },
+    { name: 'Marisol Reyes', email: 'marisol@anosupo.ai',  entitled: 15, used: 5, remaining: 10, usedInRange: 0 },
+    { name: 'Sofia Cruz',    email: 'sofia@anosupo.ai',    entitled: 15, used: 4, remaining: 11, usedInRange: 1 },
+    { name: 'Kenji Tanaka',  email: 'kenji@anosupo.ai',    entitled: 15, used: 3, remaining: 12, usedInRange: 1 },
+    { name: 'Aki Sato',      email: 'aki@anosupo.ai',      entitled: 15, used: 2, remaining: 13, usedInRange: 1 },
+    { name: 'Hana Watanabe', email: 'hana@anosupo.ai',     entitled: 15, used: 1, remaining: 14, usedInRange: 0 },
+    { name: 'Daniel Kim',    email: 'daniel@anosupo.ai',   entitled: 15, used: 1, remaining: 14, usedInRange: 0 },
+    { name: 'Yuki Mori',     email: 'yuki@anosupo.ai',     entitled: 15, used: 0, remaining: 15, usedInRange: 0 },
+    { name: 'Ethan Brown',   email: 'ethan@anosupo.ai',    entitled: 15, used: 0, remaining: 15, usedInRange: 0 },
+  ],
+};
+const MOCK_DISC = {
+  from: '', to: '',
+  members: [
+    { name: 'Sofia Cruz',    email: 'sofia@anosupo.ai',    total: 2, active: 1, voided: 1, issuedInRange: 1 },
+    { name: 'Priya Iyer',    email: 'priya@anosupo.ai',    total: 1, active: 1, voided: 0, issuedInRange: 0 },
+    { name: 'Hana Watanabe', email: 'hana@anosupo.ai',     total: 1, active: 1, voided: 0, issuedInRange: 1 },
+  ],
+};
+const MOCK_ATTENTION = {
+  members: [
+    { name: 'Sofia Cruz',    email: 'sofia@anosupo.ai',    reasons: ['2+ tardies this month', 'Active warning'] },
+    { name: 'Priya Iyer',    email: 'priya@anosupo.ai',    reasons: ['2+ tardies this month', 'Active warning'] },
+    { name: 'Hana Watanabe', email: 'hana@anosupo.ai',     reasons: ['Active warning'] },
+  ],
+};
+
 interface Props {
   apiUrl: string;
 }
@@ -329,10 +380,14 @@ export default function InsightsPage({ apiUrl }: Props) {
     ]);
 
     if (cancelled()) return;
-    setTardy(    { data: t, loading: false, error: t ? null : 'Failed to load' });
-    setLeave(    { data: l, loading: false, error: l ? null : 'Failed to load' });
-    setDisc(     { data: d, loading: false, error: d ? null : 'Failed to load' });
-    setAttention({ data: a, loading: false, error: a ? null : 'Failed to load' });
+    // In dev with no backend, fall back to mock data so the UI is always visible
+    const isDev = process.env.NODE_ENV === 'development';
+    const allFailed = !t && !l && !d && !a;
+    const useMock = isDev && allFailed;
+    setTardy(    { data: useMock ? { ...MOCK_TARDY, from: range.from, to: range.to } : t, loading: false, error: (!useMock && !t) ? 'Failed to load' : null });
+    setLeave(    { data: useMock ? { ...MOCK_LEAVE, from: range.from, to: range.to } : l, loading: false, error: (!useMock && !l) ? 'Failed to load' : null });
+    setDisc(     { data: useMock ? { ...MOCK_DISC,  from: range.from, to: range.to } : d, loading: false, error: (!useMock && !d) ? 'Failed to load' : null });
+    setAttention({ data: useMock ? MOCK_ATTENTION : a, loading: false, error: (!useMock && !a) ? 'Failed to load' : null });
   }
 
   useEffect(() => {
