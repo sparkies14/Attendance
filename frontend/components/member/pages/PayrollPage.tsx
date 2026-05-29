@@ -152,7 +152,7 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Payroll.</div>
+          <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Timesheet.</div>
           <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
             Hours tracker · pay period {startLabel} – {endLabel}, {pp.endYear}
           </div>
@@ -165,7 +165,7 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
         </div>
       </div>
 
-      {busy && <div style={{ fontSize: 12.5, color: C.text3, fontFamily: F_MONO }}>Loading payroll data…</div>}
+      {busy && <div style={{ fontSize: 12.5, color: C.text3, fontFamily: F_MONO }}>Loading timesheet data…</div>}
 
       {/* Hero: progress + projection */}
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>

@@ -104,7 +104,7 @@ const NAV: { id: Page; label: string; icon: string }[] = [
   { id: 'home',     label: 'Home',         icon: '◉' },
   { id: 'calendar', label: 'Calendar · plan', icon: '▦' },
   { id: 'leave',    label: 'Leave history', icon: '⌇' },
-  { id: 'payroll',  label: 'Payroll',      icon: '¥' },
+  { id: 'payroll',  label: 'Timesheet',    icon: '¥' },
 ];
 
 const DAYS_LONG   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
