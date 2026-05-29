@@ -73,6 +73,8 @@ router.get('/', async (req, res) => {
       clockIn: record?.clock_in || '-',
       clockOut: record?.clock_out || '-',
       totalHours: record?.clock_out ? record.total_hours : '-',
+      lastClockIn: record?.last_clock_in || record?.clock_in || '-',
+      accumulatedHours: record?.accumulated_hours || 0,
       isWeekend,
     });
   }
