@@ -54,6 +54,14 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
     setLocale(match ? match[1] : 'en');
   }, []);
 
+  useEffect(() => {
+    if (document.querySelector('script[src*="accounts.google.com/gsi"]')) return;
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.async = true;
+    document.head.appendChild(s);
+  }, []);
+
   const inits = user.name
     ? user.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
     : user.email[0].toUpperCase();
@@ -87,11 +95,12 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
 
   function linkGoogle() {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    setGLoading(true); setGMsg(null); setGErr(null);
     if (!clientId || !(window as { google?: unknown }).google) {
-      setGErr('Google sign-in is not available on this device.');
+      setGErr('Google sign-in is not available. Please try again in a moment.');
+      setGLoading(false);
       return;
     }
-    setGLoading(true); setGMsg(null); setGErr(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const g = (window as any).google;
     g.accounts.id.initialize({
@@ -180,16 +189,16 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
             {pwErr && <div style={{ marginBottom: 10, padding: '8px 12px', background: C.redSoft,   border: `1px solid ${C.redBorder}`,   borderRadius: 8, fontSize: 12.5, color: C.red   }}>{pwErr}</div>}
             <form onSubmit={changePassword} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 10, alignItems: 'flex-end' }}>
               <div>
-                <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Current</label>
-                <input type="password" value={curPw} onChange={e => setCurPw(e.target.value)} required style={inp} />
+                <label htmlFor="acc-cur-pw" style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Current</label>
+                <input id="acc-cur-pw" type="password" value={curPw} onChange={e => setCurPw(e.target.value)} required autoComplete="current-password" style={inp} />
               </div>
               <div>
-                <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>New</label>
-                <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} required style={inp} />
+                <label htmlFor="acc-new-pw" style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>New</label>
+                <input id="acc-new-pw" type="password" value={newPw} onChange={e => setNewPw(e.target.value)} required autoComplete="new-password" style={inp} />
               </div>
               <div>
-                <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Confirm</label>
-                <input type="password" value={conPw} onChange={e => setConPw(e.target.value)} required style={inp} />
+                <label htmlFor="acc-con-pw" style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Confirm</label>
+                <input id="acc-con-pw" type="password" value={conPw} onChange={e => setConPw(e.target.value)} required autoComplete="new-password" style={inp} />
               </div>
               <button type="submit" disabled={pwLoading}
                 style={{ padding: '8px 16px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, fontWeight: 500, cursor: pwLoading ? 'not-allowed' : 'pointer', opacity: pwLoading ? 0.6 : 1, whiteSpace: 'nowrap' as const }}>
