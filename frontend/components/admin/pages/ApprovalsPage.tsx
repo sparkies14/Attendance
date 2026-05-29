@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import type { DashboardData } from '../AdminDashboard';
+import { clientFetch } from '@/lib/clientFetch';
 
 interface Props {
   dashboard: DashboardData | null;
   apiUrl: string;
+  token: string;
   filterKind?: string; // 'leave' when routed from "Leave requests" nav item
 }
 
@@ -42,7 +44,9 @@ function initials(name: string): string {
 // ── Data model ────────────────────────────────────────────────────────────────
 interface RequestItem {
   id: string;
-  kind: 'manual';
+  dbId: number;
+  type: 'attendance' | 'leave';
+  kind: 'manual' | 'leave';
   name: string;
   role: string;
   hue: string;
@@ -56,21 +60,37 @@ interface RequestItem {
 
 function buildRequests(dashboard: DashboardData | null): RequestItem[] {
   if (!dashboard) return [];
-  return dashboard.members
-    .filter((m) => m.status === 'PENDING APPROVAL')
-    .map((m) => ({
-      id: m.email,
-      kind: 'manual' as const,
-      name: m.name,
-      role: m.role,
-      hue: nameColor(m.name),
-      date: dashboard.date,
-      time: m.clockIn || '—',
-      entry: 'Manual clock-in',
-      reason: 'Manual entry — awaiting approval',
-      submitted: 'Today',
-      urgency: 'today' as const,
-    }));
+  const manual = (dashboard.pendingApprovals ?? []).map(a => ({
+    id: `att-${a.id}`,
+    dbId: a.id,
+    kind: 'manual' as const,
+    type: 'attendance' as const,
+    name: a.name,
+    role: a.role ?? '',
+    hue: nameColor(a.name),
+    date: a.date,
+    time: a.clock_in || '—',
+    entry: 'Manual clock-in',
+    reason: a.reason || 'Manual entry — awaiting approval',
+    submitted: 'Today',
+    urgency: 'today' as const,
+  }));
+  const leave = (dashboard.pendingLeave ?? []).map(l => ({
+    id: `leave-${l.id}`,
+    dbId: l.id,
+    kind: 'leave' as const,
+    type: 'leave' as const,
+    name: l.name,
+    role: '',
+    hue: nameColor(l.name),
+    date: l.date,
+    time: '—',
+    entry: l.leave_type ?? 'Leave',
+    reason: l.reason || 'Leave request',
+    submitted: 'Today',
+    urgency: 'today' as const,
+  }));
+  return [...manual, ...leave];
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
@@ -201,8 +221,14 @@ interface DetailCardProps {
   allItems: RequestItem[];
   selectedIdx: number;
   onNav: (idx: number) => void;
+  note: string;
+  onNoteChange: (v: string) => void;
+  actionLoading: boolean;
+  actionMsg: string | null;
+  actionErr: string | null;
+  onAction: (action: 'approve' | 'reject') => void;
 }
-function DetailCard({ r, allItems, selectedIdx, onNav }: DetailCardProps) {
+function DetailCard({ r, allItems, selectedIdx, onNav, note, onNoteChange, actionLoading, actionMsg, actionErr, onAction }: DetailCardProps) {
   const init = initials(r.name);
   const firstName = r.name.split(' ')[0];
   const reasonWordCount = r.reason.split(/\s+/).length;
@@ -320,31 +346,34 @@ function DetailCard({ r, allItems, selectedIdx, onNav }: DetailCardProps) {
       </div>
 
       {/* Decision bar */}
-      <div style={{ padding: '16px 22px', display: 'flex', alignItems: 'center', gap: 10, background: C.surface2 }}>
-        <input
-          placeholder="Add a note (optional) · seen by member"
-          style={{ flex: 1, padding: '10px 14px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 9, fontFamily: F_SANS, fontSize: 12.5, color: C.text, outline: 'none' }}
-        />
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              disabled
-              title="Row ID not available — use admin panel"
-              style={{ padding: '10px 16px', background: C.surface, color: C.text3, border: `1px solid ${C.border}`, borderRadius: 9, fontFamily: F_SANS, fontSize: 13, fontWeight: 500, cursor: 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: 6, opacity: 0.6 }}
-            >
-              ✕ Reject <span style={{ fontFamily: F_MONO, fontSize: 9.5, color: C.text3, letterSpacing: '0.06em', padding: '1px 5px', border: `1px solid ${C.border}`, borderRadius: 3 }}>R</span>
-            </button>
-            <button
-              disabled
-              title="Row ID not available — use admin panel"
-              style={{ padding: '10px 20px', background: C.text3, color: '#fff', border: 'none', borderRadius: 9, fontFamily: F_SANS, fontSize: 13, fontWeight: 600, cursor: 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: 8, opacity: 0.6 }}
-            >
-              ✓ Approve <span style={{ fontFamily: F_MONO, fontSize: 9.5, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.06em', padding: '1px 5px', background: 'rgba(255,255,255,0.15)', borderRadius: 3 }}>A</span>
-            </button>
-          </div>
-          <div style={{ fontFamily: F_MONO, fontSize: 9.5, color: C.text3, letterSpacing: '0.04em' }}>
-            Row ID unavailable — use <a href="/dashboard.html" style={{ color: C.blue, textDecoration: 'none' }}>admin panel</a> to approve/reject
-          </div>
+      <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 10, background: C.surface2 }}>
+        {actionMsg && (
+          <div style={{ padding: '8px 12px', background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 8, fontSize: 12.5, color: C.green }}>{actionMsg}</div>
+        )}
+        {actionErr && (
+          <div style={{ padding: '8px 12px', background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, fontSize: 12.5, color: C.red }}>{actionErr}</div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <input
+            placeholder="Add a note (optional) · seen by member"
+            value={note}
+            onChange={e => onNoteChange(e.target.value)}
+            style={{ flex: 1, padding: '10px 14px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 9, fontFamily: F_SANS, fontSize: 12.5, color: C.text, outline: 'none' }}
+          />
+          <button
+            onClick={() => onAction('reject')}
+            disabled={actionLoading}
+            style={{ padding: '10px 16px', background: C.surface, color: C.red, border: `1px solid ${C.redBorder}`, borderRadius: 9, fontFamily: F_SANS, fontSize: 13, fontWeight: 500, cursor: actionLoading ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6, opacity: actionLoading ? 0.6 : 1 }}
+          >
+            ✕ Reject
+          </button>
+          <button
+            onClick={() => onAction('approve')}
+            disabled={actionLoading}
+            style={{ padding: '10px 20px', background: C.green, color: '#0a0a0a', border: 'none', borderRadius: 9, fontFamily: F_SANS, fontSize: 13, fontWeight: 600, cursor: actionLoading ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, opacity: actionLoading ? 0.6 : 1 }}
+          >
+            {actionLoading ? '…' : '✓ Approve'}
+          </button>
         </div>
       </div>
     </div>
@@ -376,30 +405,39 @@ function QueueEmptyState() {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function ApprovalsPage({ dashboard, filterKind }: Props) {
+export default function ApprovalsPage({ dashboard, apiUrl, filterKind }: Props) {
   const allRequests = buildRequests(dashboard);
-  const pendingCount = allRequests.length;
+  const manualCount = allRequests.filter(r => r.kind === 'manual').length;
+  const leaveCount  = allRequests.filter(r => r.kind === 'leave').length;
 
   const [selectedId, setSelectedId] = useState<string | null>(() => allRequests[0]?.id ?? null);
   const [activeTab, setActiveTab] = useState<'all' | 'manual' | 'leave'>(
     filterKind === 'leave' ? 'leave' : 'all'
   );
   const [search, setSearch] = useState('');
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [note, setNote] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [actionErr, setActionErr] = useState<string | null>(null);
+
+  const activeRequests = allRequests.filter(r => !dismissed.has(r.id));
 
   // Auto-select first item when data loads
   useEffect(() => {
     setSelectedId(prev => {
-      if (!prev && allRequests.length > 0) return allRequests[0].id;
+      if (!prev && activeRequests.length > 0) return activeRequests[0].id;
       // keep selection if the item still exists, otherwise select first
-      if (prev && !allRequests.find(r => r.id === prev) && allRequests.length > 0) return allRequests[0].id;
+      if (prev && !activeRequests.find(r => r.id === prev) && activeRequests.length > 0) return activeRequests[0].id;
       return prev;
     });
-  }, [allRequests]);
+  }, [activeRequests]);
 
   // Filter by tab
-  const tabFiltered: RequestItem[] = activeTab === 'leave'
-    ? []
-    : allRequests; // 'all' and 'manual' both show manual entries (no leave data)
+  const tabFiltered: RequestItem[] =
+    activeTab === 'all'    ? activeRequests :
+    activeTab === 'manual' ? activeRequests.filter(r => r.kind === 'manual') :
+                             activeRequests.filter(r => r.kind === 'leave');
 
   // Filter by search
   const searchLower = search.toLowerCase();
@@ -425,7 +463,34 @@ export default function ApprovalsPage({ dashboard, filterKind }: Props) {
     if (item) setSelectedId(item.id);
   }
 
+  async function doAction(action: 'approve' | 'reject') {
+    if (!selectedItem) return;
+    setActionLoading(true); setActionMsg(null); setActionErr(null);
+    try {
+      const res = await clientFetch(
+        `${apiUrl}/webhook/approve?action=${action}&row=${selectedItem.dbId}&type=${selectedItem.type}`,
+        {}
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        setActionErr(data.error ?? 'Action failed.');
+      } else {
+        const nextItem = activeRequests.find(r => r.id !== selectedItem.id);
+        setDismissed(prev => new Set([...prev, selectedItem.id]));
+        setNote('');
+        setActionMsg(`${selectedItem.name} — ${action === 'approve' ? 'Approved ✓' : 'Rejected ✕'}`);
+        setTimeout(() => setActionMsg(null), 4000);
+        setSelectedId(nextItem?.id ?? null);
+      }
+    } catch {
+      setActionErr('Network error. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   const isLeaveTab = activeTab === 'leave';
+  const leaveItems = activeRequests.filter(r => r.kind === 'leave');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1320, margin: '0 auto', fontFamily: F_SANS }}>
@@ -437,7 +502,7 @@ export default function ApprovalsPage({ dashboard, filterKind }: Props) {
             Approvals <span style={{ fontStyle: 'italic', color: C.text2 }}>queue.</span>
           </div>
           <div style={{ fontFamily: F_MONO, fontSize: 11.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
-            {pendingCount} pending · {pendingCount} manual clock-in{pendingCount !== 1 ? 's' : ''} · 0 leave requests
+            {`${allRequests.length} pending · ${manualCount} manual clock-in${manualCount !== 1 ? 's' : ''} · ${leaveCount} leave request${leaveCount !== 1 ? 's' : ''}`}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -455,12 +520,12 @@ export default function ApprovalsPage({ dashboard, filterKind }: Props) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
         <StatCard
           label="Awaiting you"
-          value={String(pendingCount)}
-          sub={<>{pendingCount} due today</>}
+          value={String(allRequests.length)}
+          sub={<>{allRequests.length} due today</>}
           icon="⏳"
           tint={C.accent}
-          trend={pendingCount > 0 ? 'Oldest · today' : 'Nothing pending'}
-          trendAlert={pendingCount > 0}
+          trend={allRequests.length > 0 ? 'Oldest · today' : 'Nothing pending'}
+          trendAlert={allRequests.length > 0}
         />
         <StatCard label="Approved · this week" value="—" sub={<>no data</>}       icon="✓" tint={C.green}  trend="—" />
         <StatCard label="Rejected · this week" value="—" sub={<>no data</>}       icon="✕" tint={C.red}    trend="—" />
@@ -478,9 +543,9 @@ export default function ApprovalsPage({ dashboard, filterKind }: Props) {
             {/* Tab bar */}
             <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
               {([
-                { id: 'all'    as const, label: 'All',    count: allRequests.length },
-                { id: 'manual' as const, label: 'Manual', count: allRequests.length },
-                { id: 'leave'  as const, label: 'Leave',  count: 0 },
+                { id: 'all'    as const, label: 'All',    count: activeRequests.length },
+                { id: 'manual' as const, label: 'Manual', count: manualCount },
+                { id: 'leave'  as const, label: 'Leave',  count: leaveCount },
               ]).map((t) => {
                 const active = activeTab === t.id;
                 return (
@@ -522,10 +587,14 @@ export default function ApprovalsPage({ dashboard, filterKind }: Props) {
           {/* Queue groups */}
           <div style={{ flex: 1 }}>
             {isLeaveTab ? (
-              <div style={{ padding: '32px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center' }}>
-                <div style={{ fontSize: 18, color: C.text3 }}>✦</div>
-                <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.04em' }}>No pending leave requests</div>
-              </div>
+              leaveItems.length === 0 ? (
+                <div style={{ padding: '32px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center' }}>
+                  <div style={{ fontSize: 18, color: C.text3 }}>✦</div>
+                  <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.04em' }}>No pending leave requests</div>
+                </div>
+              ) : (
+                <QueueGroup label="Due today" items={visible} selectedId={selectedId} onSelect={setSelectedId} />
+              )
             ) : visible.length === 0 ? (
               <QueueEmptyState />
             ) : (
@@ -545,7 +614,7 @@ export default function ApprovalsPage({ dashboard, filterKind }: Props) {
         </div>
 
         {/* ─── RIGHT · Detail ─── */}
-        {isLeaveTab ? (
+        {isLeaveTab && leaveItems.length === 0 ? (
           <LeaveEmptyState />
         ) : selectedItem ? (
           <DetailCard
@@ -553,6 +622,12 @@ export default function ApprovalsPage({ dashboard, filterKind }: Props) {
             allItems={visible}
             selectedIdx={selectedIdx}
             onNav={handleNav}
+            note={note}
+            onNoteChange={setNote}
+            actionLoading={actionLoading}
+            actionMsg={actionMsg}
+            actionErr={actionErr}
+            onAction={doAction}
           />
         ) : (
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '48px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
