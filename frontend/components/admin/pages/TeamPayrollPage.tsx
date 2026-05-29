@@ -183,7 +183,7 @@ function Th({ w, sort, children }: { w: string; sort?: boolean; children: React.
 }
 
 function PayrollRow({ m, isLast }: { m: PayrollMember; isLast: boolean }) {
-  const init = m.name.split(' ').map((w) => w[0]).join('').slice(0, 2);
+  const init = m.name.split(' ').filter(Boolean).map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
   const pct  = (m.hours / m.target) * 100;
 
   const statusMap: Record<PayrollStatus, { bg: string; border: string; fg: string; label: string }> = {
@@ -244,7 +244,7 @@ function PayrollRow({ m, isLast }: { m: PayrollMember; isLast: boolean }) {
           letterSpacing: '0.04em', marginTop: 4,
         }}>
           <span>{Math.round(pct)}%</span>
-          <span>{(m.target - m.hours).toFixed(1)}h to target</span>
+          <span>{m.hours > m.target ? `+${(m.hours - m.target).toFixed(1)}h over` : `${(m.target - m.hours).toFixed(1)}h to go`}</span>
         </div>
       </td>
 
@@ -309,7 +309,7 @@ export default function TeamPayrollPage({ dashboard }: Props) {
 
   // Aggregates
   const totalHours  = team.reduce((s, m) => s + m.hours, 0);
-  const totalTarget = team.length * 160;
+  const totalTarget = Math.max(1, team.length * 160);
   const totalOT     = team.reduce((s, m) => s + m.ot, 0);
   const reviewCount = team.filter((m) => m.status === 'review' || m.status === 'flagged').length;
   const totalLate   = team.reduce((s, m) => s + m.late, 0);
