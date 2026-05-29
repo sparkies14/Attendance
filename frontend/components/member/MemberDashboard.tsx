@@ -34,6 +34,8 @@ export interface CalendarDay {
   clockOut: string;
   totalHours: string | number;
   isWeekend: boolean;
+  lastClockIn: string;
+  accumulatedHours: number;
 }
 
 export interface LeaveRecord {

@@ -113,13 +113,13 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     function calc() {
       const jst = getJST();
       const nowMins = jst.hour * 60 + jst.minute;
-      const inMins  = timeMins(today!.clockIn);
+      const inMins  = timeMins(today!.lastClockIn !== '-' ? today!.lastClockIn : today!.clockIn);
       return Math.max(0, nowMins - inMins) * 60 + jst.second;
     }
     setElapsed(calc());
     const id = setInterval(() => setElapsed(calc()), 1000);
     return () => clearInterval(id);
-  }, [working, today?.clockIn]);
+  }, [working, today?.clockIn, today?.lastClockIn]);
 
   async function doAction(body: Record<string, unknown>) {
     setLoading(true); setMsg(null); setErr(null);
@@ -278,10 +278,13 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
               </>
             )}
             {done && today && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 999, padding: '8px 16px', fontSize: 13, fontWeight: 500, color: C.green, fontFamily: F_SANS }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.green, display: 'inline-block' }} />
-                Clocked out at {today.clockOut}
-              </span>
+              <>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 999, padding: '8px 16px', fontSize: 13, fontWeight: 500, color: C.green, fontFamily: F_SANS }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.green, display: 'inline-block' }} />
+                  Clocked out at {today.clockOut}
+                </span>
+                <ActionBtn onClick={clockIn} disabled={loading}>Resume</ActionBtn>
+              </>
             )}
           </div>
         </div>
@@ -345,6 +348,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
             <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Today&apos;s anatomy</div>
             {[
               { lbl: 'Clock in',  val: today.clockIn  !== '-' ? today.clockIn  : '—', tint: C.green },
+              ...(today.accumulatedHours > 0 ? [{ lbl: 'Previous', val: `${today.accumulatedHours.toFixed(2)}h`, tint: C.text3 }] : []),
               { lbl: 'Lunch',     val: lunchStart ? `${lunchStart} – ${lunchEnd ?? '…'}` : onLunch ? 'In progress' : hadLunch ? 'Taken' : '—', tint: onLunch ? C.accent : hadLunch ? C.green : C.text3 },
               { lbl: 'Break',     val: breakStart ? `${breakStart} – ${breakEnd ?? '…'}` : onBreak ? 'In progress' : '—', tint: onBreak ? C.purple : breakStart ? C.text2 : C.text3 },
               { lbl: 'Clock out', val: today.clockOut !== '-' ? today.clockOut : '—', tint: C.text2 },

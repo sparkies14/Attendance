@@ -32,21 +32,21 @@ function buildMockData(month: number, year: number): { user: UserProfile; leaveB
     const dateStr = `${month}/${day}/${year}`;
 
     if (isWeekend || isFuture) {
-      return { day, date: dateStr, status: 'weekend', clockIn: '-', clockOut: '-', totalHours: '-', isWeekend };
+      return { day, date: dateStr, status: 'weekend', clockIn: '-', clockOut: '-', totalHours: '-', isWeekend, lastClockIn: '-', accumulatedHours: 0 };
     }
     if (day === todayDay) {
-      return { day, date: dateStr, status: 'present', clockIn: '08:52', clockOut: '-', totalHours: '-', isWeekend: false };
+      return { day, date: dateStr, status: 'present', clockIn: '08:52', clockOut: '-', totalHours: '-', isWeekend: false, lastClockIn: '08:52', accumulatedHours: 0 };
     }
     if (LATE_DAYS.has(day)) {
       const mins = 10 + (day % 5) * 4; // vary lateness: 10–26 min late
       const inH = 9, inM = mins;
       const clockIn = `${String(inH).padStart(2,'0')}:${String(inM).padStart(2,'0')}`;
-      return { day, date: dateStr, status: 'late', clockIn, clockOut: '18:10', totalHours: +(8.5 - mins / 60).toFixed(2), isWeekend: false };
+      return { day, date: dateStr, status: 'late', clockIn, clockOut: '18:10', totalHours: +(8.5 - mins / 60).toFixed(2), isWeekend: false, lastClockIn: clockIn, accumulatedHours: 0 };
     }
     // Everyone else: on time, slight variation in hours
     const extraMins = (day * 7) % 25;
     const totalHours = +(9 + extraMins / 60).toFixed(2);
-    return { day, date: dateStr, status: 'present', clockIn: '08:45', clockOut: '17:52', totalHours, isWeekend: false };
+    return { day, date: dateStr, status: 'present', clockIn: '08:45', clockOut: '17:52', totalHours, isWeekend: false, lastClockIn: '08:45', accumulatedHours: 0 };
   });
 
   const present = calendar.filter(d => !d.isWeekend && d.status === 'present').length;
