@@ -8,7 +8,8 @@ interface Props {
   dashboard: DashboardData | null;
   apiUrl: string;
   token: string;
-  filterKind?: string; // 'leave' when routed from "Leave requests" nav item
+  onRefresh?: () => Promise<void>;
+  filterKind?: string;
 }
 
 // ── Color / font constants (same as AdminDashboard) ──────────────────────────
@@ -405,7 +406,7 @@ function QueueEmptyState() {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function ApprovalsPage({ dashboard, apiUrl, filterKind }: Props) {
+export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind }: Props) {
   const allRequests = buildRequests(dashboard);
   const manualCount = allRequests.filter(r => r.kind === 'manual').length;
   const leaveCount  = allRequests.filter(r => r.kind === 'leave').length;
@@ -481,6 +482,8 @@ export default function ApprovalsPage({ dashboard, apiUrl, filterKind }: Props) 
         setActionMsg(`${selectedItem.name} — ${action === 'approve' ? 'Approved ✓' : 'Rejected ✕'}`);
         setTimeout(() => setActionMsg(null), 4000);
         setSelectedId(nextItem?.id ?? null);
+        // Refresh dashboard data so the item won't reappear when switching tabs
+        await onRefresh?.();
       }
     } catch {
       setActionErr('Network error. Please try again.');

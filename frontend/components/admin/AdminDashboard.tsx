@@ -97,6 +97,17 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
   const [page, setPage] = useState<Page>('attendance');
   const [jstClock, setJstClock] = useState('');
   const [localClock, setLocalClock] = useState('');
+  const [dashData, setDashData] = useState<DashboardData | null>(dashboard);
+
+  async function refreshDashboard() {
+    try {
+      const res = await fetch(`${apiUrl}/webhook/dashboard`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      });
+      if (res.ok) setDashData(await res.json());
+    } catch { /* silent — stale data is better than crash */ }
+  }
 
   useEffect(() => {
     function tick() {
@@ -119,7 +130,7 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
     ? adminName.split(' ').map((p: string) => p[0]).join('').slice(0, 2).toUpperCase()
     : 'A';
 
-  const pendingCount = dashboard?.members.filter(m => m.status === 'PENDING APPROVAL').length ?? 0;
+  const pendingCount = (dashData?.pendingApprovals?.length ?? 0) + (dashData?.pendingLeave?.length ?? 0);
 
   // JST date
   const jst = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
@@ -227,11 +238,11 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
 
         {/* Page content */}
         <div style={{ flex: 1, overflow: 'auto', padding: '24px 28px 28px', background: C.bg }}>
-          {page === 'attendance' && <AttendancePage dashboard={dashboard} apiUrl={apiUrl} />}
-          {page === 'approvals'  && <ApprovalsPage  dashboard={dashboard} apiUrl={apiUrl} token={token} />}
-          {page === 'leave'      && <ApprovalsPage  dashboard={dashboard} apiUrl={apiUrl} token={token} filterKind="leave" />}
+          {page === 'attendance' && <AttendancePage dashboard={dashData} apiUrl={apiUrl} />}
+          {page === 'approvals'  && <ApprovalsPage  dashboard={dashData} apiUrl={apiUrl} token={token} onRefresh={refreshDashboard} />}
+          {page === 'leave'      && <ApprovalsPage  dashboard={dashData} apiUrl={apiUrl} token={token} onRefresh={refreshDashboard} filterKind="leave" />}
           {page === 'calendar'   && <CalendarPage />}
-          {page === 'payroll'    && <TeamPayrollPage dashboard={dashboard} apiUrl={apiUrl} />}
+          {page === 'payroll'    && <TeamPayrollPage dashboard={dashData} apiUrl={apiUrl} />}
         </div>
       </div>
     </div>
