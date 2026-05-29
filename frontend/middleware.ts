@@ -3,6 +3,8 @@ import { jwtVerify } from 'jose';
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get('att_token')?.value;
+  // In development, allow unauthenticated access so mock data is visible
+  if (!token && process.env.NODE_ENV === 'development') return NextResponse.next();
   if (!token) return redirectToLogin(req);
 
   try {

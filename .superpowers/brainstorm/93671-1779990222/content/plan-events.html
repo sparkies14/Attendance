@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan Events Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #f5f5f5;
+  font-family: 'Geist', -apple-system, sans-serif;
+  color: #0a0a0a;
+  padding: 24px;
+  min-height: 100vh;
+}
+.page-label { font-family: 'Geist Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #a3a3a3; margin-bottom: 6px; }
+.page-title { font-family: 'Instrument Serif', serif; font-size: 26px; color: #0a0a0a; letter-spacing: -0.025em; margin-bottom: 6px; }
+.page-desc { font-size: 13px; color: #525252; margin-bottom: 24px; line-height: 1.6; max-width: 600px; }
+
+.layout { display: flex; gap: 20px; align-items: flex-start; max-width: 960px; }
+.left { flex: 1; min-width: 0; }
+.right { width: 240px; flex-shrink: 0; }
+
+/* ── Card ── */
+.card { background: #fff; border: 1px solid #e6e6e6; border-radius: 14px; }
+
+/* ── Day detail panel ── */
+.detail-panel { padding: 18px 20px; }
+.detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.detail-date { font-family: 'Instrument Serif', serif; font-size: 18px; color: #0a0a0a; letter-spacing: -0.015em; }
+.detail-sub { font-family: 'Geist Mono', monospace; font-size: 10px; color: #a3a3a3; margin-top: 4px; }
+.status-pill { display: inline-flex; align-items: center; gap: 5px; margin-top: 6px; padding: 3px 9px; border-radius: 999px; background: rgba(22,163,74,0.08); }
+.status-dot { width: 5px; height: 5px; border-radius: 50%; background: #16a34a; flex-shrink: 0; }
+.status-lbl { font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #16a34a; letter-spacing: 0.04em; }
+
+/* attendance grid */
+.att-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 16px; }
+.att-cell { background: #f5f5f5; border-radius: 8px; padding: 8px 10px; }
+.att-lbl { font-family: 'Geist Mono', monospace; font-size: 9.5px; color: #a3a3a3; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 3px; }
+.att-val { font-family: 'Geist Mono', monospace; font-size: 13px; color: #0a0a0a; font-weight: 500; }
+
+/* ── Plan section ── */
+.divider { border: none; border-top: 1px solid #e6e6e6; margin: 14px 0; }
+.plan-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.plan-title { font-family: 'Geist Mono', monospace; font-size: 10px; color: #a3a3a3; letter-spacing: 0.1em; text-transform: uppercase; }
+.add-btn { display: flex; align-items: center; gap: 4px; background: transparent; border: 1px solid #e6e6e6; border-radius: 6px; padding: 3px 10px; font-size: 11.5px; font-family: 'Geist', sans-serif; color: #525252; cursor: pointer; }
+
+/* event list */
+.events { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.event-item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 11px; border-radius: 9px; background: #fafafa; border: 1px solid #e6e6e6; }
+.event-item.done { opacity: 0.55; }
+.event-check { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; margin-top: 1px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; }
+.event-check.unchecked { border: 1.5px solid #d4d4d4; background: transparent; }
+.event-check.checked { background: #16a34a; border: none; }
+.event-body { flex: 1; min-width: 0; }
+.event-time { font-family: 'Geist Mono', monospace; font-size: 10.5px; color: #7c3aed; letter-spacing: 0.03em; margin-bottom: 2px; }
+.event-title { font-size: 13px; color: #0a0a0a; line-height: 1.3; }
+.event-item.done .event-title { text-decoration: line-through; color: #a3a3a3; }
+.event-del { background: none; border: none; cursor: pointer; font-size: 13px; color: #d4d4d4; padding: 0 2px; line-height: 1; }
+
+/* empty state */
+.empty-state { font-size: 12px; color: #a3a3a3; margin-bottom: 8px; text-align: center; padding: 16px 0; }
+
+/* ── Add event form ── */
+.add-form { background: rgba(124,58,237,0.04); border: 1px solid rgba(124,58,237,0.15); border-radius: 10px; padding: 14px; margin-top: 6px; }
+.add-form-title { font-family: 'Geist Mono', monospace; font-size: 10px; color: #7c3aed; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+.form-row { display: flex; gap: 6px; margin-bottom: 8px; }
+.form-input {
+  flex: 1; padding: 7px 10px; border: 1px solid #e6e6e6; border-radius: 8px;
+  font-size: 12.5px; font-family: 'Geist', sans-serif; background: white; color: #0a0a0a;
+}
+.form-input:focus { outline: none; border-color: rgba(124,58,237,0.4); }
+.form-input::placeholder { color: #a3a3a3; }
+.time-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.time-label { font-family: 'Geist Mono', monospace; font-size: 10px; color: #a3a3a3; letter-spacing: 0.08em; width: 32px; flex-shrink: 0; }
+.time-input {
+  width: 90px; padding: 6px 8px; border: 1px solid #e6e6e6; border-radius: 8px;
+  font-size: 12.5px; font-family: 'Geist Mono', monospace; background: white; color: #0a0a0a;
+}
+.time-sep { font-size: 12px; color: #a3a3a3; }
+.form-actions { display: flex; gap: 6px; }
+.btn-save { padding: 7px 14px; background: #0a0a0a; color: #fafafa; border: none; border-radius: 8px; font-size: 12px; font-family: 'Geist', sans-serif; font-weight: 500; cursor: pointer; }
+.btn-save-add { padding: 7px 14px; background: rgba(124,58,237,0.08); color: #7c3aed; border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; font-size: 12px; font-family: 'Geist', sans-serif; font-weight: 500; cursor: pointer; }
+.btn-cancel { padding: 7px 10px; background: transparent; color: #525252; border: 1px solid #e6e6e6; border-radius: 8px; font-size: 12px; font-family: 'Geist', sans-serif; cursor: pointer; }
+
+/* ── Calendar mini (simplified) ── */
+.cal-panel { padding: 18px; }
+.month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.nav-btn { background: transparent; border: 1px solid #e6e6e6; border-radius: 6px; padding: 4px 12px; font-size: 13px; color: #525252; cursor: pointer; }
+.month-name { font-family: 'Instrument Serif', serif; font-size: 18px; color: #0a0a0a; }
+.day-hdrs { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; margin-bottom: 3px; }
+.dh { text-align: center; font-family: 'Geist Mono', monospace; font-size: 9.5px; color: #a3a3a3; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 0; }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
+.cell { padding: 6px 4px; border-radius: 8px; min-height: 48px; border: 1.5px solid transparent; position: relative; cursor: pointer; }
+.cell-present { background: rgba(22,163,74,0.08); }
+.cell-late { background: rgba(180,83,9,0.08); }
+.cell-wk { background: transparent; cursor: default; }
+.cell-sel { border-color: #b45309 !important; }
+.cell-num { font-size: 12px; font-weight: 500; color: #0a0a0a; line-height: 1; }
+.cell-wk .cell-num { color: #a3a3a3; }
+.cell-time { font-family: 'Geist Mono', monospace; font-size: 9px; color: #a3a3a3; margin-top: 2px; }
+.event-dot { position: absolute; bottom: 4px; right: 4px; width: 5px; height: 5px; border-radius: 50%; background: #7c3aed; }
+
+/* sidebar */
+.sidebar-card { padding: 18px; }
+.sidebar-title { font-family: 'Instrument Serif', serif; font-size: 15px; color: #0a0a0a; margin-bottom: 2px; }
+.sidebar-sub { font-family: 'Geist Mono', monospace; font-size: 9.5px; color: #a3a3a3; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 14px; }
+.att-rate { font-family: 'Instrument Serif', serif; font-size: 48px; color: #16a34a; letter-spacing: -0.03em; line-height: 0.85; }
+.color-bar { display: flex; height: 5px; border-radius: 999px; overflow: hidden; gap: 1px; margin: 10px 0 14px; }
+.stat-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #e6e6e6; }
+.stat-lbl { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #525252; }
+.dot8 { width: 7px; height: 7px; border-radius: 2px; display: inline-block; flex-shrink: 0; }
+.stat-val { font-family: 'Geist Mono', monospace; font-size: 12.5px; font-weight: 500; color: #0a0a0a; }
+
+.annotation { background: rgba(124,58,237,0.06); border: 1px solid rgba(124,58,237,0.18); border-radius: 8px; padding: 8px 12px; font-size: 11.5px; color: #7c3aed; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<div class="page-label">Design Mockup · Calendar Plan Events</div>
+<div class="page-title">Calendar · plan mode</div>
+<div class="page-desc">
+  When a member clicks a day, the panel below the calendar shows <strong>Plan Events</strong> — time-blocked activities with start/end time and a title. Events are sorted by start time (9am–6pm JST). Members can add, check off, and delete events. Admins see them too.
+</div>
+
+<div class="layout">
+
+  <!-- Left: calendar + day panel -->
+  <div class="left">
+    <div class="card" style="margin-bottom: 12px;">
+      <div class="cal-panel">
+        <!-- Nav -->
+        <div class="month-nav">
+          <button class="nav-btn">←</button>
+          <div style="text-align:center">
+            <div class="month-name">May <em>2026</em></div>
+            <div style="font-family:'Geist Mono',monospace;font-size:9px;color:#a3a3a3;letter-spacing:0.06em;margin-top:2px">令和8年5月</div>
+          </div>
+          <button class="nav-btn">→</button>
+        </div>
+        <!-- Day headers -->
+        <div class="day-hdrs">
+          <div class="dh">Sun</div><div class="dh">Mon</div><div class="dh">Tue</div><div class="dh">Wed</div><div class="dh">Thu</div><div class="dh">Fri</div><div class="dh">Sat</div>
+        </div>
+        <!-- Grid (simplified) -->
+        <div class="cal-grid">
+          <div></div><div></div><div></div><div></div>
+          <div class="cell cell-present"><div class="cell-num">1</div><div class="cell-time">08:58</div></div>
+          <div class="cell cell-present"><div class="cell-num">2</div><div class="cell-time">08:51</div></div>
+          <div class="cell cell-wk"><div class="cell-num">3</div></div>
+          <div class="cell cell-wk"><div class="cell-num">4</div></div>
+          <div class="cell cell-present" style="position:relative"><div class="cell-num">5</div><div class="cell-time">09:02</div><div class="event-dot"></div></div>
+          <div class="cell cell-late"><div class="cell-num">6</div><div class="cell-time">09:28</div></div>
+          <div class="cell cell-present" style="position:relative"><div class="cell-num">7</div><div class="cell-time">08:55</div><div class="event-dot"></div></div>
+          <div class="cell cell-present"><div class="cell-num">8</div><div class="cell-time">08:48</div></div>
+          <div class="cell cell-present"><div class="cell-num">9</div><div class="cell-time">09:01</div></div>
+          <div class="cell cell-wk"><div class="cell-num">10</div></div>
+          <div class="cell cell-wk"><div class="cell-num">11</div></div>
+          <div class="cell cell-present"><div class="cell-num">12</div></div>
+          <div class="cell cell-present" style="position:relative"><div class="cell-num">13</div><div class="event-dot"></div></div>
+          <div class="cell cell-present"><div class="cell-num">14</div></div>
+          <div class="cell cell-present"><div class="cell-num">15</div></div>
+          <div class="cell cell-present"><div class="cell-num">16</div></div>
+          <div class="cell cell-wk"><div class="cell-num">17</div></div>
+          <div class="cell cell-wk"><div class="cell-num">18</div></div>
+          <div class="cell cell-present"><div class="cell-num">19</div></div>
+          <div class="cell cell-present"><div class="cell-num">20</div></div>
+          <div class="cell cell-present" style="position:relative"><div class="cell-num">21</div><div class="event-dot"></div></div>
+          <div class="cell cell-late"><div class="cell-num">22</div></div>
+          <div class="cell cell-present cell-sel" style="position:relative"><div class="cell-num">23</div><div class="cell-time">09:00</div><div class="event-dot"></div></div>
+          <div class="cell cell-wk"><div class="cell-num">24</div></div>
+          <div class="cell cell-wk"><div class="cell-num">25</div></div>
+          <div class="cell cell-present"><div class="cell-num">26</div></div>
+          <div class="cell cell-present"><div class="cell-num">27</div></div>
+          <div style="padding:6px 4px;border-radius:8px;min-height:48px;background:#0a0a0a;position:relative">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
+              <span style="font-size:12px;font-weight:600;color:#fafafa">28</span>
+              <span style="font-family:'Geist Mono',monospace;font-size:7px;color:#b45309;background:rgba(244,185,66,0.18);padding:1px 4px;border-radius:3px">NOW</span>
+            </div>
+            <div style="font-family:'Geist Mono',monospace;font-size:9px;color:rgba(255,255,255,0.5);margin-top:2px">09:00</div>
+          </div>
+          <div class="cell" style="opacity:0.4"><div class="cell-num">29</div></div>
+          <div class="cell" style="opacity:0.4"><div class="cell-num">30</div></div>
+          <div class="cell cell-wk"><div class="cell-num">31</div></div>
+        </div>
+        <!-- Legend -->
+        <div style="display:flex;gap:14px;margin-top:14px;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:5px;font-family:'Geist Mono',monospace;font-size:10px;color:#a3a3a3">
+            <span style="width:9px;height:9px;border-radius:2px;background:#16a34a;display:inline-block"></span>On time
+          </span>
+          <span style="display:flex;align-items:center;gap:5px;font-family:'Geist Mono',monospace;font-size:10px;color:#a3a3a3">
+            <span style="width:9px;height:9px;border-radius:2px;background:#b45309;display:inline-block"></span>Late
+          </span>
+          <span style="display:flex;align-items:center;gap:5px;font-family:'Geist Mono',monospace;font-size:10px;color:#a3a3a3">
+            <span style="width:9px;height:9px;border-radius:50%;background:#7c3aed;display:inline-block"></span>Has plans
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day detail panel — May 23 selected -->
+    <div class="card">
+      <div class="detail-panel">
+        <div class="detail-header">
+          <div>
+            <div class="detail-date">May 23, 2026 <span style="font-family:'Geist Mono',monospace;font-size:10px;color:#a3a3a3">SAT</span></div>
+            <div class="status-pill">
+              <span class="status-dot"></span>
+              <span class="status-lbl">On time</span>
+            </div>
+          </div>
+          <button style="background:none;border:none;cursor:pointer;font-size:18px;color:#a3a3a3">×</button>
+        </div>
+
+        <!-- Attendance grid -->
+        <div class="att-grid">
+          <div class="att-cell"><div class="att-lbl">Clock in</div><div class="att-val">09:00</div></div>
+          <div class="att-cell"><div class="att-lbl">Clock out</div><div class="att-val">17:05</div></div>
+          <div class="att-cell"><div class="att-lbl">Total hours</div><div class="att-val">8.1h</div></div>
+          <div class="att-cell"><div class="att-lbl">Status</div><div class="att-val">Present</div></div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Plan section -->
+        <div class="plan-hdr">
+          <span class="plan-title">Day plan</span>
+          <button class="add-btn">+ Add event</button>
+        </div>
+
+        <!-- Event list (sorted by time) -->
+        <div class="events">
+          <!-- Done event -->
+          <div class="event-item done">
+            <div class="event-check checked">✓</div>
+            <div class="event-body">
+              <div class="event-time">09:00 – 10:00</div>
+              <div class="event-title">Daily standup</div>
+            </div>
+            <button class="event-del">×</button>
+          </div>
+          <!-- Active events -->
+          <div class="event-item">
+            <div class="event-check unchecked"></div>
+            <div class="event-body">
+              <div class="event-time">10:00 – 12:00</div>
+              <div class="event-title">Code review with James</div>
+            </div>
+            <button class="event-del">×</button>
+          </div>
+          <div class="event-item">
+            <div class="event-check unchecked"></div>
+            <div class="event-body">
+              <div class="event-time">13:00 – 15:00</div>
+              <div class="event-title">Meeting with AT</div>
+            </div>
+            <button class="event-del">×</button>
+          </div>
+          <div class="event-item">
+            <div class="event-check unchecked"></div>
+            <div class="event-body">
+              <div class="event-time">16:00 – 17:00</div>
+              <div class="event-title">Reviewing declines</div>
+            </div>
+            <button class="event-del">×</button>
+          </div>
+        </div>
+
+        <!-- Add event form (shown when + Add event clicked) -->
+        <div class="add-form">
+          <div class="add-form-title">New plan event</div>
+          <div class="form-row">
+            <input class="form-input" type="text" placeholder="What are you doing? (e.g. Meeting with AT)" value="">
+          </div>
+          <div class="time-row">
+            <span class="time-label" style="font-family:'Geist Mono',monospace;font-size:9.5px;color:#a3a3a3;letter-spacing:0.06em">FROM</span>
+            <input class="time-input" type="time" value="13:00">
+            <span class="time-sep">→</span>
+            <span class="time-label" style="font-family:'Geist Mono',monospace;font-size:9.5px;color:#a3a3a3;letter-spacing:0.06em">TO</span>
+            <input class="time-input" type="time" value="15:00">
+          </div>
+          <div class="form-actions">
+            <button class="btn-save">Save</button>
+            <button class="btn-save-add">Save + add another</button>
+            <button class="btn-cancel">Cancel</button>
+          </div>
+        </div>
+
+        <div class="annotation">
+          <strong>Purple dot</strong> on calendar cells = that day has plan events. Events sorted by start time. Admins can see and manage these too.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right sidebar -->
+  <div class="right">
+    <div class="card">
+      <div class="sidebar-card">
+        <div class="sidebar-title">May at a glance.</div>
+        <div class="sidebar-sub">2026</div>
+        <div class="att-rate">92<span style="font-size:20px;color:#a3a3a3;font-family:'Instrument Serif',serif">%</span></div>
+        <div class="color-bar">
+          <div style="flex:18;background:#16a34a;border-radius:999px 0 0 999px"></div>
+          <div style="flex:5;background:#b45309"></div>
+        </div>
+        <div class="stat-row"><span class="stat-lbl"><span class="dot8" style="background:#16a34a"></span>Present</span><span class="stat-val">18</span></div>
+        <div class="stat-row"><span class="stat-lbl"><span class="dot8" style="background:#b45309"></span>Late</span><span class="stat-val">5</span></div>
+        <div class="stat-row"><span class="stat-lbl"><span class="dot8" style="background:#dc2626"></span>Absent</span><span class="stat-val">0</span></div>
+        <div class="stat-row"><span class="stat-lbl"><span class="dot8" style="background:#7c3aed"></span>Leave</span><span class="stat-val">0</span></div>
+        <div class="stat-row"><span class="stat-lbl"><span class="dot8" style="background:#a3a3a3"></span>Pending</span><span class="stat-val">3</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
