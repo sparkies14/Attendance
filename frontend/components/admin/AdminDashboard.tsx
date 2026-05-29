@@ -5,6 +5,7 @@ import AttendancePage from './pages/AttendancePage';
 import ApprovalsPage from './pages/ApprovalsPage';
 import CalendarPage from './pages/CalendarPage';
 import TeamPayrollPage from './pages/TeamPayrollPage';
+import InsightsPage from './pages/InsightsPage';
 
 export interface PendingAttendance {
   id: number;
@@ -61,7 +62,7 @@ interface Props {
   token: string;
 }
 
-type Page = 'attendance' | 'approvals' | 'leave' | 'calendar' | 'payroll';
+type Page = 'attendance' | 'approvals' | 'leave' | 'calendar' | 'payroll' | 'insights';
 
 const C = {
   bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
@@ -82,7 +83,10 @@ const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, 
 const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 const NAV_GROUPS = [
-  { label: 'Overview',   items: [{ id: 'attendance' as Page, label: 'Attendance',     icon: '◉', badge: null }] },
+  { label: 'Overview',   items: [
+    { id: 'attendance' as Page, label: 'Attendance', icon: '◉', badge: null },
+    { id: 'insights'   as Page, label: 'Reports',    icon: '▤', badge: null },
+  ]},
   { label: 'Management', items: [
     { id: 'approvals' as Page, label: 'Approvals',      icon: '✓', badge: 'pending' as const },
     { id: 'leave' as Page,     label: 'Leave requests', icon: '⌇', badge: 'leave' as const },
@@ -243,6 +247,7 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
           {page === 'leave'      && <ApprovalsPage  dashboard={dashData} apiUrl={apiUrl} token={token} onRefresh={refreshDashboard} filterKind="leave" />}
           {page === 'calendar'   && <CalendarPage />}
           {page === 'payroll'    && <TeamPayrollPage dashboard={dashData} apiUrl={apiUrl} />}
+          {page === 'insights'   && <InsightsPage apiUrl={apiUrl} />}
         </div>
       </div>
     </div>
