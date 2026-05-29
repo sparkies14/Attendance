@@ -6,6 +6,7 @@ import ApprovalsPage from './pages/ApprovalsPage';
 import CalendarPage from './pages/CalendarPage';
 import TeamPayrollPage from './pages/TeamPayrollPage';
 import InsightsPage from './pages/InsightsPage';
+import MembersPage from './pages/MembersPage';
 
 export interface PendingAttendance {
   id: number;
@@ -62,7 +63,7 @@ interface Props {
   token: string;
 }
 
-type Page = 'attendance' | 'approvals' | 'leave' | 'calendar' | 'payroll' | 'insights';
+type Page = 'attendance' | 'approvals' | 'leave' | 'calendar' | 'payroll' | 'insights' | 'members';
 
 const C = {
   bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
@@ -94,6 +95,7 @@ const NAV_GROUPS = [
   { label: 'Company',    items: [
     { id: 'calendar' as Page, label: 'Calendar', icon: '▦', badge: null },
     { id: 'payroll' as Page,  label: 'Payroll',  icon: '¥', badge: null },
+    { id: 'members' as Page,  label: 'Members',  icon: '⊞', badge: null },
   ]},
 ];
 
@@ -248,6 +250,7 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
           {page === 'calendar'   && <CalendarPage />}
           {page === 'payroll'    && <TeamPayrollPage dashboard={dashData} apiUrl={apiUrl} />}
           {page === 'insights'   && <InsightsPage apiUrl={apiUrl} />}
+          {page === 'members'   && <MembersPage apiUrl={apiUrl} adminRole={adminRole} />}
         </div>
       </div>
     </div>
