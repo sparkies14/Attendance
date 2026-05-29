@@ -121,12 +121,17 @@ function isoWeek(date: Date): number {
 export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl }: MemberDashboardProps) {
   const [page, setPage] = useState<Page>('home');
   const [clock, setClock] = useState('');
+  const [localClock, setLocalClock] = useState('');
 
   useEffect(() => {
     function tick() {
       const jst = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
       setClock(
         `${String(jst.getHours()).padStart(2,'0')}:${String(jst.getMinutes()).padStart(2,'0')}:${String(jst.getSeconds()).padStart(2,'0')}`
+      );
+      const local = new Date();
+      setLocalClock(
+        `${String(local.getHours()).padStart(2,'0')}:${String(local.getMinutes()).padStart(2,'0')}`
       );
     }
     tick();
@@ -233,9 +238,16 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
             >
               <span>↻</span> Refresh
             </button>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: F_MONO, fontSize: 22, color: C.text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{clock}</div>
-              <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.08em', marginTop: 3 }}>JST · Tokyo</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontFamily: F_MONO, fontSize: 18, color: C.text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{localClock}</div>
+                <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.08em', marginTop: 3 }}>LOCAL · BROWSER</div>
+              </div>
+              <div style={{ width: 1, height: 32, background: C.border }} />
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontFamily: F_MONO, fontSize: 22, color: C.text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{clock}</div>
+                <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.08em', marginTop: 3 }}>JST · TOKYO</div>
+              </div>
             </div>
           </div>
         </div>
