@@ -241,7 +241,7 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontFamily: F_MONO, fontSize: 18, color: C.text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{localClock}</div>
-                <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.08em', marginTop: 3 }}>LOCAL · BROWSER</div>
+                <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.08em', marginTop: 3 }}>LOCAL</div>
               </div>
               <div style={{ width: 1, height: 32, background: C.border }} />
               <div style={{ textAlign: 'right' }}>
