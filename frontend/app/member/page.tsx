@@ -83,9 +83,22 @@ function buildMockData(month: number, year: number): { user: UserProfile; leaveB
       onBreak: false,
       hadLunch: true,
       leaveHistory: [
-        { id: '1', date: `${month}/3/${year}`, leaveType: 'Vacation', reason: 'Family trip', status: 'Approved' },
-        { id: '2', date: `${month}/10/${year}`, leaveType: 'Sick', reason: 'Fever', status: 'Approved' },
-        { id: '3', date: `${month}/20/${year}`, leaveType: 'Personal', reason: 'Errands', status: 'Pending' },
+        // Past — Approved
+        { id: 'h1', date: '3/20/2026', leaveType: 'Vacation',  reason: 'Spring break with family',        status: 'Approved' },
+        { id: 'h2', date: '4/15/2026', leaveType: 'Sick',      reason: 'Cold and fever',                  status: 'Approved' },
+        // Past — Rejected
+        { id: 'h3', date: '4/1/2026',  leaveType: 'Personal',  reason: 'Running personal errands',        status: 'Rejected' },
+        // Past — Pending (4 entries → show in Pending section)
+        { id: 'p1', date: '5/5/2026',  leaveType: 'Sick',      reason: 'Migraine, unable to work',        status: 'Pending' },
+        { id: 'p2', date: '5/10/2026', leaveType: 'Vacation',  reason: 'Out-of-town wedding',             status: 'Pending' },
+        { id: 'p3', date: '5/15/2026', leaveType: 'Personal',  reason: 'Government document renewal',     status: 'Pending' },
+        { id: 'p4', date: '5/22/2026', leaveType: 'Sick',      reason: 'Dental procedure follow-up',      status: 'Pending' },
+        // Future — Approved (5 entries → show in Upcoming section)
+        { id: 'u1', date: '6/5/2026',  leaveType: 'Vacation',  reason: 'Boracay trip with friends',       status: 'Approved' },
+        { id: 'u2', date: '6/18/2026', leaveType: 'Personal',  reason: 'Graduation ceremony attendance',  status: 'Approved' },
+        { id: 'u3', date: '7/4/2026',  leaveType: 'Sick',      reason: 'Scheduled medical check-up',      status: 'Approved' },
+        { id: 'u4', date: '7/25/2026', leaveType: 'Vacation',  reason: 'Annual leave — Osaka trip',       status: 'Approved' },
+        { id: 'u5', date: '8/12/2026', leaveType: 'Personal',  reason: 'Family reunion in Cebu',          status: 'Approved' },
       ],
     },
   };
