@@ -1,0 +1,115 @@
+'use client';
+import { useState, useEffect } from 'react';
+import { clientFetch } from '@/lib/clientFetch';
+
+interface Props { apiUrl: string; adminRole: string; }
+
+const C = {
+  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
+  border: '#e6e6e6', borderStrong: '#d4d4d4',
+  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
+  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
+  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
+  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
+  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
+  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
+  btnBg: '#0a0a0a', btnText: '#fafafa',
+};
+const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
+const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
+const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
+
+interface Config {
+  threshold_minor_tardy: number; threshold_major_tardy: number;
+  threshold_awol_half: number; threshold_awol_full: number;
+}
+const MOCK_CONFIG: Config = { threshold_minor_tardy: 3, threshold_major_tardy: 2, threshold_awol_half: 1, threshold_awol_full: 1 };
+const FIELDS: { key: keyof Config; label: string; description: string }[] = [
+  { key: 'threshold_minor_tardy', label: 'Minor tardy threshold',   description: 'Days before a minor tardy warning is triggered' },
+  { key: 'threshold_major_tardy', label: 'Major tardy threshold',   description: 'Days before a major tardy warning is triggered' },
+  { key: 'threshold_awol_half',   label: 'AWOL half-day threshold', description: 'Days before an AWOL half-day warning is triggered' },
+  { key: 'threshold_awol_full',   label: 'AWOL full-day threshold', description: 'Days before an AWOL full-day warning is triggered' },
+];
+
+export default function PolicyPage({ apiUrl, adminRole }: Props) {
+  const [config,  setConfig]  = useState<Config | null>(null);
+  const [draft,   setDraft]   = useState<Config | null>(null);
+  const [busy,    setBusy]    = useState(false);
+  const [saving,  setSaving]  = useState(false);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
+
+  const isOwner = adminRole === 'owner';
+
+  useEffect(() => {
+    setBusy(true);
+    clientFetch(`${apiUrl}/admin/policy-config`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { const c = d?.config ?? MOCK_CONFIG; setConfig(c); setDraft({ ...c }); })
+      .catch(() => { setConfig(MOCK_CONFIG); setDraft({ ...MOCK_CONFIG }); })
+      .finally(() => setBusy(false));
+  }, [apiUrl]);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!draft || !config) return;
+    const changes: Partial<Config> = {};
+    (Object.keys(draft) as (keyof Config)[]).forEach(k => { if (draft[k] !== config[k]) changes[k] = draft[k]; });
+    if (Object.keys(changes).length === 0) { setSaveMsg('No changes to save.'); setTimeout(() => setSaveMsg(null), 3_000); return; }
+    setSaving(true); setSaveMsg(null); setSaveErr(null);
+    try {
+      const res  = await clientFetch(`${apiUrl}/admin/policy-config`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(changes) });
+      const data = await res.json();
+      if (res.ok) { setConfig(data.config); setDraft({ ...data.config }); setSaveMsg('Saved.'); setTimeout(() => setSaveMsg(null), 3_000); }
+      else        { setSaveErr(data.error ?? 'Save failed.'); }
+    } catch { setSaveErr('Network error.'); }
+    finally { setSaving(false); }
+  }
+
+  void F_SERIF;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 640 }}>
+      <div>
+        <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Policy config.</div>
+        <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
+          Tardy &amp; AWOL thresholds · {isOwner ? 'Editable' : 'Read-only'}
+        </div>
+      </div>
+
+      {busy && <div style={{ fontFamily: F_MONO, fontSize: 12, color: C.text3 }}>Loading…</div>}
+
+      {!busy && draft && (
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '24px 26px' }}>
+          <form onSubmit={save}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {FIELDS.map(({ key, label, description }) => (
+                <div key={key}>
+                  <label style={{ display: 'block', fontSize: 13.5, fontWeight: 500, color: C.text, marginBottom: 3 }}>{label}</label>
+                  <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, marginBottom: 8 }}>{description}</div>
+                  <input
+                    type="number" min={1} required
+                    value={draft[key]}
+                    onChange={e => setDraft(prev => prev ? { ...prev, [key]: parseInt(e.target.value) || 1 } : prev)}
+                    disabled={!isOwner}
+                    style={{ padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F_MONO, fontSize: 14, color: C.text, background: isOwner ? C.bg : C.surface2, width: 120, boxSizing: 'border-box' as const }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {isOwner && (
+              <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button type="submit" disabled={saving}
+                  style={{ padding: '9px 22px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 9, fontFamily: F_SANS, fontSize: 13, fontWeight: 500, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}>
+                  {saving ? 'Saving…' : 'Save changes'}
+                </button>
+                {saveMsg && <span style={{ fontFamily: F_MONO, fontSize: 11, color: C.green }}>{saveMsg}</span>}
+                {saveErr && <span style={{ fontFamily: F_MONO, fontSize: 11, color: C.red }}>{saveErr}</span>}
+              </div>
+            )}
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
