@@ -66,6 +66,7 @@ router.get('/', async (req, res) => {
       else if (status === 'pending') summary.pending++;
     }
 
+    const isoDate = `${yearNum}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     calendar.push({
       day,
       date: dateStr,
@@ -75,6 +76,8 @@ router.get('/', async (req, res) => {
       totalHours: record?.clock_out ? record.total_hours : '-',
       lastClockIn: record?.last_clock_in || record?.clock_in || '-',
       accumulatedHours: record?.accumulated_hours || 0,
+      entryType: record?.entry_type || 'auto',
+      dateISO: isoDate,
       isWeekend,
     });
   }
