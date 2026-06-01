@@ -8,6 +8,13 @@ import CalendarPage from './pages/CalendarPage';
 import TeamPayrollPage from './pages/TeamPayrollPage';
 import InsightsPage from './pages/InsightsPage';
 import MembersPage from './pages/MembersPage';
+import TardyPage         from './pages/TardyPage';
+import HolidaysPage      from './pages/HolidaysPage';
+import PolicyPage        from './pages/PolicyPage';
+import DisciplinePage    from './pages/DisciplinePage';
+import AppealsAdminPage  from './pages/AppealsAdminPage';
+import AuditLogPage      from './pages/AuditLogPage';
+import LeaveBalancesPage from './pages/LeaveBalancesPage';
 
 export interface PendingAttendance {
   id: number;
@@ -64,7 +71,8 @@ interface Props {
   token: string;
 }
 
-type Page = 'attendance' | 'approvals' | 'leave' | 'calendar' | 'payroll' | 'insights' | 'members';
+type Page = 'attendance' | 'approvals' | 'leave' | 'calendar' | 'payroll' | 'insights' | 'members'
+          | 'tardy' | 'holidays' | 'policy' | 'discipline' | 'appeals-admin' | 'audit' | 'leave-balances';
 
 const C = {
   bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
@@ -86,17 +94,26 @@ const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-mono
 
 const NAV_GROUPS = [
   { label: 'Overview',   items: [
-    { id: 'attendance' as Page, label: 'Attendance', icon: '◉', badge: null },
-    { id: 'insights'   as Page, label: 'Reports',    icon: '▤', badge: null },
+    { id: 'attendance'    as Page, label: 'Attendance',     icon: '◉', badge: null },
+    { id: 'insights'      as Page, label: 'Reports',        icon: '▤', badge: null },
   ]},
   { label: 'Management', items: [
-    { id: 'approvals' as Page, label: 'Approvals',      icon: '✓', badge: 'pending' as const },
-    { id: 'leave' as Page,     label: 'Leave requests', icon: '⌇', badge: 'leave' as const },
+    { id: 'approvals'     as Page, label: 'Approvals',      icon: '✓', badge: 'pending' as const },
+    { id: 'leave'         as Page, label: 'Leave requests', icon: '⌇', badge: 'leave'   as const },
+    { id: 'tardy'         as Page, label: 'Tardy & AWOL',   icon: '⏱', badge: null },
+    { id: 'discipline'    as Page, label: 'Discipline',     icon: '⚑', badge: null },
+    { id: 'appeals-admin' as Page, label: 'Appeals',        icon: '⟳', badge: 'appeals' as const },
   ]},
   { label: 'Company',    items: [
-    { id: 'calendar' as Page, label: 'Calendar', icon: '▦', badge: null },
-    { id: 'payroll' as Page,  label: 'Payroll',  icon: '¥', badge: null },
-    { id: 'members' as Page,  label: 'Members',  icon: '⊞', badge: null },
+    { id: 'calendar'       as Page, label: 'Calendar',       icon: '▦', badge: null },
+    { id: 'payroll'        as Page, label: 'Payroll',        icon: '¥', badge: null },
+    { id: 'members'        as Page, label: 'Members',        icon: '⊞', badge: null },
+    { id: 'holidays'       as Page, label: 'Holidays',       icon: '✦', badge: null },
+    { id: 'leave-balances' as Page, label: 'Leave balances', icon: '◈', badge: null },
+  ]},
+  { label: 'Settings',   items: [
+    { id: 'policy' as Page, label: 'Policy config', icon: '⚙', badge: null },
+    { id: 'audit'  as Page, label: 'Audit log',     icon: '≡', badge: null },
   ]},
 ];
 
@@ -105,6 +122,7 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
   const [jstClock, setJstClock] = useState('');
   const [localClock, setLocalClock] = useState('');
   const [dashData, setDashData] = useState<DashboardData | null>(dashboard);
+  const [pendingAppeals, setPendingAppeals] = useState(0);
 
   async function refreshDashboard() {
     try {
@@ -180,7 +198,7 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
               <div style={{ fontFamily: F_MONO, fontSize: 9.5, color: '#525252', letterSpacing: '0.14em', textTransform: 'uppercase', padding: '4px 12px 8px' }}>{g.label}</div>
               {g.items.map((it) => {
                 const isActive = page === it.id;
-                const badge = it.badge === 'pending' ? pendingCount : null;
+                const badge = it.badge === 'pending' ? pendingCount : it.badge === 'appeals' ? pendingAppeals : null;
                 return (
                   <button key={it.id} onClick={() => setPage(it.id)}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 12px', borderRadius: 8, marginBottom: 1, background: isActive ? C.sidebarActive : 'transparent', border: 'none', cursor: 'pointer', color: isActive ? C.sidebarActiveText : C.sidebarText, fontSize: 13, fontFamily: F_SANS, fontWeight: isActive ? 500 : 400, textAlign: 'left' }}>
@@ -257,7 +275,14 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
           {page === 'calendar'   && <CalendarPage />}
           {page === 'payroll'    && <TeamPayrollPage dashboard={dashData} apiUrl={apiUrl} />}
           {page === 'insights'   && <InsightsPage apiUrl={apiUrl} />}
-          {page === 'members'   && <MembersPage apiUrl={apiUrl} adminRole={adminRole} />}
+          {page === 'members'        && <MembersPage      apiUrl={apiUrl} adminRole={adminRole} />}
+          {page === 'tardy'          && <TardyPage        apiUrl={apiUrl} adminRole={adminRole} />}
+          {page === 'holidays'       && <HolidaysPage     apiUrl={apiUrl} adminRole={adminRole} />}
+          {page === 'policy'         && <PolicyPage       apiUrl={apiUrl} adminRole={adminRole} />}
+          {page === 'discipline'     && <DisciplinePage   apiUrl={apiUrl} adminRole={adminRole} />}
+          {page === 'appeals-admin'  && <AppealsAdminPage apiUrl={apiUrl} adminRole={adminRole} onPendingCount={setPendingAppeals} />}
+          {page === 'audit'          && <AuditLogPage     apiUrl={apiUrl} adminRole={adminRole} />}
+          {page === 'leave-balances' && <LeaveBalancesPage apiUrl={apiUrl} adminRole={adminRole} />}
         </div>
       </div>
     </div>
