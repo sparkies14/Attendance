@@ -147,12 +147,12 @@ router.post('/login', async (req, res) => {
     return res.status(401).json({ error: 'Invalid credentials.' });
   }
 
-  await supabase.from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id);
-
-  await audit.log(req, audit.ACTIONS.LOGIN, {
+  // fire-and-forget — don't block the response for background bookkeeping
+  supabase.from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id).then(() => {});
+  audit.log(req, audit.ACTIONS.LOGIN, {
     actor: { user_id: user.id, email: user.email, role: user.role },
     target_user_id: user.id, target_table: 'users', target_id: user.id,
-  });
+  }).catch(() => {});
 
   const loginData = issueLoginResponse(user);
   setAuthCookie(res, loginData.token);
@@ -204,15 +204,15 @@ router.post('/google', async (req, res) => {
     return res.status(403).json({ error: 'Your account has been deactivated.' });
   }
 
+  // fire-and-forget — don't block the response for background bookkeeping
   if (!user.google_sub) {
-    await supabase.from('users').update({ google_sub: profile.sub }).eq('id', user.id);
+    supabase.from('users').update({ google_sub: profile.sub }).eq('id', user.id).then(() => {});
   }
-  await supabase.from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id);
-
-  await audit.log(req, audit.ACTIONS.LOGIN_GOOGLE, {
+  supabase.from('users').update({ last_login_at: new Date().toISOString() }).eq('id', user.id).then(() => {});
+  audit.log(req, audit.ACTIONS.LOGIN_GOOGLE, {
     actor: { user_id: user.id, email: user.email, role: user.role },
     target_user_id: user.id, target_table: 'users', target_id: user.id,
-  });
+  }).catch(() => {});
 
   const loginData = issueLoginResponse(user);
   setAuthCookie(res, loginData.token);
