@@ -31,6 +31,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
   const [jstTime, setJstTime] = useState('');
   const gsiLoaded = useRef(false);
 
@@ -80,14 +81,15 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? 'Sign in failed.');
+        setLoading(false);
       } else {
         await fetch('/api/set-cookie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: data.token }) });
         localStorage.setItem('att_token', data.token);
+        setSignedIn(true);
         redirectByRole(data.user?.role ?? '');
       }
     } catch {
       setError('Network error. Please try again.');
-    } finally {
       setLoading(false);
     }
   }
@@ -144,14 +146,15 @@ export default function LoginPage() {
           const data = await res.json();
           if (!res.ok) {
             setError(data.error ?? 'Google sign-in failed.');
+            setLoading(false);
           } else {
             await fetch('/api/set-cookie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: data.token }) });
             localStorage.setItem('att_token', data.token);
+            setSignedIn(true);
             redirectByRole(data.user?.role ?? '');
           }
         } catch {
           setError('Network error. Please try again.');
-        } finally {
           setLoading(false);
         }
       },
@@ -289,6 +292,7 @@ export default function LoginPage() {
                   setMode(m);
                   setError(null);
                   setSuccessMessage(null);
+                  setSignedIn(false);
                 }}
                 style={{
                   flex: 1,
@@ -388,11 +392,11 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || signedIn}
               style={{
                 width: '100%',
                 padding: '0.75rem',
-                backgroundColor: '#111',
+                backgroundColor: signedIn ? '#16a34a' : '#111',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 999,
@@ -401,11 +405,18 @@ export default function LoginPage() {
                 fontWeight: 700,
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.6 : 1,
+                cursor: loading || signedIn ? 'not-allowed' : 'pointer',
+                opacity: loading && !signedIn ? 0.6 : 1,
+                transition: 'background-color 0.2s',
               }}
             >
-              {loading ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+              {signedIn
+                ? 'Logged in ✓ Redirecting…'
+                : loading
+                ? 'Please wait…'
+                : mode === 'signin'
+                ? 'Sign in'
+                : 'Create account'}
             </button>
           </form>
 
