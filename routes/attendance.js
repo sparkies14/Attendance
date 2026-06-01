@@ -109,6 +109,18 @@ router.post('/', async (req, res) => {
     return res.json({ success: true, message: '🏖️ Leave request submitted! Manager will review shortly.' });
   }
 
+  if (action === 'cancel-leave') {
+    const { leave_id } = req.body || {};
+    if (!leave_id) return res.status(400).json({ error: 'leave_id is required.' });
+    const { data: leave } = await supabase.from('leave_log').select('id, email, status').eq('id', leave_id).maybeSingle();
+    if (!leave) return res.status(404).json({ error: 'Leave request not found.' });
+    if (leave.email !== email) return res.status(403).json({ error: 'Not your leave request.' });
+    if (leave.status !== 'Pending') return res.status(400).json({ error: 'Only pending requests can be cancelled.' });
+    const { error } = await supabase.from('leave_log').delete().eq('id', leave_id);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ success: true, message: 'Leave request cancelled.' });
+  }
+
   if (action === 'lunch-out') {
     const { error } = await supabase.from('lunch_log').insert({
       name: officialName, date, lunch_out: local_time, lunch_in: '', duration_mins: 0,

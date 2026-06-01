@@ -111,6 +111,26 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
     finally  { setAppealLoading(false); }
   }
 
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  async function cancelLeave(leaveId: string) {
+    setCancellingId(leaveId);
+    try {
+      const res  = await clientFetch(`${apiUrl}/webhook/attendance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel-leave', leave_id: leaveId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setHistory(prev => prev.filter(r => r.id !== leaveId));
+      } else {
+        alert(data.error ?? 'Could not cancel.');
+      }
+    } catch { alert('Network error.'); }
+    finally  { setCancellingId(null); }
+  }
+
   function fetchLeaveHistory() {
     const jst = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
     const month = jst.getMonth() + 1;
@@ -339,8 +359,19 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
                       <span style={{ fontFamily: F_MONO, fontSize: 10, color: C.accent, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Pending review</span>
                       <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3 }}>{fmtShort(r.date)}</span>
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{r.leaveType}</div>
-                    {r.reason && <div style={{ fontSize: 12, color: C.text2, marginTop: 2 }}>{r.reason}</div>}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{r.leaveType}</div>
+                        {r.reason && <div style={{ fontSize: 12, color: C.text2, marginTop: 2 }}>{r.reason}</div>}
+                      </div>
+                      <button
+                        onClick={() => cancelLeave(r.id)}
+                        disabled={cancellingId === r.id}
+                        style={{ padding: '4px 10px', background: 'transparent', border: `1px solid ${C.redBorder}`, borderRadius: 6, fontFamily: F_MONO, fontSize: 10, color: C.red, cursor: cancellingId === r.id ? 'not-allowed' : 'pointer', opacity: cancellingId === r.id ? 0.5 : 1, whiteSpace: 'nowrap' }}
+                      >
+                        {cancellingId === r.id ? '…' : 'Cancel'}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -412,6 +443,15 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
                             )}
                             {appealDone.has(r.id) && (
                               <span style={{ fontFamily: F_MONO, fontSize: 10, color: C.green }}>Appealed ✓</span>
+                            )}
+                            {r.status === 'Pending' && (
+                              <button
+                                onClick={() => cancelLeave(r.id)}
+                                disabled={cancellingId === r.id}
+                                style={{ padding: '2px 9px', borderRadius: 999, background: 'transparent', border: `1px solid ${C.redBorder}`, fontFamily: F_MONO, fontSize: 10, color: C.red, cursor: cancellingId === r.id ? 'not-allowed' : 'pointer', opacity: cancellingId === r.id ? 0.5 : 1, whiteSpace: 'nowrap' }}
+                              >
+                                {cancellingId === r.id ? '…' : 'Cancel'}
+                              </button>
                             )}
                           </div>
                         </div>

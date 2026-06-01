@@ -117,6 +117,7 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
   const [data2, setData2] = useState<MemberData | null>(null);
   const [busy,  setBusy]  = useState(false);
   const [periodOffset, setPeriodOffset] = useState(0);
+  const [showAllLedger, setShowAllLedger] = useState(false);
 
   const jst = getJST();
   const pp  = shiftedPayPeriod(jst.year, jst.month, jst.day, periodOffset);
@@ -236,7 +237,8 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
   const dayOfPeriod = countWorkDays(pp.startYear, pp.startMonth, 25, jst.year, jst.month, jst.day);
   const startLabel  = `${MONTHS_SHORT[pp.startMonth-1]} 25`;
   const endLabel    = `${MONTHS_SHORT[pp.endMonth-1]} 24`;
-  const ledgerDays  = allWDs.filter(d => d <= today).slice(-10);
+  const ledgerAllDays = allWDs.filter(d => d <= today);
+  const ledgerDays    = showAllLedger ? ledgerAllDays : ledgerAllDays.slice(-10);
 
   const hFull = Math.floor(hoursThisPeriod);
   const mPart = Math.round((hoursThisPeriod - hFull) * 60);
@@ -382,9 +384,19 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
             <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text, letterSpacing: '-0.015em' }}>Daily ledger</div>
             <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 3 }}>Day-by-day hours · this period</div>
           </div>
-          <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.04em' }}>
-            8h at 80% ▏ mark
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.04em' }}>
+              8h at 80% ▏ mark
+            </span>
+            {ledgerAllDays.length > 10 && (
+              <button
+                onClick={() => setShowAllLedger(v => !v)}
+                style={{ padding: '4px 10px', background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F_MONO, fontSize: 10.5, color: C.text2, cursor: 'pointer', letterSpacing: '0.04em' }}
+              >
+                {showAllLedger ? `Show last 10` : `Show all ${ledgerAllDays.length}`}
+              </button>
+            )}
+          </div>
         </div>
 
         {ledgerDays.length === 0 && <p style={{ fontSize: 12.5, color: C.text3 }}>No data for this period yet.</p>}
