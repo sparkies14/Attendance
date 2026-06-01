@@ -56,7 +56,10 @@ app.use('/webhook/approve',     require('./routes/approve'));
 // DEV ONLY — Remove this line and routes/devReset.js to disable
 app.use('/webhook/dev/reset-today', require('./routes/devReset'));
 
+app.use('/discord/link', require('./routes/discordLink').router);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Attendance server running on http://localhost:${PORT}`));
 
 require('./lib/cron').registerCron();
+require('./lib/discordBot').initDiscordBot();

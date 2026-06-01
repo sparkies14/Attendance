@@ -223,13 +223,14 @@ router.post('/google', async (req, res) => {
 
 router.get('/me', requireAuth, async (req, res) => {
   const { data: user, error } = await supabase
-    .from('users').select('id, email, name, role, status, google_sub, password_hash').eq('id', req.user.user_id).maybeSingle();
+    .from('users').select('id, email, name, role, status, google_sub, password_hash, discord_id').eq('id', req.user.user_id).maybeSingle();
   if (error) return res.status(500).json({ error: 'Database error.' });
   if (!user) return res.status(404).json({ error: 'User not found.' });
   return res.json({
     id: user.id, email: user.email, name: user.name, role: user.role, status: user.status,
     hasPassword: !!user.password_hash,
     hasGoogle: !!user.google_sub,
+    hasDiscord: !!user.discord_id,
   });
 });
 
