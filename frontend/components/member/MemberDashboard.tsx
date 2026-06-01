@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import DevResetButton from '@/components/dev/DevResetButton'; // DEV ONLY — remove this line and its usage below
 import HomePage from './pages/HomePage';
 import CalendarPage from './pages/CalendarPage';
 import LeavePage from './pages/LeavePage';
@@ -160,7 +161,7 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
 
   const dateStr = `${DAYS_LONG[jst.getDay()]}, ${MONTHS_LONG[jst.getMonth()]} ${jst.getDate()} · Week ${week}`;
 
-  return (
+  return (<>
     <div style={{ display: 'flex', height: '100vh', fontFamily: F_SANS, overflow: 'hidden', background: C.bg, color: C.text }}>
 
       {/* ── Sidebar (always dark) ── */}
@@ -266,5 +267,7 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
         </div>
       </div>
     </div>
-  );
+    {/* DEV ONLY — remove this line and the import above to disable */}
+    <DevResetButton apiUrl={apiUrl} defaultEmail={user.email} onReset={() => window.location.reload()} />
+  </>);
 }

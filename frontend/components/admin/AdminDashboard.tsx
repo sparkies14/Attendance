@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import DevResetButton from '@/components/dev/DevResetButton'; // DEV ONLY — remove this line and its usage below
 import AttendancePage from './pages/AttendancePage';
 import ApprovalsPage from './pages/ApprovalsPage';
 import CalendarPage from './pages/CalendarPage';
@@ -147,7 +148,7 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
   // Suppress unused variable warnings for style constants
   void F_SERIF;
 
-  return (
+  return (<>
     <div style={{ display: 'flex', height: '100vh', fontFamily: F_SANS, background: C.bg, color: C.text, overflow: 'hidden' }}>
 
       {/* ── Sidebar ── */}
@@ -254,5 +255,7 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
         </div>
       </div>
     </div>
-  );
+    {/* DEV ONLY — remove this line and the import above to disable */}
+    <DevResetButton apiUrl={apiUrl} onReset={() => window.location.reload()} />
+  </>);
 }
