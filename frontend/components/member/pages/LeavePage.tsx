@@ -102,8 +102,9 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
       else {
         setFormMsg('Leave request submitted.');
         setLeaveDate(''); setLeaveReason(''); setShowForm(false);
-        const r = await clientFetch(`${apiUrl}/leaves?email=${encodeURIComponent(email)}`, { });
-        if (r.ok) { const d = await r.json(); setHistory(d?.leaves ?? d?.leaveHistory ?? d ?? history); }
+        const jst2 = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+        const r = await clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${jst2.getMonth() + 1}&year=${jst2.getFullYear()}`, {});
+        if (r.ok) { const d = await r.json(); if (d?.leaveHistory) setHistory(d.leaveHistory); }
       }
     } catch { setFormErr('Network error.'); }
     finally  { setFormLoading(false); }

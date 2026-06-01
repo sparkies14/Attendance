@@ -222,7 +222,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     if (!today?.dateISO) return;
     setAppealLoading(true); setAppealMsg(null); setAppealErr(null);
     try {
-      const res  = await clientFetch(`${apiUrl}/webhook/appeals`, {
+      const res  = await clientFetch(`${apiUrl}/appeals`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target_type: 'attendance', target_id: today.dateISO, reason: appealReason }),
