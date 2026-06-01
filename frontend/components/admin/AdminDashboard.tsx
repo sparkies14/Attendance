@@ -139,7 +139,7 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
       const jst = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
       setJstClock(`${String(jst.getHours()).padStart(2,'0')}:${String(jst.getMinutes()).padStart(2,'0')}:${String(jst.getSeconds()).padStart(2,'0')}`);
       const loc = new Date();
-      setLocalClock(`${String(loc.getHours()).padStart(2,'0')}:${String(loc.getMinutes()).padStart(2,'0')}`);
+      setLocalClock(`${String(loc.getHours()).padStart(2,'0')}:${String(loc.getMinutes()).padStart(2,'0')}:${String(loc.getSeconds()).padStart(2,'0')}`);
     }
     tick();
     const id = setInterval(tick, 1000);
@@ -168,6 +168,8 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const dateStr = `${DAYS[jst.getDay()]}, ${MONTHS[jst.getMonth()]} ${jst.getDate()}`;
+  const loc = new Date();
+  const localDateStr = `${DAYS[loc.getDay()]}, ${MONTHS[loc.getMonth()]} ${loc.getDate()}`;
 
   // Suppress unused variable warnings for style constants
   void F_SERIF;
@@ -225,8 +227,8 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
             <div style={{ width: 1, background: C.sidebarBorder, alignSelf: 'stretch' }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: F_MONO, fontSize: 9, color: C.sidebarText, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Local</div>
-              <div style={{ fontFamily: F_MONO, fontSize: 13, color: C.sidebarText, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.01em', marginTop: 4 }}>{localClock || '--:--'}</div>
-              <div style={{ fontFamily: F_MONO, fontSize: 10, color: '#525252', marginTop: 1 }}>Browser time</div>
+              <div style={{ fontFamily: F_MONO, fontSize: 16, color: '#fafafa', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', marginTop: 2 }}>{localClock || '--:--:--'}</div>
+              <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, marginTop: 1 }}>{localDateStr}</div>
             </div>
           </div>
         </div>
