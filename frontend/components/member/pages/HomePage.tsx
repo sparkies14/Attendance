@@ -121,6 +121,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   const notIn           = !today || today.clockIn === '-';
   const working         = !!today && today.clockIn !== '-' && today.clockOut === '-' && !pendingApproval && !rejected;
   const done            = !!today && today.clockIn !== '-' && today.clockOut !== '-';
+  const todayIsWeekend  = getJST().raw.getDay() === 0 || getJST().raw.getDay() === 6;
 
   useEffect(() => {
     if (!working) return;
@@ -180,6 +181,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
       if (!res.ok) { setErr(data.error ?? 'Action failed.'); }
       else {
         setMsg(data.message ?? 'Done.');
+        setTimeout(() => setMsg(null), 4_000);
         setManualReason('');
         await refreshData();
       }
@@ -214,7 +216,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
       const res  = await clientFetch(`${apiUrl}/webhook/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'leave', date: leaveDate, leave_type: leaveType, reason: leaveReason }) });
       const data = await res.json();
       if (!res.ok) { setLErr(data.error ?? 'Request failed.'); }
-      else { setLMsg('Leave request submitted.'); setLeaveDate(''); setLeaveReason(''); }
+      else { setLMsg('Leave request submitted.'); setTimeout(() => setLMsg(null), 4_000); setLeaveDate(''); setLeaveReason(''); }
     } catch { setLErr('Network error.'); }
     finally  { setLLoading(false); }
   }
@@ -283,18 +285,20 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
 
           {/* Status badge */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-            {notIn            && <StatusBadge bg={C.surface2}   color={C.text3}   dot={C.text3}>Not clocked in</StatusBadge>}
-            {pendingApproval  && <StatusBadge bg={C.accentSoft} color={C.accent}  dot={C.accent} pulse>Awaiting approval</StatusBadge>}
-            {rejected         && <StatusBadge bg={C.redSoft}    color={C.red}     dot={C.red}>Rejected</StatusBadge>}
-            {working          && <StatusBadge bg={C.greenSoft}  color={C.green}   dot={C.green} pulse>Working</StatusBadge>}
-            {done             && <StatusBadge bg={C.blueSoft}   color={C.blue}    dot={C.blue}>Done for today</StatusBadge>}
-            {onLunch && working && <StatusBadge bg={C.accentSoft} color={C.accent} dot={C.accent}>On lunch</StatusBadge>}
-            {onBreak && working && <StatusBadge bg={C.purpleSoft} color={C.purple} dot={C.purple}>On break</StatusBadge>}
+            {notIn && !todayIsWeekend && <StatusBadge bg={C.surface2}   color={C.text3}   dot={C.text3}>Not clocked in</StatusBadge>}
+            {notIn && todayIsWeekend  && <StatusBadge bg={C.purpleSoft} color={C.purple}  dot={C.purple}>Weekend</StatusBadge>}
+            {pendingApproval          && <StatusBadge bg={C.accentSoft} color={C.accent}  dot={C.accent} pulse>Awaiting approval</StatusBadge>}
+            {rejected                 && <StatusBadge bg={C.redSoft}    color={C.red}     dot={C.red}>Rejected</StatusBadge>}
+            {working                  && <StatusBadge bg={C.greenSoft}  color={C.green}   dot={C.green} pulse>Working</StatusBadge>}
+            {done                     && <StatusBadge bg={C.blueSoft}   color={C.blue}    dot={C.blue}>Done for today</StatusBadge>}
+            {onLunch && working       && <StatusBadge bg={C.accentSoft} color={C.accent}  dot={C.accent}>On lunch</StatusBadge>}
+            {onBreak && working       && <StatusBadge bg={C.purpleSoft} color={C.purple}  dot={C.purple}>On break</StatusBadge>}
           </div>
 
           {/* Serif status headline */}
           <div style={{ fontFamily: F_SERIF, fontSize: 36, lineHeight: 1.05, letterSpacing: '-0.02em', color: C.text, marginBottom: 6 }}>
-            {notIn   && 'Ready to start your day.'}
+            {notIn && !todayIsWeekend && 'Ready to start your day.'}
+            {notIn && todayIsWeekend  && <><span style={{ fontStyle: 'normal' }}>It&apos;s the weekend — </span><span style={{ fontStyle: 'italic' }}>enjoy your time off.</span></>}
             {pendingApproval && <><span style={{ fontStyle: 'normal' }}>Clock-in </span><span style={{ fontStyle: 'italic' }}>pending approval.</span></>}
             {rejected        && <><span style={{ fontStyle: 'normal' }}>Manual clock-in </span><span style={{ fontStyle: 'italic' }}>was rejected.</span></>}
             {working && (
@@ -348,7 +352,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
           )}
 
           {/* Auto / Manual toggle */}
-          {notIn && (
+          {notIn && !todayIsWeekend && (
             <div style={{ marginBottom: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Entry</span>
@@ -386,7 +390,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
 
           {/* Action buttons */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            {notIn && (
+            {notIn && !todayIsWeekend && (
               <ActionBtn onClick={clockIn} disabled={loading} primary>Clock in</ActionBtn>
             )}
             {rejected && today && (
@@ -514,6 +518,24 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
 
       {/* ── Right column ── */}
       <div style={{ width: 256, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+        {/* Pending anatomy — shown while awaiting admin approval */}
+        {pendingApproval && today && (
+          <div style={{ background: C.surface, border: `1px solid ${C.accentBorder}`, borderRadius: 14, padding: '20px 22px' }}>
+            <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.accent, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Pending review</div>
+            {[
+              { lbl: 'Submitted', val: today.clockIn !== '-' ? today.clockIn : '—', tint: C.accent },
+              { lbl: 'Entry',     val: 'Manual',                                    tint: C.text2  },
+              { lbl: 'Status',    val: 'Awaiting approval',                         tint: C.accent },
+              { lbl: 'Timer',     val: 'Starts once approved',                      tint: C.text3  },
+            ].map(({ lbl, val, tint }) => (
+              <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '6px 0', borderBottom: `1px solid ${C.border}` }}>
+                <span style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.04em' }}>{lbl}</span>
+                <span style={{ fontFamily: F_MONO, fontSize: 12.5, color: tint, fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>{val}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Today's anatomy */}
         {(working || done) && today && (
