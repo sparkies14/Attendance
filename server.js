@@ -46,6 +46,7 @@ app.use('/reports',    require('./routes/reports'));
 app.use('/admin', require('./routes/adminTardy'));
 app.use('/admin', require('./routes/adminHolidays'));
 app.use('/admin', require('./routes/adminPolicyConfig'));
+app.use('/holidays', require('./routes/holidays'));
 app.use('/member', require('./routes/adminTardy'));
 
 app.use('/webhook/attendance',  require('./routes/attendance'));
