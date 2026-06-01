@@ -86,6 +86,8 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
   const [appErr,  setAppErr]  = useState<string | null>(null);
   const [appBusy, setAppBusy] = useState(false);
 
+  const [holidays, setHolidays] = useState<{ date: string; name: string }[]>([]);
+
   // Plan events state
   const [planDate,     setPlanDate]     = useState(todayISO);
   const [events,       setEvents]       = useState<PlanEvent[]>([]);
@@ -100,6 +102,15 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
   const [showAddForm,  setShowAddForm]  = useState(false);
 
   useEffect(() => { fetchEvents(todayISO); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    let cancelled = false;
+    clientFetch(`${apiUrl}/holidays/mine?year=${year}`)
+      .then(r => r.ok ? r.json() : { holidays: [] })
+      .then(d => { if (!cancelled) setHolidays(Array.isArray(d.holidays) ? d.holidays : []); })
+      .catch(() => { if (!cancelled) setHolidays([]); });
+    return () => { cancelled = true; };
+  }, [apiUrl, year]);
 
   async function navigate(m: number, y: number) {
     setNavErr(null); setBusy(true); setSelected(null); setAppDay(null);
@@ -190,6 +201,16 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
   const attRate     = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
   const reiwa       = reiwaYear(year);
   const doneCount   = events.filter(e => e.completed).length;
+
+  const holidayByDay: Record<number, string> = {};
+  for (const h of holidays) {
+    const [hy, hm, hd] = h.date.split('-').map(Number);
+    if (hy === year && hm === month) holidayByDay[hd] = h.name;
+  }
+  const monthHolidays = holidays.filter(h => {
+    const [hy, hm] = h.date.split('-').map(Number);
+    return hy === year && hm === month;
+  });
 
   function handleDayClick(cell: CalendarDay) {
     if (cell.isWeekend) return;
@@ -329,6 +350,9 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                     )}
                     {!cell.isWeekend && (data?.planEventsByDate?.[iso] ?? 0) > 0 && (
                       <div style={{ position: 'absolute', bottom: 5, right: 6, width: 5, height: 5, borderRadius: '50%', background: isToday ? 'rgba(255,255,255,0.6)' : C.purple }} />
+                    )}
+                    {holidayByDay[cell.day] && (
+                      <span title={holidayByDay[cell.day]} style={{ position: 'absolute', top: 4, right: 4, width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }} />
                     )}
                   </div>
                 );
@@ -568,6 +592,18 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                 </div>
               )}
             </>
+          )}
+
+          {monthHolidays.length > 0 && (
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 14px', marginTop: 12 }}>
+              <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>Holidays</div>
+              {monthHolidays.map((h, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'baseline', padding: '4px 0' }}>
+                  <span style={{ fontFamily: F_MONO, fontSize: 11, color: '#dc2626', minWidth: 56 }}>{h.date.slice(5)}</span>
+                  <span style={{ fontFamily: F_SANS, fontSize: 12.5, color: C.text }}>{h.name}</span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
