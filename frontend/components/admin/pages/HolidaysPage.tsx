@@ -19,7 +19,7 @@ const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Rom
 const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
 const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
-interface Holiday { id: number; date: string; name: string; country: string; }
+interface Holiday { id: number; date: string; name: string; country: string; source?: string; }
 
 const MOCK: Holiday[] = [
   { id: 1, date: '2026-01-01', name: "New Year's Day",  country: 'PH' },
@@ -39,6 +39,18 @@ export default function HolidaysPage({ apiUrl, adminRole }: Props) {
   const [addBusy,    setAddBusy]    = useState(false);
   const [addErr,     setAddErr]     = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const SYNC_COUNTRIES = [
+    { code: 'PH', name: 'Philippines' }, { code: 'JP', name: 'Japan' },
+    { code: 'TH', name: 'Thailand' },    { code: 'MM', name: 'Myanmar' },
+    { code: 'IN', name: 'India' },       { code: 'BD', name: 'Bangladesh' },
+    { code: 'MY', name: 'Malaysia' },
+  ];
+  const [syncCountry, setSyncCountry] = useState('PH');
+  const [syncYear,    setSyncYear]    = useState(new Date().getFullYear());
+  const [syncBusy,    setSyncBusy]    = useState(false);
+  const [syncMsg,     setSyncMsg]     = useState<string | null>(null);
+  const [syncErr,     setSyncErr]     = useState<string | null>(null);
 
   const isOwner = adminRole === 'owner';
   const inp: React.CSSProperties = { padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, color: C.text, background: C.bg, boxSizing: 'border-box' };
@@ -62,6 +74,29 @@ export default function HolidaysPage({ apiUrl, adminRole }: Props) {
       else        { setAddErr(data.error ?? 'Failed to add holiday.'); }
     } catch { setAddErr('Network error.'); }
     finally { setAddBusy(false); }
+  }
+
+  async function syncHolidays() {
+    setSyncBusy(true); setSyncMsg(null); setSyncErr(null);
+    try {
+      const res = await clientFetch(`${apiUrl}/admin/holidays/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ country: syncCountry, year: syncYear }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSyncMsg(`Imported ${data.imported} holiday${data.imported === 1 ? '' : 's'} for ${syncCountry} ${syncYear}.`);
+        const list = await clientFetch(`${apiUrl}/admin/holidays`).then(r => r.json());
+        setHolidays(list?.holidays ?? []);
+      } else {
+        setSyncErr(data.error ?? 'Sync failed.');
+      }
+    } catch {
+      setSyncErr('Network error.');
+    } finally {
+      setSyncBusy(false);
+    }
   }
 
   async function deleteHoliday(id: number) {
@@ -93,6 +128,27 @@ export default function HolidaysPage({ apiUrl, adminRole }: Props) {
         ))}
       </div>
 
+      {/* Sync panel */}
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px 16px', marginBottom: 16 }}>
+        <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 10 }}>
+          Sync official holidays
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <select value={syncCountry} onChange={e => setSyncCountry(e.target.value)}
+            style={{ padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F_SANS, fontSize: 13, color: C.text, background: C.surface }}>
+            {SYNC_COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name} ({c.code})</option>)}
+          </select>
+          <input type="number" value={syncYear} onChange={e => setSyncYear(parseInt(e.target.value, 10) || syncYear)}
+            style={{ padding: '7px 10px', width: 90, border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F_MONO, fontSize: 13, color: C.text, background: C.surface }} />
+          <button onClick={syncHolidays} disabled={syncBusy}
+            style={{ padding: '7px 14px', background: C.text, color: C.surface, border: 'none', borderRadius: 8, fontFamily: F_SANS, fontSize: 13, fontWeight: 500, cursor: syncBusy ? 'not-allowed' : 'pointer', opacity: syncBusy ? 0.6 : 1 }}>
+            {syncBusy ? 'Syncing…' : 'Sync'}
+          </button>
+          {syncMsg && <span style={{ fontFamily: F_MONO, fontSize: 11, color: '#16a34a' }}>{syncMsg}</span>}
+          {syncErr && <span style={{ fontFamily: F_MONO, fontSize: 11, color: '#dc2626' }}>{syncErr}</span>}
+        </div>
+      </div>
+
       {/* Table */}
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
         {busy && <div style={{ padding: 24, fontFamily: F_MONO, fontSize: 12, color: C.text3 }}>Loading…</div>}
@@ -110,7 +166,15 @@ export default function HolidaysPage({ apiUrl, adminRole }: Props) {
               {visible.map((h, i) => (
                 <tr key={h.id} style={{ borderBottom: i < visible.length - 1 ? `1px solid ${C.border}` : 'none' }}>
                   <td style={{ padding: '11px 16px', fontFamily: F_MONO, fontSize: 12.5, color: C.text2 }}>{h.date}</td>
-                  <td style={{ padding: '11px 16px', fontSize: 13, color: C.text, fontWeight: 500 }}>{h.name}</td>
+                  <td style={{ padding: '11px 16px', fontSize: 13, color: C.text, fontWeight: 500 }}>
+                    {h.name}
+                    <span style={{ marginLeft: 8, padding: '1px 7px', borderRadius: 999, fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.06em',
+                      background: h.source === 'auto' ? '#f5f5f5' : 'rgba(37,99,235,0.08)',
+                      color: h.source === 'auto' ? '#737373' : '#2563eb',
+                      border: `1px solid ${h.source === 'auto' ? '#e6e6e6' : 'rgba(37,99,235,0.22)'}` }}>
+                      {h.source === 'auto' ? 'AUTO' : 'MANUAL'}
+                    </span>
+                  </td>
                   <td style={{ padding: '11px 16px', fontFamily: F_MONO, fontSize: 13 }}>{FLAG[h.country] ?? h.country} {h.country}</td>
                   {isOwner && (
                     <td style={{ padding: '11px 16px', textAlign: 'right' }}>
