@@ -28,10 +28,12 @@ const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, 
 const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 const STATUS_COLOR: Record<string, string> = {
-  present: '#16a34a',
-  late:    '#b45309',
-  absent:  '#dc2626',
-  leave:   '#7c3aed',
+  present:  '#16a34a',
+  late:     '#b45309',
+  absent:   '#dc2626',
+  leave:    '#7c3aed',
+  pending:  '#b45309',
+  rejected: '#dc2626',
 };
 
 const LEAVE_TYPES = ['Vacation', 'Sick', 'Personal', 'Other'];
@@ -98,6 +100,13 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   const [isLate,     setIsLate]    = useState(false);
   const [manualReason, setManualReason] = useState('');
 
+  // Appeal form (for rejected manual clock-in)
+  const [appealReason,    setAppealReason]    = useState('');
+  const [appealLoading,   setAppealLoading]   = useState(false);
+  const [appealMsg,       setAppealMsg]       = useState<string | null>(null);
+  const [appealErr,       setAppealErr]       = useState<string | null>(null);
+  const [appealSubmitted, setAppealSubmitted] = useState(false);
+
   // Leave form
   const [leaveDate,   setLeaveDate]   = useState('');
   const [leaveType,   setLeaveType]   = useState(LEAVE_TYPES[0]);
@@ -106,9 +115,11 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   const [lMsg,        setLMsg]        = useState<string | null>(null);
   const [lErr,        setLErr]        = useState<string | null>(null);
 
-  const notIn   = !today || today.clockIn === '-';
-  const working = !!today && today.clockIn !== '-' && today.clockOut === '-';
-  const done    = !!today && today.clockIn !== '-' && today.clockOut !== '-';
+  const pendingApproval = !!today && today.status === 'pending' && today.entryType === 'manual';
+  const rejected        = !!today && today.status === 'rejected';
+  const notIn           = !today || today.clockIn === '-';
+  const working         = !!today && today.clockIn !== '-' && today.clockOut === '-' && !pendingApproval;
+  const done            = !!today && today.clockIn !== '-' && today.clockOut !== '-';
 
   useEffect(() => {
     if (!working) return;
@@ -194,6 +205,28 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     finally  { setLLoading(false); }
   }
 
+  async function submitAppeal(e: React.FormEvent) {
+    e.preventDefault();
+    if (!today?.dateISO) return;
+    setAppealLoading(true); setAppealMsg(null); setAppealErr(null);
+    try {
+      const res  = await clientFetch(`${apiUrl}/webhook/appeals`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target_type: 'attendance', target_id: today.dateISO, reason: appealReason }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAppealErr(res.status === 409 ? 'Appeal already submitted.' : (data.error ?? 'Request failed.'));
+      } else {
+        setAppealMsg('Appeal submitted — admin will review.');
+        setAppealSubmitted(true);
+        setAppealReason('');
+      }
+    } catch { setAppealErr('Network error.'); }
+    finally  { setAppealLoading(false); }
+  }
+
   const hoursWorked = working
     ? (today?.accumulatedHours ?? 0) + elapsed / 3600
     : done
@@ -237,9 +270,11 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
 
           {/* Status badge */}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-            {notIn   && <StatusBadge bg={C.surface2} color={C.text3} dot={C.text3}>Not clocked in</StatusBadge>}
-            {working && <StatusBadge bg={C.greenSoft} color={C.green} dot={C.green} pulse>Working</StatusBadge>}
-            {done    && <StatusBadge bg={C.blueSoft}  color={C.blue}  dot={C.blue}>Done for today</StatusBadge>}
+            {notIn            && <StatusBadge bg={C.surface2}   color={C.text3}   dot={C.text3}>Not clocked in</StatusBadge>}
+            {pendingApproval  && <StatusBadge bg={C.accentSoft} color={C.accent}  dot={C.accent} pulse>Awaiting approval</StatusBadge>}
+            {rejected         && <StatusBadge bg={C.redSoft}    color={C.red}     dot={C.red}>Rejected</StatusBadge>}
+            {working          && <StatusBadge bg={C.greenSoft}  color={C.green}   dot={C.green} pulse>Working</StatusBadge>}
+            {done             && <StatusBadge bg={C.blueSoft}   color={C.blue}    dot={C.blue}>Done for today</StatusBadge>}
             {onLunch && working && <StatusBadge bg={C.accentSoft} color={C.accent} dot={C.accent}>On lunch</StatusBadge>}
             {onBreak && working && <StatusBadge bg={C.purpleSoft} color={C.purple} dot={C.purple}>On break</StatusBadge>}
           </div>
@@ -247,6 +282,8 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
           {/* Serif status headline */}
           <div style={{ fontFamily: F_SERIF, fontSize: 36, lineHeight: 1.05, letterSpacing: '-0.02em', color: C.text, marginBottom: 6 }}>
             {notIn   && 'Ready to start your day.'}
+            {pendingApproval && <><span style={{ fontStyle: 'normal' }}>Clock-in </span><span style={{ fontStyle: 'italic' }}>pending approval.</span></>}
+            {rejected        && <><span style={{ fontStyle: 'normal' }}>Manual clock-in </span><span style={{ fontStyle: 'italic' }}>was rejected.</span></>}
             {working && (
               today!.accumulatedHours > 0
                 ? <><span style={{ fontStyle: 'normal' }}>Resumed at </span><span style={{ fontStyle: 'italic' }}>{today!.lastClockIn}.</span></>
@@ -254,6 +291,20 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
             )}
             {done    && <><span style={{ fontStyle: 'normal' }}>Done at </span><span style={{ fontStyle: 'italic' }}>{today!.clockOut}.</span></>}
           </div>
+
+          {/* Pending approval subtext */}
+          {pendingApproval && today && (
+            <div style={{ fontFamily: F_MONO, fontSize: 12, color: C.accent, letterSpacing: '0.04em', marginBottom: 22 }}>
+              Submitted at {today.clockIn} — waiting for admin review
+            </div>
+          )}
+
+          {/* Rejected subtext */}
+          {rejected && today && (
+            <div style={{ fontFamily: F_MONO, fontSize: 12, color: C.red, letterSpacing: '0.04em', marginBottom: 22 }}>
+              Submitted at {today.clockIn} — this entry was not approved
+            </div>
+          )}
 
           {/* Live timer or total */}
           {working && (
@@ -324,6 +375,42 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             {notIn && (
               <ActionBtn onClick={clockIn} disabled={loading} primary>Clock in</ActionBtn>
+            )}
+            {rejected && today && (
+              <div style={{ width: '100%' }}>
+                {appealMsg && (
+                  <div style={{ marginBottom: 10, padding: '8px 12px', background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 8, fontSize: 12.5, color: C.green }}>
+                    {appealMsg}
+                  </div>
+                )}
+                {appealErr && (
+                  <div style={{ marginBottom: 10, padding: '8px 12px', background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 8, fontSize: 12.5, color: C.red }}>
+                    {appealErr}
+                  </div>
+                )}
+                {!appealSubmitted && (
+                  <form onSubmit={submitAppeal}>
+                    <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>
+                      Appeal reason
+                    </label>
+                    <textarea
+                      value={appealReason}
+                      onChange={e => setAppealReason(e.target.value)}
+                      required
+                      rows={2}
+                      placeholder="Explain why this clock-in should be reconsidered…"
+                      style={{ width: '100%', padding: '8px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12.5, color: C.text, background: C.bg, boxSizing: 'border-box' as const, fontFamily: F_SANS, resize: 'vertical' as const, marginBottom: 8 }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={appealLoading}
+                      style={{ padding: '10px 20px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 9, fontSize: 13, fontFamily: F_SANS, fontWeight: 500, cursor: appealLoading ? 'not-allowed' : 'pointer', opacity: appealLoading ? 0.6 : 1 }}
+                    >
+                      {appealLoading ? 'Submitting…' : 'Submit appeal'}
+                    </button>
+                  </form>
+                )}
+              </div>
             )}
             {working && (
               <>
