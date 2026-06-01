@@ -388,7 +388,7 @@ function LeaveEmptyState() {
       <div style={{ width: 48, height: 48, borderRadius: '50%', background: C.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: C.text3 }}>✦</div>
       <div style={{ fontFamily: F_SERIF, fontSize: 22, color: C.text, letterSpacing: '-0.015em' }}>No pending leave requests</div>
       <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.04em', maxWidth: 300 }}>
-        Leave request data is not available in the current dashboard view.
+        There are no leave requests waiting for your decision right now.
       </div>
     </div>
   );
@@ -416,9 +416,6 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
   const leaveMode = filterKind === 'leave';
 
   const [selectedId, setSelectedId] = useState<string | null>(() => allRequests[0]?.id ?? null);
-  const [activeTab, setActiveTab] = useState<'all' | 'manual' | 'leave'>(
-    filterKind === 'leave' ? 'leave' : 'all'
-  );
   const [search, setSearch] = useState('');
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [note, setNote] = useState('');
@@ -438,22 +435,20 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
     });
   }, [activeRequests]);
 
-  // Filter by tab
-  const tabFiltered: RequestItem[] =
-    activeTab === 'all'    ? activeRequests :
-    activeTab === 'manual' ? activeRequests.filter(r => r.kind === 'manual') :
-                             activeRequests.filter(r => r.kind === 'leave');
+  // Each page is single-purpose: Approvals = manual clock-ins only,
+  // Leave requests = leave only. No overlap between the two views.
+  const scopedRequests = activeRequests.filter(r => r.kind === (leaveMode ? 'leave' : 'manual'));
 
   // Filter by search
   const searchLower = search.toLowerCase();
   const visible = search
-    ? tabFiltered.filter((r) =>
+    ? scopedRequests.filter((r) =>
         r.name.toLowerCase().includes(searchLower) ||
         r.reason.toLowerCase().includes(searchLower) ||
         r.date.toLowerCase().includes(searchLower) ||
         r.role.toLowerCase().includes(searchLower)
       )
-    : tabFiltered;
+    : scopedRequests;
 
   // Group by urgency
   const dueToday  = visible.filter((r) => r.urgency === 'today');
@@ -496,7 +491,7 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
     }
   }
 
-  const isLeaveTab = activeTab === 'leave';
+  const isLeaveTab = leaveMode;
   const leaveItems = activeRequests.filter(r => r.kind === 'leave');
 
   return (
@@ -513,7 +508,7 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
           <div style={{ fontFamily: F_MONO, fontSize: 11.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
             {leaveMode
               ? `${leaveCount} pending leave request${leaveCount !== 1 ? 's' : ''}`
-              : `${allRequests.length} pending · ${manualCount} manual clock-in${manualCount !== 1 ? 's' : ''} · ${leaveCount} leave request${leaveCount !== 1 ? 's' : ''}`}
+              : `${manualCount} pending clock-in approval${manualCount !== 1 ? 's' : ''}`}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -530,13 +525,13 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
       {/* ── Stat row ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
         <StatCard
-          label={leaveMode ? 'Leave awaiting you' : 'Awaiting you'}
-          value={String(leaveMode ? leaveCount : allRequests.length)}
-          sub={<>{leaveMode ? leaveCount : allRequests.length} due today</>}
-          icon="⏳"
-          tint={C.accent}
-          trend={(leaveMode ? leaveCount : allRequests.length) > 0 ? 'Oldest · today' : 'Nothing pending'}
-          trendAlert={(leaveMode ? leaveCount : allRequests.length) > 0}
+          label={leaveMode ? 'Leave awaiting you' : 'Clock-ins awaiting you'}
+          value={String(leaveMode ? leaveCount : manualCount)}
+          sub={<>{leaveMode ? leaveCount : manualCount} due today</>}
+          icon={leaveMode ? '⌇' : '⏳'}
+          tint={leaveMode ? C.blue : C.accent}
+          trend={(leaveMode ? leaveCount : manualCount) > 0 ? 'Oldest · today' : 'Nothing pending'}
+          trendAlert={(leaveMode ? leaveCount : manualCount) > 0}
         />
         <StatCard label="Approved · this week" value="—" sub={<>no data</>}       icon="✓" tint={C.green}  trend="—" />
         <StatCard label="Rejected · this week" value="—" sub={<>no data</>}       icon="✕" tint={C.red}    trend="—" />
@@ -551,39 +546,17 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
 
           {/* Queue header */}
           <div style={{ padding: '14px 16px', borderBottom: `1px solid ${C.border}` }}>
-            {/* Tab bar — hidden in dedicated leave-requests mode */}
-            {!leaveMode && (
-            <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
-              {([
-                { id: 'all'    as const, label: 'All',    count: activeRequests.length },
-                { id: 'manual' as const, label: 'Manual', count: manualCount },
-                { id: 'leave'  as const, label: 'Leave',  count: leaveCount },
-              ]).map((t) => {
-                const active = activeTab === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => setActiveTab(t.id)}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      padding: '5px 10px', borderRadius: 7,
-                      background: active ? C.text : 'transparent',
-                      color: active ? C.surface : C.text2,
-                      border: `1px solid ${active ? C.text : C.border}`,
-                      fontFamily: F_SANS, fontSize: 11.5, fontWeight: 500, cursor: 'pointer',
-                    }}
-                  >
-                    {t.label}
-                    <span style={{ fontFamily: F_MONO, fontSize: 10, opacity: 0.85 }}>{t.count}</span>
-                  </button>
-                );
-              })}
+            {/* Queue label + sort */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 10 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 7, background: C.text, color: C.surface, fontFamily: F_SANS, fontSize: 11.5, fontWeight: 500 }}>
+                {leaveMode ? 'Leave' : 'Clock-ins'}
+                <span style={{ fontFamily: F_MONO, fontSize: 10, opacity: 0.85 }}>{leaveMode ? leaveCount : manualCount}</span>
+              </span>
               <div style={{ flex: 1 }} />
               <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 7, background: C.surface2, color: C.text2, border: `1px solid ${C.border}`, fontFamily: F_MONO, fontSize: 11, letterSpacing: '0.04em', cursor: 'pointer' }}>
                 ⇅ Oldest first
               </button>
             </div>
-            )}
 
             {/* Search */}
             <div style={{ position: 'relative' }}>
