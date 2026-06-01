@@ -80,6 +80,37 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
   const [formErr,     setFormErr]     = useState<string | null>(null);
   const [showForm,    setShowForm]    = useState(false);
 
+  // Leave appeal state — keyed by leave record id
+  const [appealingId,  setAppealingId]  = useState<string | null>(null);
+  const [appealReason, setAppealReason] = useState('');
+  const [appealLoading,setAppealLoading]= useState(false);
+  const [appealDone,   setAppealDone]   = useState<Set<string>>(new Set());
+  const [appealMsg,    setAppealMsg]    = useState<string | null>(null);
+  const [appealErr,    setAppealErr]    = useState<string | null>(null);
+
+  async function submitLeaveAppeal(leaveId: string, e: React.FormEvent) {
+    e.preventDefault();
+    setAppealLoading(true); setAppealMsg(null); setAppealErr(null);
+    try {
+      const res  = await clientFetch(`${apiUrl}/appeals`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target_type: 'leave', target_id: leaveId, reason: appealReason }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAppealErr(res.status === 409 ? 'Appeal already submitted.' : (data.error ?? 'Request failed.'));
+      } else {
+        setAppealMsg('Appeal submitted — admin will review.');
+        setAppealDone(prev => new Set([...prev, leaveId]));
+        setAppealingId(null);
+        setAppealReason('');
+        setTimeout(() => setAppealMsg(null), 4_000);
+      }
+    } catch { setAppealErr('Network error.'); }
+    finally  { setAppealLoading(false); }
+  }
+
   function fetchLeaveHistory() {
     const jst = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
     const month = jst.getMonth() + 1;
@@ -358,17 +389,53 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
                         {fmtShort(r.date)}
                       </div>
                       {/* Card */}
-                      <div style={{ flex: 1, padding: '10px 14px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ width: 8, height: 8, borderRadius: '50%', background: typeColor(r.leaveType), display: 'inline-block', flexShrink: 0 }} />
-                          <div>
-                            <span style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{r.leaveType}</span>
-                            {r.reason && <span style={{ fontSize: 12, color: C.text3, marginLeft: 8 }}>— {r.reason}</span>}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ padding: '10px 14px', background: C.surface, border: `1px solid ${C.border}`, borderRadius: appealingId === r.id ? '10px 10px 0 0' : 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: typeColor(r.leaveType), display: 'inline-block', flexShrink: 0 }} />
+                            <div>
+                              <span style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{r.leaveType}</span>
+                              {r.reason && <span style={{ fontSize: 12, color: C.text3, marginLeft: 8 }}>— {r.reason}</span>}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 9px', borderRadius: 999, background: sc.bg, border: `1px solid ${sc.border}`, fontFamily: F_MONO, fontSize: 10, color: sc.text, letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
+                              {r.status}
+                            </span>
+                            {r.status === 'Rejected' && !appealDone.has(r.id) && (
+                              <button
+                                onClick={() => { setAppealingId(appealingId === r.id ? null : r.id); setAppealErr(null); setAppealReason(''); }}
+                                style={{ padding: '2px 9px', borderRadius: 999, background: 'transparent', border: `1px solid ${C.border}`, fontFamily: F_MONO, fontSize: 10, color: C.text3, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                              >
+                                {appealingId === r.id ? 'Cancel' : 'Appeal'}
+                              </button>
+                            )}
+                            {appealDone.has(r.id) && (
+                              <span style={{ fontFamily: F_MONO, fontSize: 10, color: C.green }}>Appealed ✓</span>
+                            )}
                           </div>
                         </div>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 9px', borderRadius: 999, background: sc.bg, border: `1px solid ${sc.border}`, fontFamily: F_MONO, fontSize: 10, color: sc.text, letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
-                          {r.status}
-                        </span>
+                        {appealingId === r.id && (
+                          <div style={{ padding: '12px 14px', background: C.surface2, border: `1px solid ${C.border}`, borderTop: 'none', borderRadius: '0 0 10px 10px' }}>
+                            {appealMsg && <div style={{ marginBottom: 8, fontSize: 12, color: C.green }}>{appealMsg}</div>}
+                            {appealErr && <div style={{ marginBottom: 8, fontSize: 12, color: C.red }}>{appealErr}</div>}
+                            <form onSubmit={e => submitLeaveAppeal(r.id, e)} style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                              <div style={{ flex: 1 }}>
+                                <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Appeal reason</label>
+                                <input
+                                  value={appealReason}
+                                  onChange={e => setAppealReason(e.target.value)}
+                                  required
+                                  placeholder="Why should this be reconsidered?"
+                                  style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 7, fontSize: 12.5, color: C.text, background: C.bg, fontFamily: F_SANS, boxSizing: 'border-box' as const }}
+                                />
+                              </div>
+                              <button type="submit" disabled={appealLoading} style={{ padding: '7px 14px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 7, fontSize: 12.5, fontFamily: F_SANS, fontWeight: 500, cursor: appealLoading ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+                                {appealLoading ? '…' : 'Submit'}
+                              </button>
+                            </form>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

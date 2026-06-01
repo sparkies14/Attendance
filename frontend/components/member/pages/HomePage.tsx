@@ -262,7 +262,8 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     const isNow  = usStr === todayUsStr;
     const hrs    = isNow && working ? hoursWorked : (rec && !rec.isWeekend ? parseFloat(String(rec.totalHours || 0)) || 0 : 0);
     const status = rec?.status ?? (isWeekend ? 'weekend' : '');
-    const tint   = isNow ? C.accent : (status === 'present' ? C.green : status === 'late' ? C.accent : status === 'absent' ? C.red : status === 'leave' ? C.purple : C.border);
+    const statusTint = status === 'present' ? C.green : status === 'late' ? C.accent : status === 'absent' ? C.red : status === 'leave' ? C.purple : C.border;
+    const tint   = isNow ? statusTint : statusTint;
     return { label, usStr, dateNum, monthLabel, isWeekend, isNow, rec, hrs, status, tint };
   });
 
