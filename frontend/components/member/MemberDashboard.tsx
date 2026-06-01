@@ -37,6 +37,8 @@ export interface CalendarDay {
   isWeekend: boolean;
   lastClockIn: string;
   accumulatedHours: number;
+  entryType?: string;     // 'manual' | 'auto'
+  dateISO?: string;       // YYYY-MM-DD, used for attendance appeal submission
 }
 
 export interface LeaveRecord {
