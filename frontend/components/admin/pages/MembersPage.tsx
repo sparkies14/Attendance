@@ -45,6 +45,7 @@ interface User {
   status: string;
   created_at: string;
   last_login_at?: string;
+  discord_id?: string | null;
 }
 
 // ── Role pill ────────────────────────────────────────────────────────────────
@@ -169,6 +170,33 @@ export default function MembersPage({ apiUrl, adminRole }: Props) {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [actionErr, setActionErr] = useState<string | null>(null);
+
+  // Discord ID edit state
+  const [discordEditId,  setDiscordEditId]  = useState<string | null>(null);
+  const [discordValue,   setDiscordValue]   = useState('');
+  const [discordLoading, setDiscordLoading] = useState(false);
+  const [discordMsg,     setDiscordMsg]     = useState<string | null>(null);
+  const [discordErr,     setDiscordErr]     = useState<string | null>(null);
+
+  async function saveDiscordId(userId: string) {
+    setDiscordLoading(true); setDiscordMsg(null); setDiscordErr(null);
+    try {
+      const res  = await clientFetch(`${apiUrl}/users/${userId}/discord`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ discord_id: discordValue.trim() || null }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, discord_id: discordValue.trim() || null } : u));
+        setDiscordMsg('Saved.');
+        setTimeout(() => { setDiscordMsg(null); setDiscordEditId(null); }, 2_000);
+      } else {
+        setDiscordErr(data.error ?? 'Save failed.');
+      }
+    } catch { setDiscordErr('Network error.'); }
+    finally { setDiscordLoading(false); }
+  }
 
   // ── Load users ──────────────────────────────────────────────────────────────
   const loadUsers = useCallback(async () => {
@@ -557,6 +585,39 @@ export default function MembersPage({ apiUrl, adminRole }: Props) {
                               {user.job_role}
                             </div>
                           )}
+                          {/* Discord ID inline editor */}
+                          <div style={{ marginTop: 4 }}>
+                            {discordEditId === user.id ? (
+                              <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
+                                <input
+                                  value={discordValue}
+                                  onChange={e => setDiscordValue(e.target.value)}
+                                  placeholder="18-digit Discord ID"
+                                  style={{ padding: '3px 7px', border: `1px solid ${C.border}`, borderRadius: 5, fontFamily: F_MONO, fontSize: 10.5, color: C.text, background: C.bg, width: 150 }}
+                                />
+                                <button onClick={() => saveDiscordId(user.id)} disabled={discordLoading}
+                                  style={{ padding: '3px 8px', background: C.green, color: '#fff', border: 'none', borderRadius: 5, fontFamily: F_MONO, fontSize: 10, cursor: discordLoading ? 'not-allowed' : 'pointer' }}>
+                                  {discordLoading ? '…' : 'Save'}
+                                </button>
+                                <button onClick={() => { setDiscordEditId(null); setDiscordErr(null); }}
+                                  style={{ padding: '3px 7px', background: 'transparent', color: C.text3, border: `1px solid ${C.border}`, borderRadius: 5, fontFamily: F_MONO, fontSize: 10, cursor: 'pointer' }}>
+                                  ✕
+                                </button>
+                                {discordMsg && <span style={{ fontFamily: F_MONO, fontSize: 10, color: C.green }}>{discordMsg}</span>}
+                                {discordErr && <span style={{ fontFamily: F_MONO, fontSize: 10, color: C.red }}>{discordErr}</span>}
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ fontFamily: F_MONO, fontSize: 10, color: user.discord_id ? C.text3 : C.text3 }}>
+                                  {user.discord_id ? `Discord: ${user.discord_id}` : 'Discord: —'}
+                                </span>
+                                <button onClick={() => { setDiscordEditId(user.id); setDiscordValue(user.discord_id ?? ''); setDiscordErr(null); }}
+                                  style={{ padding: '1px 6px', background: 'transparent', color: C.text3, border: `1px solid ${C.border}`, borderRadius: 4, fontFamily: F_MONO, fontSize: 9, cursor: 'pointer' }}>
+                                  Edit
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
