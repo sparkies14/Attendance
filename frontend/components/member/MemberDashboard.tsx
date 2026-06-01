@@ -16,6 +16,7 @@ export interface UserProfile {
   status: string;
   hasPassword: boolean;
   hasGoogle: boolean;
+  hasDiscord?: boolean;
 }
 
 export interface LeaveBalance {

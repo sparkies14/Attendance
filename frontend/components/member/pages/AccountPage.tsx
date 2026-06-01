@@ -46,6 +46,13 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
   const [gMsg,      setGMsg]      = useState<string | null>(null);
   const [gErr,      setGErr]      = useState<string | null>(null);
 
+  // Discord linking
+  const [discordCode,    setDiscordCode]    = useState('');
+  const [discordLoading, setDiscordLoading] = useState(false);
+  const [discordMsg,     setDiscordMsg]     = useState<string | null>(null);
+  const [discordErr,     setDiscordErr]     = useState<string | null>(null);
+  const [discordLinked,  setDiscordLinked]  = useState(!!user.hasDiscord);
+
   // Locale
   const [locale, setLocale] = useState('en');
 
@@ -134,6 +141,27 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
     document.cookie = `att_locale=${l};path=/;max-age=${60 * 60 * 24 * 365}`;
     setLocale(l);
     window.location.reload();
+  }
+
+  async function verifyDiscordLink(e: React.FormEvent) {
+    e.preventDefault();
+    setDiscordLoading(true); setDiscordMsg(null); setDiscordErr(null);
+    try {
+      const res  = await clientFetch(`${apiUrl}/discord/link/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: discordCode.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDiscordLinked(true);
+        setDiscordMsg('✅ Discord linked successfully!');
+        setDiscordCode('');
+      } else {
+        setDiscordErr(data.error ?? 'Invalid or expired code.');
+      }
+    } catch { setDiscordErr('Network error.'); }
+    finally { setDiscordLoading(false); }
   }
 
   return (
@@ -226,6 +254,45 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
             </button>
           )}
         </div>
+      </div>
+
+      {/* ── Discord card ── */}
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '24px 28px' }}>
+        <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text, letterSpacing: '-0.015em', marginBottom: 3 }}>Discord</div>
+        <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 22 }}>
+          {discordLinked ? 'Linked' : 'Clock in from Discord'}
+        </div>
+
+        {discordLinked ? (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 999, fontSize: 13, color: C.green, fontFamily: F_SANS, fontWeight: 500 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.green, display: 'inline-block' }} />
+            Discord linked — clock in by posting in #clock-in
+          </div>
+        ) : (
+          <>
+            <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, marginBottom: 16, lineHeight: 1.7 }}>
+              1. Type <span style={{ color: C.text, fontWeight: 600 }}>/link</span> in the Discord server<br />
+              2. The bot will DM you a 6-digit code<br />
+              3. Enter it below
+            </div>
+            {discordMsg && <div style={{ marginBottom: 10, padding: '8px 12px', background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 8, fontSize: 12.5, color: C.green }}>{discordMsg}</div>}
+            {discordErr && <div style={{ marginBottom: 10, padding: '8px 12px', background: C.redSoft,   border: `1px solid ${C.redBorder}`,   borderRadius: 8, fontSize: 12.5, color: C.red   }}>{discordErr}</div>}
+            <form onSubmit={verifyDiscordLink} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                value={discordCode}
+                onChange={e => setDiscordCode(e.target.value)}
+                required
+                placeholder="6-digit code"
+                maxLength={6}
+                style={{ padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F_MONO, fontSize: 14, color: C.text, background: C.bg, width: 130, letterSpacing: '0.15em', boxSizing: 'border-box' as const }}
+              />
+              <button type="submit" disabled={discordLoading}
+                style={{ padding: '8px 16px', background: '#5865F2', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontFamily: F_SANS, fontWeight: 500, cursor: discordLoading ? 'not-allowed' : 'pointer', opacity: discordLoading ? 0.6 : 1 }}>
+                {discordLoading ? 'Linking…' : 'Link Discord'}
+              </button>
+            </form>
+          </>
+        )}
       </div>
 
       {/* ── Preferences card ── */}
