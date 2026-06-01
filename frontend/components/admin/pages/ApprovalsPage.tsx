@@ -233,6 +233,7 @@ function DetailCard({ r, allItems, selectedIdx, onNav, note, onNoteChange, actio
   const init = initials(r.name);
   const firstName = r.name.split(' ')[0];
   const reasonWordCount = r.reason.split(/\s+/).length;
+  const isLeave = r.kind === 'leave';
 
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
@@ -248,9 +249,15 @@ function DetailCard({ r, allItems, selectedIdx, onNav, note, onNoteChange, actio
             <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.04em' }}>· {r.role}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 6, background: C.blueSoft, border: `1px solid ${C.blueBorder}`, color: C.blue, fontFamily: F_MONO, fontSize: 10.5, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              ⏱ manual · clock-in
-            </span>
+            {isLeave ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 6, background: C.blueSoft, border: `1px solid ${C.blueBorder}`, color: C.blue, fontFamily: F_MONO, fontSize: 10.5, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                ⌇ leave · request
+              </span>
+            ) : (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 6, background: C.accentSoft, border: `1px solid ${C.accentBorder}`, color: C.accent, fontFamily: F_MONO, fontSize: 10.5, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                ⏱ manual · clock-in
+              </span>
+            )}
             <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               Submitted {r.submitted}
             </span>
@@ -273,10 +280,21 @@ function DetailCard({ r, allItems, selectedIdx, onNav, note, onNoteChange, actio
 
       {/* Request body — 4-col KV */}
       <div style={{ padding: '20px 22px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, borderBottom: `1px solid ${C.border}` }}>
-        <KV k="Date" v={r.date} />
-        <KV k="Stamped time" v={r.time} accent />
-        <KV k="Entry type" v={r.entry} />
-        <KV k="Coverage" v="—" />
+        {isLeave ? (
+          <>
+            <KV k="Leave date" v={r.date} />
+            <KV k="Leave type" v={r.entry} accent />
+            <KV k="Status" v="Pending" />
+            <KV k="Coverage" v="—" />
+          </>
+        ) : (
+          <>
+            <KV k="Date" v={r.date} />
+            <KV k="Stamped time" v={r.time} accent />
+            <KV k="Entry type" v={r.entry} />
+            <KV k="Coverage" v="—" />
+          </>
+        )}
       </div>
 
       {/* Reason */}
@@ -290,58 +308,81 @@ function DetailCard({ r, allItems, selectedIdx, onNav, note, onNoteChange, actio
       {/* Context grid */}
       <div style={{ padding: '18px 22px', display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 18, borderBottom: `1px solid ${C.border}` }}>
 
-        {/* Recent pattern */}
-        <div>
-          <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>
-            {firstName}&apos;s recent pattern
+        {/* Left column — leave summary, or clock-in pattern for manual entries */}
+        {isLeave ? (
+          <div>
+            <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>
+              Time-off request
+            </div>
+            <div style={{ fontFamily: F_SERIF, fontSize: 26, color: C.text, letterSpacing: '-0.02em', lineHeight: 1 }}>{r.entry}</div>
+            <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', marginTop: 6 }}>Requested for {r.date}</div>
+            <div style={{ marginTop: 14, padding: '10px 12px', borderRadius: 8, background: C.surface2, border: `1px solid ${C.border}`, fontSize: 11.5, color: C.text2, lineHeight: 1.5 }}>
+              Approving records this as approved time off for {firstName}. There is no clock-in to validate on a leave request.
+            </div>
           </div>
+        ) : (
+          <div>
+            <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>
+              {firstName}&apos;s recent pattern
+            </div>
 
-          {/* 14-day strip */}
-          <div style={{ display: 'flex', gap: 3, marginBottom: 8 }}>
-            {(['on','on','on','on','wkend','wkend','on','on','on','on','on','wkend','wkend','on'] as const).map((s, i) => {
-              const tint = s === 'on' ? C.green : C.border;
-              return (
-                <div
-                  key={i}
-                  style={{ flex: 1, height: 22, borderRadius: 3, background: s === 'wkend' ? 'transparent' : tint, border: s === 'wkend' ? `1px dashed ${C.border}` : 'none', opacity: s === 'wkend' ? 0.4 : 1 }}
-                  title={`Day ${i + 1}`}
-                />
-              );
-            })}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: F_MONO, fontSize: 9.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            <span>2 weeks ago</span>
-            <span>Today</span>
-          </div>
+            {/* 14-day strip */}
+            <div style={{ display: 'flex', gap: 3, marginBottom: 8 }}>
+              {(['on','on','on','on','wkend','wkend','on','on','on','on','on','wkend','wkend','on'] as const).map((s, i) => {
+                const tint = s === 'on' ? C.green : C.border;
+                return (
+                  <div
+                    key={i}
+                    style={{ flex: 1, height: 22, borderRadius: 3, background: s === 'wkend' ? 'transparent' : tint, border: s === 'wkend' ? `1px dashed ${C.border}` : 'none', opacity: s === 'wkend' ? 0.4 : 1 }}
+                    title={`Day ${i + 1}`}
+                  />
+                );
+              })}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: F_MONO, fontSize: 9.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              <span>2 weeks ago</span>
+              <span>Today</span>
+            </div>
 
-          {/* Stats row */}
-          <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-            {[
-              { lbl: 'On time', v: '10', tint: C.green },
-              { lbl: 'Late',    v: '0',  tint: C.text2 },
-              { lbl: 'Absent',  v: '0',  tint: C.text2 },
-              { lbl: 'Hours',   v: '—',  tint: C.text },
-            ].map((s, i) => (
-              <div key={i} style={{ padding: '8px 10px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 8 }}>
-                <div style={{ fontFamily: F_MONO, fontSize: 9.5, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{s.lbl}</div>
-                <div style={{ fontFamily: F_SERIF, fontSize: 22, color: s.tint, letterSpacing: '-0.02em', lineHeight: 1, marginTop: 4 }}>{s.v}</div>
-              </div>
-            ))}
+            {/* Stats row */}
+            <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+              {[
+                { lbl: 'On time', v: '10', tint: C.green },
+                { lbl: 'Late',    v: '0',  tint: C.text2 },
+                { lbl: 'Absent',  v: '0',  tint: C.text2 },
+                { lbl: 'Hours',   v: '—',  tint: C.text },
+              ].map((s, i) => (
+                <div key={i} style={{ padding: '8px 10px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 8 }}>
+                  <div style={{ fontFamily: F_MONO, fontSize: 9.5, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{s.lbl}</div>
+                  <div style={{ fontFamily: F_SERIF, fontSize: 22, color: s.tint, letterSpacing: '-0.02em', lineHeight: 1, marginTop: 4 }}>{s.v}</div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Signals */}
         <div>
           <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>
             Signals
           </div>
-          <SignalRow tint={C.green}  k="Clock-in window"   v="Pending review"     ok />
-          <SignalRow tint={C.accent} k="Manual frequency"  v="This month"         />
-          <SignalRow tint={C.text2}  k="Reason length"     v={`${reasonWordCount} words`} />
+          {isLeave ? (
+            <>
+              <SignalRow tint={C.blue}  k="Leave type"      v={r.entry}    ok />
+              <SignalRow tint={C.text2} k="Date requested"  v={r.date}        />
+              <SignalRow tint={C.text2} k="Reason length"   v={`${reasonWordCount} words`} />
+            </>
+          ) : (
+            <>
+              <SignalRow tint={C.green}  k="Clock-in window"   v="Pending review"     ok />
+              <SignalRow tint={C.accent} k="Manual frequency"  v="This month"         />
+              <SignalRow tint={C.text2}  k="Reason length"     v={`${reasonWordCount} words`} />
+            </>
+          )}
 
-          <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 8, background: C.accentSoft, border: `1px solid ${C.accentBorder}`, fontSize: 11.5, color: C.accent, lineHeight: 1.5 }}>
+          <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 8, background: isLeave ? C.blueSoft : C.accentSoft, border: `1px solid ${isLeave ? C.blueBorder : C.accentBorder}`, fontSize: 11.5, color: isLeave ? C.blue : C.accent, lineHeight: 1.5 }}>
             <span style={{ fontFamily: F_MONO, fontSize: 9.5, letterSpacing: '0.1em', textTransform: 'uppercase' }}>⚠ Action required</span><br />
-            <span style={{ color: C.text2 }}>Manual clock-in awaiting your review and approval.</span>
+            <span style={{ color: C.text2 }}>{isLeave ? 'Leave request awaiting your review and approval.' : 'Manual clock-in awaiting your review and approval.'}</span>
           </div>
         </div>
       </div>
