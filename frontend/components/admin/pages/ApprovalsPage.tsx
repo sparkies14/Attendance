@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import type { DashboardData } from '../AdminDashboard';
 import { clientFetch } from '@/lib/clientFetch';
+import RecentDecisions from '@/components/admin/RecentDecisions';
 
 interface Props {
   dashboard: DashboardData | null;
@@ -10,6 +11,7 @@ interface Props {
   token: string;
   onRefresh?: () => Promise<void>;
   filterKind?: string;
+  onViewAudit?: () => void;
 }
 
 // ── Color / font constants (same as AdminDashboard) ──────────────────────────
@@ -447,7 +449,7 @@ function QueueEmptyState() {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind }: Props) {
+export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind, onViewAudit }: Props) {
   const allRequests = buildRequests(dashboard);
   const manualCount = allRequests.filter(r => r.kind === 'manual').length;
   const leaveCount  = allRequests.filter(r => r.kind === 'leave').length;
@@ -458,6 +460,7 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
 
   const [selectedId, setSelectedId] = useState<string | null>(() => allRequests[0]?.id ?? null);
   const [search, setSearch] = useState('');
+  const [decisionsRefreshKey, setDecisionsRefreshKey] = useState(0);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [note, setNote] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
@@ -524,6 +527,7 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
         setSelectedId(nextItem?.id ?? null);
         // Refresh dashboard data so the item won't reappear when switching tabs
         await onRefresh?.();
+        setDecisionsRefreshKey(k => k + 1);
       }
     } catch {
       setActionErr('Network error. Please try again.');
@@ -663,6 +667,14 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
           </div>
         )}
       </div>
+
+      {/* ── Recent decisions history ── */}
+      <RecentDecisions
+        apiUrl={apiUrl}
+        type={leaveMode ? 'leave' : 'attendance'}
+        refreshKey={decisionsRefreshKey}
+        onViewAudit={onViewAudit}
+      />
     </div>
   );
 }

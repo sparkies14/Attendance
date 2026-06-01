@@ -272,8 +272,8 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
         {/* Page content */}
         <div style={{ flex: 1, overflow: 'auto', padding: '24px 28px 28px', background: C.bg }}>
           {page === 'attendance' && <AttendancePage dashboard={dashData} apiUrl={apiUrl} />}
-          {page === 'approvals'  && <ApprovalsPage  dashboard={dashData} apiUrl={apiUrl} token={token} onRefresh={refreshDashboard} />}
-          {page === 'leave'      && <ApprovalsPage  dashboard={dashData} apiUrl={apiUrl} token={token} onRefresh={refreshDashboard} filterKind="leave" />}
+          {page === 'approvals'  && <ApprovalsPage  dashboard={dashData} apiUrl={apiUrl} token={token} onRefresh={refreshDashboard} onViewAudit={() => setPage('audit')} />}
+          {page === 'leave'      && <ApprovalsPage  dashboard={dashData} apiUrl={apiUrl} token={token} onRefresh={refreshDashboard} filterKind="leave" onViewAudit={() => setPage('audit')} />}
           {page === 'calendar'   && <CalendarPage />}
           {page === 'payroll'    && <TeamPayrollPage dashboard={dashData} apiUrl={apiUrl} />}
           {page === 'insights'   && <InsightsPage apiUrl={apiUrl} />}
