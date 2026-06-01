@@ -411,6 +411,10 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
   const manualCount = allRequests.filter(r => r.kind === 'manual').length;
   const leaveCount  = allRequests.filter(r => r.kind === 'leave').length;
 
+  // When opened from the "Leave requests" sidebar item, this is a dedicated
+  // leave-only page: leave title, leave count, and no Manual/All tabs.
+  const leaveMode = filterKind === 'leave';
+
   const [selectedId, setSelectedId] = useState<string | null>(() => allRequests[0]?.id ?? null);
   const [activeTab, setActiveTab] = useState<'all' | 'manual' | 'leave'>(
     filterKind === 'leave' ? 'leave' : 'all'
@@ -502,10 +506,14 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>
-            Approvals <span style={{ fontStyle: 'italic', color: C.text2 }}>queue.</span>
+            {leaveMode
+              ? <>Leave <span style={{ fontStyle: 'italic', color: C.text2 }}>requests.</span></>
+              : <>Approvals <span style={{ fontStyle: 'italic', color: C.text2 }}>queue.</span></>}
           </div>
           <div style={{ fontFamily: F_MONO, fontSize: 11.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
-            {`${allRequests.length} pending · ${manualCount} manual clock-in${manualCount !== 1 ? 's' : ''} · ${leaveCount} leave request${leaveCount !== 1 ? 's' : ''}`}
+            {leaveMode
+              ? `${leaveCount} pending leave request${leaveCount !== 1 ? 's' : ''}`
+              : `${allRequests.length} pending · ${manualCount} manual clock-in${manualCount !== 1 ? 's' : ''} · ${leaveCount} leave request${leaveCount !== 1 ? 's' : ''}`}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -522,13 +530,13 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
       {/* ── Stat row ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
         <StatCard
-          label="Awaiting you"
-          value={String(allRequests.length)}
-          sub={<>{allRequests.length} due today</>}
+          label={leaveMode ? 'Leave awaiting you' : 'Awaiting you'}
+          value={String(leaveMode ? leaveCount : allRequests.length)}
+          sub={<>{leaveMode ? leaveCount : allRequests.length} due today</>}
           icon="⏳"
           tint={C.accent}
-          trend={allRequests.length > 0 ? 'Oldest · today' : 'Nothing pending'}
-          trendAlert={allRequests.length > 0}
+          trend={(leaveMode ? leaveCount : allRequests.length) > 0 ? 'Oldest · today' : 'Nothing pending'}
+          trendAlert={(leaveMode ? leaveCount : allRequests.length) > 0}
         />
         <StatCard label="Approved · this week" value="—" sub={<>no data</>}       icon="✓" tint={C.green}  trend="—" />
         <StatCard label="Rejected · this week" value="—" sub={<>no data</>}       icon="✕" tint={C.red}    trend="—" />
@@ -543,7 +551,8 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
 
           {/* Queue header */}
           <div style={{ padding: '14px 16px', borderBottom: `1px solid ${C.border}` }}>
-            {/* Tab bar */}
+            {/* Tab bar — hidden in dedicated leave-requests mode */}
+            {!leaveMode && (
             <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
               {([
                 { id: 'all'    as const, label: 'All',    count: activeRequests.length },
@@ -574,6 +583,7 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
                 ⇅ Oldest first
               </button>
             </div>
+            )}
 
             {/* Search */}
             <div style={{ position: 'relative' }}>
