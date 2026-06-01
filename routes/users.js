@@ -49,6 +49,26 @@ router.post('/invite', async (req, res) => {
   return res.json({ success: true, user: data });
 });
 
+// Admin sets a member's Discord ID directly
+router.patch('/:id/discord', requireRole('owner', 'admin'), async (req, res) => {
+  const { discord_id } = req.body || {};
+  const userId = parseInt(req.params.id, 10);
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return res.status(400).json({ error: 'Invalid user id.' });
+  }
+
+  // Allow clearing the discord_id by passing null
+  const value = discord_id === null ? null : (typeof discord_id === 'string' ? discord_id.trim() : null);
+
+  const { error } = await supabase
+    .from('users')
+    .update({ discord_id: value })
+    .eq('id', userId);
+  if (error) return res.status(500).json({ error: error.message });
+
+  return res.json({ success: true });
+});
+
 async function performRoleAction(req, res, action, newFields) {
   const id = req.params.id;
   if (!id) return res.status(400).json({ error: 'Invalid user id.' });
