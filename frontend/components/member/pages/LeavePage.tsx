@@ -80,16 +80,25 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
   const [formErr,     setFormErr]     = useState<string | null>(null);
   const [showForm,    setShowForm]    = useState(false);
 
-  useEffect(() => {
+  function fetchLeaveHistory() {
     const jst = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
     const month = jst.getMonth() + 1;
     const year  = jst.getFullYear();
-    setLoading(true);
-    clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${month}&year=${year}`, { })
+    return clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(email)}&month=${month}&year=${year}`, {})
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.leaveHistory) setHistory(d.leaveHistory); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => {});
+  }
+
+  useEffect(() => {
+    setLoading(true);
+    fetchLeaveHistory().finally(() => setLoading(false));
+  }, [email, apiUrl]);
+
+  // Poll every 15 s so admin approve/reject is reflected without manual refresh
+  useEffect(() => {
+    const id = setInterval(() => { if (!document.hidden) fetchLeaveHistory(); }, 15_000);
+    return () => clearInterval(id);
   }, [email, apiUrl]);
 
   async function submitLeave(e: React.FormEvent) {

@@ -95,6 +95,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   const [today,      setToday]     = useState<CalendarDay | null>(
     memberData ? findToday(memberData.calendar) : null
   );
+  const [calendar,   setCalendar]  = useState<CalendarDay[]>(memberData?.calendar ?? []);
   const [elapsed,    setElapsed]   = useState(0);
   const [entryType,  setEntryType] = useState<'auto'|'manual'>('auto');
   const [isLate,     setIsLate]    = useState(false);
@@ -153,6 +154,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
       if (r.ok) {
         const d = await r.json();
         setToday(findToday(d.calendar));
+        setCalendar(d.calendar ?? []);
         setOnLunch(d.onLunch);
         setOnBreak(d.onBreak);
         setHadLunch(d.hadLunch ?? false);
@@ -247,10 +249,9 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   const targetH     = 8;
   const pct         = Math.min(100, (hoursWorked / targetH) * 100);
 
-  // Weekly rows
+  // Weekly rows — uses `calendar` state (kept fresh by refreshData/polling)
   const jstNow   = getJST();
   const wd       = weekDates(jstNow.date);
-  const calendar = memberData?.calendar ?? [];
   const jstDateParts = jstNow.date.split('-');
   const todayUsStr = `${parseInt(jstDateParts[1])}/${parseInt(jstDateParts[2])}/${jstDateParts[0]}`;
 
