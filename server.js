@@ -52,6 +52,7 @@ app.use('/webhook/attendance',  require('./routes/attendance'));
 app.use('/webhook/member-data', require('./routes/memberData'));
 app.use('/webhook/dashboard',   require('./routes/dashboard'));
 app.use('/webhook/approve',     require('./routes/approve'));
+app.use('/webhook/recent-decisions', require('./routes/recentDecisions'));
 
 // DEV ONLY — Remove this line and routes/devReset.js to disable
 app.use('/webhook/dev/reset-today', require('./routes/devReset'));
