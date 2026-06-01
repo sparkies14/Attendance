@@ -128,6 +128,12 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
     return () => clearInterval(id);
   }, []);
 
+  // Poll every 15 s so new clock-ins and approvals appear without manual refresh
+  useEffect(() => {
+    const id = setInterval(() => { if (!document.hidden) refreshDashboard(); }, 15_000);
+    return () => clearInterval(id);
+  }, []);
+
   async function signOut() {
     try { await fetch('/api/logout', { method: 'POST' }); } catch {}
     window.location.replace('/login');

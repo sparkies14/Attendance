@@ -146,6 +146,30 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     return () => clearInterval(id);
   }, []);
 
+  async function refreshData() {
+    const jst = getJST();
+    try {
+      const r = await clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(user.email)}&month=${parseInt(jst.date.split('-')[1])}&year=${parseInt(jst.date.split('-')[0])}`, {});
+      if (r.ok) {
+        const d = await r.json();
+        setToday(findToday(d.calendar));
+        setOnLunch(d.onLunch);
+        setOnBreak(d.onBreak);
+        setHadLunch(d.hadLunch ?? false);
+        setLunchStart(d.lunchStart ?? null);
+        setLunchEnd(d.lunchEnd ?? null);
+        setBreakStart(d.breakStart ?? null);
+        setBreakEnd(d.breakEnd ?? null);
+      }
+    } catch { /* silent on background poll */ }
+  }
+
+  // Poll every 15 s so admin approve/reject is reflected without manual refresh
+  useEffect(() => {
+    const id = setInterval(() => { if (!document.hidden) refreshData(); }, 15_000);
+    return () => clearInterval(id);
+  }, []);
+
   async function doAction(body: Record<string, unknown>) {
     setLoading(true); setMsg(null); setErr(null);
     try {
@@ -155,19 +179,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
       else {
         setMsg(data.message ?? 'Done.');
         setManualReason('');
-        const jst = getJST();
-        const r = await clientFetch(`${apiUrl}/webhook/member-data?email=${encodeURIComponent(user.email)}&month=${parseInt(jst.date.split('-')[1])}&year=${parseInt(jst.date.split('-')[0])}`, { });
-        if (r.ok) {
-          const d = await r.json();
-          setToday(findToday(d.calendar));
-          setOnLunch(d.onLunch);
-          setOnBreak(d.onBreak);
-          setHadLunch(d.hadLunch ?? false);
-          setLunchStart(d.lunchStart ?? null);
-          setLunchEnd(d.lunchEnd ?? null);
-          setBreakStart(d.breakStart ?? null);
-          setBreakEnd(d.breakEnd ?? null);
-        }
+        await refreshData();
       }
     } catch { setErr('Network error. Please try again.'); }
     finally  { setLoading(false); }
