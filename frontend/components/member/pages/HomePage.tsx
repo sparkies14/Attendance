@@ -118,7 +118,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   const pendingApproval = !!today && today.status === 'pending' && today.entryType === 'manual';
   const rejected        = !!today && today.status === 'rejected';
   const notIn           = !today || today.clockIn === '-';
-  const working         = !!today && today.clockIn !== '-' && today.clockOut === '-' && !pendingApproval;
+  const working         = !!today && today.clockIn !== '-' && today.clockOut === '-' && !pendingApproval && !rejected;
   const done            = !!today && today.clockIn !== '-' && today.clockOut !== '-';
 
   useEffect(() => {

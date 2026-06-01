@@ -53,10 +53,8 @@ app.use('/webhook/member-data', require('./routes/memberData'));
 app.use('/webhook/dashboard',   require('./routes/dashboard'));
 app.use('/webhook/approve',     require('./routes/approve'));
 
-// DEV ONLY — Remove these 3 lines and routes/devReset.js to disable
-if (process.env.NODE_ENV !== 'production') {
-  app.use('/webhook/dev/reset-today', require('./routes/devReset'));
-}
+// DEV ONLY — Remove this line and routes/devReset.js to disable
+app.use('/webhook/dev/reset-today', require('./routes/devReset'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Attendance server running on http://localhost:${PORT}`));

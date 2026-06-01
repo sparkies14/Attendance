@@ -11,8 +11,6 @@ interface Props {
 }
 
 export default function DevResetButton({ apiUrl, defaultEmail, onReset }: Props) {
-  if (process.env.NODE_ENV === 'production') return null;
-
   const [email, setEmail]   = useState(defaultEmail ?? '');
   const [loading, setLoading] = useState(false);
   const [msg, setMsg]       = useState<string | null>(null);
