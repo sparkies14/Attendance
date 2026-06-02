@@ -486,10 +486,10 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
                     ? `🍱 On Lunch · ${fmt(lunchRemaining)}${lunchRemaining < 0 ? ' over' : ' left'}`
                     : lunchConsumed ? '🍱 Lunch taken' : '🍱 Lunch'}
                 </ActionBtn>
-                <ActionBtn onClick={breakToggle} disabled={loading} active={onBreak} activeColor={onBreak && breakRemaining < 0 ? C.red : C.purple}>
+                <ActionBtn onClick={breakToggle} disabled={loading || (!onBreak && breakRemaining <= 0)} active={onBreak} activeColor={onBreak && breakRemaining < 0 ? C.red : C.purple}>
                   {onBreak
                     ? `☕ On Break · ${fmt(breakRemaining)}${breakRemaining < 0 ? ' over' : ' left'}`
-                    : `☕ Break · ${fmt(Math.max(0, breakRemaining))} left`}
+                    : breakRemaining <= 0 ? '☕ No break left' : `☕ Break · ${fmt(Math.max(0, breakRemaining))} left`}
                 </ActionBtn>
               </>
             )}

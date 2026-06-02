@@ -80,6 +80,20 @@ describe('break-out / break-in (multi-session, secs)', () => {
       .send({ action: 'break-in', local_time: '10:03:30', date: '2026-06-02' });
     expect(res.status).toBe(400);
   });
+
+  test('break-out blocked once the 15-min daily budget is spent', async () => {
+    supabase.from.mockImplementation((t) => {
+      if (t === 'users') return builder({ data: ACTIVE_USER });
+      // Completed breaks summing to the full 900s budget, none open.
+      return builder({ data: [{ break_in: '10:15:00', duration_secs: 900 }] });
+    });
+    const res = await request(makeApp())
+      .post('/webhook/attendance')
+      .set('Authorization', `Bearer ${token()}`)
+      .send({ action: 'break-out', local_time: '11:00:00', date: '2026-06-02' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/no break time remaining/i);
+  });
 });
 
 describe('lunch-out / lunch-in (single-use, secs)', () => {

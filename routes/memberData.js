@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const supabase = require('../lib/supabase');
-const { calendarDayStatus, todayJST } = require('../lib/rules');
+const { calendarDayStatus, todayJSTISO, BREAK_BUDGET_SECS, LUNCH_BUDGET_SECS } = require('../lib/rules');
 const requireAuth = require('../middleware/requireAuth');
 const requireSelfOrRole = require('../middleware/requireSelfOrRole');
 
@@ -11,7 +11,9 @@ router.get('/', async (req, res) => {
   const { email, month, year } = req.query;
   const monthNum = parseInt(month);
   const yearNum = parseInt(year);
-  const today = todayJST();
+  // break_log/lunch_log rows are written with the client's JST ISO date (YYYY-MM-DD),
+  // so we must query them with the same format — not todayJST()'s "M/D/YYYY".
+  const today = todayJSTISO();
 
   if (isNaN(monthNum) || isNaN(yearNum)) {
     return res.status(400).json({ error: 'Invalid month or year.' });
@@ -97,9 +99,6 @@ router.get('/', async (req, res) => {
     const d = String(row.date).slice(0, 10);
     planEventsByDate[d] = (planEventsByDate[d] || 0) + 1;
   }
-
-  const BREAK_BUDGET_SECS = 900;   // 15 min
-  const LUNCH_BUDGET_SECS = 3600;  // 60 min
 
   const breaks = breakRows || [];
   const openBreak = breaks.find(b => !b.break_in || b.break_in === '');

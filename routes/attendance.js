@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const supabase = require('../lib/supabase');
 const { sendMessage, CHANNELS } = require('../lib/discord');
-const { classifyLateStatus, timeToMinutes, calcRawHours, timeToSeconds } = require('../lib/rules');
+const { classifyLateStatus, timeToMinutes, calcRawHours, timeToSeconds, BREAK_BUDGET_SECS } = require('../lib/rules');
 const requireAuth = require('../middleware/requireAuth');
 
 router.use(requireAuth);
@@ -175,11 +175,20 @@ router.post('/', async (req, res) => {
   }
 
   if (action === 'break-out') {
+    const { data: todaysBreaks } = await supabase
+      .from('break_log').select('break_in, duration_secs').eq('name', officialName).eq('date', date);
+    const rows = todaysBreaks || [];
     // Guard: must not already have an open break session today.
-    const { data: openRows } = await supabase
-      .from('break_log').select('id').eq('name', officialName).eq('date', date).eq('break_in', '');
-    if (openRows && openRows.length > 0) {
+    if (rows.some(r => !r.break_in || r.break_in === '')) {
       return res.status(400).json({ error: 'You already have an open break.' });
+    }
+    // Budget gate: block a NEW break once the 15-min daily allowance is used up.
+    // (An already-running break may overrun into "over" time — that's recorded on break-in.)
+    const usedSecs = rows
+      .filter(r => r.break_in && r.break_in !== '')
+      .reduce((sum, r) => sum + (r.duration_secs || 0), 0);
+    if (usedSecs >= BREAK_BUDGET_SECS) {
+      return res.status(400).json({ error: 'No break time remaining today.' });
     }
     const { error } = await supabase.from('break_log').insert({
       name: officialName, date, break_out: local_time, break_in: '', duration_secs: 0,
