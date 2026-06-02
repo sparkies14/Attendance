@@ -100,6 +100,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   const [elapsed,    setElapsed]   = useState(0);
   const [entryType,  setEntryType] = useState<'auto'|'manual'>('auto');
   const [isLate,     setIsLate]    = useState(false);
+  const [lateManualRequired, setLateManualRequired] = useState(memberData?.lateManualRequired ?? true);
   const [manualReason, setManualReason] = useState('');
   const [breakBudget, setBreakBudget] = useState(memberData?.breakBudgetSecs ?? 900);
   const [breakUsed,   setBreakUsed]   = useState(memberData?.breakUsedSecs ?? 0);
@@ -152,12 +153,12 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
       const { hour, minute } = getJST();
       const late = hour > 9 || (hour === 9 && minute > 10);
       setIsLate(late);
-      setEntryType(late ? 'manual' : 'auto');
+      setEntryType(late && lateManualRequired ? 'manual' : 'auto');
     }
     checkLate();
     const id = setInterval(checkLate, 60_000);
     return () => clearInterval(id);
-  }, []);
+  }, [lateManualRequired]);
 
   async function refreshData() {
     const jst = getJST();
@@ -179,6 +180,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
         setLunchBudget(d.lunchBudgetSecs ?? 3600);
         setLunchUsed(d.lunchUsedSecs ?? 0);
         setLunchConsumed(d.lunchConsumed ?? false);
+        setLateManualRequired(d.lateManualRequired ?? true);
       }
     } catch { /* silent on background poll */ }
   }
@@ -404,7 +406,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
             <div style={{ marginBottom: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Entry</span>
-                {isLate ? (
+                {(isLate && lateManualRequired) ? (
                   <span style={{ display: 'inline-flex', alignItems: 'center', padding: '5px 12px', background: C.accentSoft, color: C.accent, border: `1px solid ${C.accentBorder}`, borderRadius: 999, fontSize: 11.5, fontFamily: F_SANS, fontWeight: 500, letterSpacing: '0.04em' }}>
                     Past 9:10 — manual entry required
                   </span>
@@ -419,6 +421,11 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
                   </div>
                 )}
               </div>
+              {isLate && !lateManualRequired && (
+                <div style={{ marginTop: 8, fontFamily: F_MONO, fontSize: 10.5, color: C.accent, letterSpacing: '0.02em' }}>
+                  Running late — you&apos;ll be clocked in now and still marked tardy.
+                </div>
+              )}
               {entryType === 'manual' && (
                 <div style={{ marginTop: 12, marginBottom: 2 }}>
                   <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>

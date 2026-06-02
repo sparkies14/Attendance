@@ -31,6 +31,7 @@ router.get('/', async (req, res) => {
     { data: lunchRows },
     { data: breakRows },
     { data: monthPlanEvents },
+    { data: latePolicy },
   ] = await Promise.all([
     supabase.from('attendance').select('*').eq('email', email),
     supabase.from('leave_log').select('*').eq('email', email),
@@ -39,6 +40,7 @@ router.get('/', async (req, res) => {
     supabase.from('plan_events').select('date').eq('user_id', userId)
       .gte('date', `${yearNum}-${String(monthNum).padStart(2,'0')}-01`)
       .lte('date', `${yearNum}-${String(monthNum).padStart(2,'0')}-${String(new Date(yearNum, monthNum, 0).getDate()).padStart(2,'0')}`),
+    supabase.from('policy_config').select('value').eq('key', 'late_manual_required').maybeSingle(),
   ]);
 
   const monthAtt = (allAttendance || []).filter(a => {
@@ -113,6 +115,8 @@ router.get('/', async (req, res) => {
     .reduce((sum, l) => sum + (l.duration_secs || 0), 0);
   const lunchConsumed = lunches.some(l => l.lunch_in && l.lunch_in !== '');
 
+  const lateManualRequired = (latePolicy?.value ?? 'on') === 'on';
+
   res.json({
     month: monthNum,
     year: yearNum,
@@ -133,6 +137,7 @@ router.get('/', async (req, res) => {
     lunchBudgetSecs: LUNCH_BUDGET_SECS,
     lunchUsedSecs,
     lunchConsumed,
+    lateManualRequired,
     leaveHistory,
   });
 });

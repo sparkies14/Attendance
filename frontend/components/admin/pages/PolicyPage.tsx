@@ -38,6 +38,8 @@ export default function PolicyPage({ apiUrl, adminRole }: Props) {
   const [saving,  setSaving]  = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [saveErr, setSaveErr] = useState<string | null>(null);
+  const [lateManual, setLateManual] = useState<boolean>(true);
+  const [toggleBusy, setToggleBusy] = useState(false);
 
   const isOwner = adminRole === 'owner';
 
@@ -45,7 +47,7 @@ export default function PolicyPage({ apiUrl, adminRole }: Props) {
     setBusy(true);
     clientFetch(`${apiUrl}/admin/policy-config`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => { const c = d?.config ?? MOCK_CONFIG; setConfig(c); setDraft({ ...c }); })
+      .then(d => { const c = d?.config ?? MOCK_CONFIG; setConfig(c); setDraft({ ...c }); setLateManual(d?.lateManualRequired ?? true); })
       .catch(() => { setConfig(MOCK_CONFIG); setDraft({ ...MOCK_CONFIG }); })
       .finally(() => setBusy(false));
   }, [apiUrl]);
@@ -66,13 +68,30 @@ export default function PolicyPage({ apiUrl, adminRole }: Props) {
     finally { setSaving(false); }
   }
 
+  async function toggleLateManual() {
+    setToggleBusy(true);
+    setSaveErr(null);
+    try {
+      const next = !lateManual;
+      const res  = await clientFetch(`${apiUrl}/admin/policy-config`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ late_manual_required: next ? 'on' : 'off' }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setSaveErr(d.error ?? 'Failed to update.'); }
+      else { setLateManual(d.lateManualRequired ?? next); setSaveMsg(`Late manual approval ${next ? 'enabled' : 'disabled'}.`); setTimeout(() => setSaveMsg(null), 3_000); }
+    } catch { setSaveErr('Network error.'); }
+    finally { setToggleBusy(false); }
+  }
+
   void F_SERIF;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 640 }}>
       <div>
         <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Policy config.</div>
         <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
-          Tardy &amp; AWOL thresholds · {isOwner ? 'Editable' : 'Read-only'}
+          Tardy &amp; AWOL thresholds · {isOwner ? 'Editable' : 'Thresholds read-only · toggle editable'}
         </div>
       </div>
 
@@ -108,6 +127,30 @@ export default function PolicyPage({ apiUrl, adminRole }: Props) {
               </div>
             )}
           </form>
+
+          <div style={{ marginTop: 20, paddingTop: 18, borderTop: `1px solid ${C.border}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+              <div>
+                <div style={{ fontFamily: F_SANS, fontSize: 13.5, color: C.text, fontWeight: 500 }}>
+                  Require manual approval for late (post-9:10) clock-ins
+                </div>
+                <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, marginTop: 4, letterSpacing: '0.02em' }}>
+                  Off — late members clock in automatically but are still marked tardy.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={toggleLateManual}
+                disabled={toggleBusy}
+                aria-pressed={lateManual}
+                style={{ position: 'relative', width: 46, height: 26, flexShrink: 0, borderRadius: 999, border: 'none', cursor: toggleBusy ? 'default' : 'pointer', background: lateManual ? C.accent : C.borderStrong, transition: 'background 0.15s', opacity: toggleBusy ? 0.6 : 1 }}
+              >
+                <span style={{ position: 'absolute', top: 3, left: lateManual ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' }} />
+              </button>
+            </div>
+            {saveMsg && <div style={{ marginTop: 8, fontFamily: F_MONO, fontSize: 11, color: C.green }}>{saveMsg}</div>}
+            {saveErr && <div style={{ marginTop: 8, fontFamily: F_MONO, fontSize: 11, color: C.red }}>{saveErr}</div>}
+          </div>
         </div>
       )}
     </div>

@@ -54,3 +54,30 @@ describe('member-data break/lunch date matching (root-cause regression)', () => 
     expect(res.body.onBreak).toBe(true);
   });
 });
+
+describe('member-data lateManualRequired flag', () => {
+  test('reports false when policy is off', async () => {
+    supabase.from.mockImplementation((t) => {
+      if (t === 'users') return builder({ data: { name: 'Maria Cruz', id: 1 } });
+      if (t === 'policy_config') return builder({ data: { value: 'off' } });
+      return builder({ data: [] });
+    });
+    const res = await request(makeApp())
+      .get('/webhook/member-data?email=m@x.com&month=6&year=2026')
+      .set('Authorization', `Bearer ${token()}`);
+    expect(res.status).toBe(200);
+    expect(res.body.lateManualRequired).toBe(false);
+  });
+
+  test('defaults to true when the policy row is missing', async () => {
+    supabase.from.mockImplementation((t) => {
+      if (t === 'users') return builder({ data: { name: 'Maria Cruz', id: 1 } });
+      if (t === 'policy_config') return builder({ data: null });
+      return builder({ data: [] });
+    });
+    const res = await request(makeApp())
+      .get('/webhook/member-data?email=m@x.com&month=6&year=2026')
+      .set('Authorization', `Bearer ${token()}`);
+    expect(res.body.lateManualRequired).toBe(true);
+  });
+});
