@@ -78,6 +78,11 @@ export interface MemberData {
   breakEnd?: string | null;
   leaveHistory: LeaveRecord[];
   planEventsByDate?: Record<string, number>;
+  breakBudgetSecs?: number;
+  breakUsedSecs?: number;
+  lunchBudgetSecs?: number;
+  lunchUsedSecs?: number;
+  lunchConsumed?: boolean;
 }
 
 export interface MemberDashboardProps {

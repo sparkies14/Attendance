@@ -43,6 +43,7 @@ function getJST() {
   return {
     date: `${jst.getFullYear()}-${String(jst.getMonth() + 1).padStart(2,'0')}-${String(jst.getDate()).padStart(2,'0')}`,
     time: `${String(jst.getHours()).padStart(2,'0')}:${String(jst.getMinutes()).padStart(2,'0')}`,
+    timeSecs: `${String(jst.getHours()).padStart(2,'0')}:${String(jst.getMinutes()).padStart(2,'0')}:${String(jst.getSeconds()).padStart(2,'0')}`,
     hour: jst.getHours(), minute: jst.getMinutes(), second: jst.getSeconds(), raw: jst,
   };
 }
@@ -100,6 +101,12 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   const [entryType,  setEntryType] = useState<'auto'|'manual'>('auto');
   const [isLate,     setIsLate]    = useState(false);
   const [manualReason, setManualReason] = useState('');
+  const [breakBudget, setBreakBudget] = useState(memberData?.breakBudgetSecs ?? 900);
+  const [breakUsed,   setBreakUsed]   = useState(memberData?.breakUsedSecs ?? 0);
+  const [lunchBudget, setLunchBudget] = useState(memberData?.lunchBudgetSecs ?? 3600);
+  const [lunchUsed,   setLunchUsed]   = useState(memberData?.lunchUsedSecs ?? 0);
+  const [lunchConsumed, setLunchConsumed] = useState(memberData?.lunchConsumed ?? false);
+  const [tick, setTick] = useState(0); // forces re-render each second for countdowns
 
   // Appeal form (for rejected manual clock-in)
   const [appealReason,    setAppealReason]    = useState('');
@@ -163,6 +170,11 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
         setLunchEnd(d.lunchEnd ?? null);
         setBreakStart(d.breakStart ?? null);
         setBreakEnd(d.breakEnd ?? null);
+        setBreakBudget(d.breakBudgetSecs ?? 900);
+        setBreakUsed(d.breakUsedSecs ?? 0);
+        setLunchBudget(d.lunchBudgetSecs ?? 3600);
+        setLunchUsed(d.lunchUsedSecs ?? 0);
+        setLunchConsumed(d.lunchConsumed ?? false);
       }
     } catch { /* silent on background poll */ }
   }
@@ -172,6 +184,12 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     const id = setInterval(() => { if (!document.hidden) refreshData(); }, 15_000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (!onBreak && !onLunch) return;
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [onBreak, onLunch]);
 
   async function doAction(body: Record<string, unknown>) {
     setLoading(true); setMsg(null); setErr(null);
@@ -206,8 +224,8 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     });
   }
   function clockOut()   { doAction({ action: 'clock-out', local_time: time, date }); }
-  function lunchToggle(){ doAction({ action: onLunch ? 'lunch-in' : 'lunch-out', local_time: time, date }); }
-  function breakToggle(){ doAction({ action: onBreak ? 'break-in' : 'break-out', local_time: time, date }); }
+  function lunchToggle(){ const j = getJST(); doAction({ action: onLunch ? 'lunch-in' : 'lunch-out', local_time: j.timeSecs, date }); }
+  function breakToggle(){ const j = getJST(); doAction({ action: onBreak ? 'break-in' : 'break-out', local_time: j.timeSecs, date }); }
 
   async function submitLeave(e: React.FormEvent) {
     e.preventDefault();
@@ -266,6 +284,24 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     const tint   = isNow ? statusTint : statusTint;
     return { label, usStr, dateNum, monthLabel, isWeekend, isNow, rec, hrs, status, tint };
   });
+
+  // elapsed seconds of the currently open session, from its HH:MM:SS start in JST
+  function openElapsed(startHHMMSS: string | null): number {
+    if (!startHHMMSS) return 0;
+    const j = getJST();
+    const [h, m, s] = startHHMMSS.split(':').map(Number);
+    const startSecs = (h * 3600) + (m * 60) + (s || 0);
+    const nowSecs = (j.hour * 3600) + (j.minute * 60) + j.second;
+    return Math.max(0, nowSecs - startSecs);
+  }
+  function fmt(secs: number): string {
+    const sign = secs < 0 ? '-' : '';
+    const a = Math.abs(secs);
+    return `${sign}${String(Math.floor(a / 60)).padStart(2,'0')}:${String(a % 60).padStart(2,'0')}`;
+  }
+  void tick; // referenced so the interval re-render is meaningful
+  const breakRemaining = breakBudget - breakUsed - (onBreak ? openElapsed(breakStart) : 0);
+  const lunchRemaining = lunchBudget - lunchUsed - (onLunch ? openElapsed(lunchStart) : 0);
 
   const inp: React.CSSProperties = {
     width: '100%', padding: '8px 10px', border: `1px solid ${C.border}`, borderRadius: 8,
@@ -433,11 +469,15 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
             {working && (
               <>
                 <ActionBtn onClick={clockOut} disabled={loading} danger>Clock out</ActionBtn>
-                <ActionBtn onClick={lunchToggle} disabled={loading} active={onLunch} activeColor={C.accent}>
-                  {onLunch ? '🍱 On Lunch — tap to return' : '🍱 Lunch'}
+                <ActionBtn onClick={lunchToggle} disabled={loading || (lunchConsumed && !onLunch)} active={onLunch} activeColor={onLunch && lunchRemaining < 0 ? C.red : C.accent}>
+                  {onLunch
+                    ? `🍱 On Lunch · ${fmt(lunchRemaining)}${lunchRemaining < 0 ? ' over' : ' left'}`
+                    : lunchConsumed ? '🍱 Lunch taken' : '🍱 Lunch'}
                 </ActionBtn>
-                <ActionBtn onClick={breakToggle} disabled={loading} active={onBreak} activeColor={C.purple}>
-                  {onBreak ? '☕ On Break — tap to return' : '☕ Break'}
+                <ActionBtn onClick={breakToggle} disabled={loading} active={onBreak} activeColor={onBreak && breakRemaining < 0 ? C.red : C.purple}>
+                  {onBreak
+                    ? `☕ On Break · ${fmt(breakRemaining)}${breakRemaining < 0 ? ' over' : ' left'}`
+                    : `☕ Break · ${fmt(Math.max(0, breakRemaining))} left`}
                 </ActionBtn>
               </>
             )}
