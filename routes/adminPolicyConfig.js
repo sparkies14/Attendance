@@ -23,14 +23,14 @@ function buildPayload(rows) {
 
 router.use(requireAuth);
 
-router.get('/', requireRole('owner', 'admin'), async (req, res) => {
+router.get('/policy-config', requireRole('owner', 'admin'), async (req, res) => {
   const { data, error } = await supabase.from('policy_config').select('key, value');
   if (error) return res.status(500).json({ error: error.message });
   return res.json(buildPayload(data));
 });
 
 // Toggle is editable by owner + admin; numeric thresholds remain owner-only.
-router.patch('/', requireRole('owner', 'admin'), async (req, res) => {
+router.patch('/policy-config', requireRole('owner', 'admin'), async (req, res) => {
   const updates = req.body || {};
   const isOwner = req.user.role === 'owner';
 
