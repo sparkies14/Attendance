@@ -101,6 +101,32 @@ router.post('/', async (req, res) => {
     return res.json({ success: true, message: 'Clock out recorded!' });
   }
 
+  if (action === 'emergency') {
+    if (!reason || !String(reason).trim()) {
+      return res.status(400).json({ error: 'An emergency reason is required.' });
+    }
+    const { data: row } = await supabase
+      .from('attendance')
+      .select('id, clock_in, clock_out, last_clock_in, accumulated_hours')
+      .eq('email', email).eq('date', date).maybeSingle();
+    if (!row) return res.status(400).json({ error: 'No clock-in record found for today.' });
+    if (row.clock_out && row.clock_out !== '') {
+      return res.status(400).json({ error: 'You have already clocked out today.' });
+    }
+    const segmentFrom = row.last_clock_in || row.clock_in;
+    const current_raw_hours = calcRawHours(segmentFrom, local_time);
+    const total_raw_hours = (row.accumulated_hours || 0) + current_raw_hours;
+    const total_hours = Math.max(0, Math.round((total_raw_hours - 1) * 100) / 100);
+
+    const { error } = await supabase.from('attendance')
+      .update({ clock_out: local_time, total_hours, status: 'Approved', emergency: true, emergency_reason: String(reason).trim() })
+      .eq('id', row.id);
+    if (error) return res.status(500).json({ error: error.message });
+    await sendMessage(CHANNELS.clockLogs,
+      `🚨 **EMERGENCY** — ${officialName} | ${date} ${local_time} | ${String(reason).trim()}`);
+    return res.json({ success: true, message: 'Emergency exit recorded. Stay safe.' });
+  }
+
   if (action === 'leave') {
     const { error } = await supabase.from('leave_log').insert({
       email, name: officialName, date, leave_type, reason, status: 'Pending',
