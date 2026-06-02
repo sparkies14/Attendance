@@ -268,6 +268,9 @@ export default function AttendancePage({ dashboard }: Props) {
   const outMembers = members.filter(m => m.onBreak || m.onLunch);
   const budgets = dashboard?.budgets ?? { breakSecs: 900, lunchSecs: 3600 };
 
+  // Panel: members who emergency-clocked-out today.
+  const emergencyMembers = members.filter(m => m.emergency);
+
   // ── Filtered table members ──
   const filtered = members.filter(m => {
     const nameMatch = m.name.toLowerCase().includes(search.toLowerCase());
@@ -410,6 +413,18 @@ export default function AttendancePage({ dashboard }: Props) {
           )}
         </PanelCard>
       </div>
+
+      {emergencyMembers.length > 0 && (
+        <PanelCard title="Emergency clock-outs" count={emergencyMembers.length} alert>
+          {emergencyMembers.map((m) => (
+            <div key={m.email} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '6px 12px 6px 6px', background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 999 }}>
+              <span style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(220,38,38,0.18)', color: C.red, fontSize: 10, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{initials(m.name)}</span>
+              <span style={{ fontFamily: F_SANS, fontSize: 12, color: C.text, fontWeight: 500 }}>{m.name}</span>
+              <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.red, letterSpacing: '0.02em' }}>{m.emergencyReason || 'Emergency'}</span>
+            </div>
+          ))}
+        </PanelCard>
+      )}
 
       {/* ── Controls row ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '10px 14px' }}>
