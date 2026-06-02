@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { ComponentType } from 'react';
+import { useSidebarCollapse, COLLAPSED_W } from '../hooks/useSidebarCollapse';
+import { HomeIcon, ReportsIcon, ApprovalsIcon, DoorIcon, TardyIcon, DisciplineIcon, AppealsIcon, CalendarIcon, TimesheetIcon, MembersIcon, HolidaysIcon, LeaveBalancesIcon, SettingIcon, AuditIcon, PinIcon } from '../icons/NavIcons';
 import DevResetButton from '@/components/dev/DevResetButton'; // DEV ONLY — remove this line and its usage below
 import AttendancePage from './pages/AttendancePage';
 import ApprovalsPage from './pages/ApprovalsPage';
@@ -108,28 +111,28 @@ const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Rom
 const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
 const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
-const NAV_GROUPS = [
+const NAV_GROUPS: { label: string; items: { id: Page; label: string; icon: ComponentType<{ size?: number }>; badge: 'pending' | 'leave' | 'appeals' | null }[] }[] = [
   { label: 'Overview',   items: [
-    { id: 'attendance'    as Page, label: 'Attendance',     icon: '◉', badge: null },
-    { id: 'insights'      as Page, label: 'Reports',        icon: '▤', badge: null },
+    { id: 'attendance'    as Page, label: 'Attendance',     icon: HomeIcon,        badge: null },
+    { id: 'insights'      as Page, label: 'Reports',        icon: ReportsIcon,     badge: null },
   ]},
   { label: 'Management', items: [
-    { id: 'approvals'     as Page, label: 'Approvals',      icon: '✓', badge: 'pending' as const },
-    { id: 'leave'         as Page, label: 'Leave requests', icon: '⌇', badge: 'leave'   as const },
-    { id: 'tardy'         as Page, label: 'Tardy & AWOL',   icon: '⏱', badge: null },
-    { id: 'discipline'    as Page, label: 'Discipline',     icon: '⚑', badge: null },
-    { id: 'appeals-admin' as Page, label: 'Appeals',        icon: '⟳', badge: 'appeals' as const },
+    { id: 'approvals'     as Page, label: 'Approvals',      icon: ApprovalsIcon,   badge: 'pending' },
+    { id: 'leave'         as Page, label: 'Leave requests', icon: DoorIcon,        badge: 'leave'   },
+    { id: 'tardy'         as Page, label: 'Tardy & AWOL',   icon: TardyIcon,       badge: null },
+    { id: 'discipline'    as Page, label: 'Discipline',     icon: DisciplineIcon,  badge: null },
+    { id: 'appeals-admin' as Page, label: 'Appeals',        icon: AppealsIcon,     badge: 'appeals' },
   ]},
   { label: 'Company',    items: [
-    { id: 'calendar'       as Page, label: 'Calendar',       icon: '▦', badge: null },
-    { id: 'payroll'        as Page, label: 'Payroll',        icon: '¥', badge: null },
-    { id: 'members'        as Page, label: 'Members',        icon: '⊞', badge: null },
-    { id: 'holidays'       as Page, label: 'Holidays',       icon: '✦', badge: null },
-    { id: 'leave-balances' as Page, label: 'Leave balances', icon: '◈', badge: null },
+    { id: 'calendar'       as Page, label: 'Calendar',       icon: CalendarIcon,      badge: null },
+    { id: 'payroll'        as Page, label: 'Timesheet',      icon: TimesheetIcon,     badge: null },
+    { id: 'members'        as Page, label: 'Members',        icon: MembersIcon,       badge: null },
+    { id: 'holidays'       as Page, label: 'Holidays',       icon: HolidaysIcon,      badge: null },
+    { id: 'leave-balances' as Page, label: 'Leave balances', icon: LeaveBalancesIcon, badge: null },
   ]},
   { label: 'Settings',   items: [
-    { id: 'policy' as Page, label: 'Policy config', icon: '⚙', badge: null },
-    { id: 'audit'  as Page, label: 'Audit log',     icon: '≡', badge: null },
+    { id: 'policy' as Page, label: 'Policy config', icon: SettingIcon, badge: null },
+    { id: 'audit'  as Page, label: 'Audit log',     icon: AuditIcon,   badge: null },
   ]},
 ];
 
@@ -187,6 +190,8 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
   const loc = new Date();
   const localDateStr = `${DAYS[loc.getDay()]}, ${MONTHS[loc.getMonth()]} ${loc.getDate()}`;
 
+  const { expanded, locked, toggleLock, hoverProps, EXPANDED_W } = useSidebarCollapse(232);
+
   // Suppress unused variable warnings for style constants
   void F_SERIF;
 
@@ -194,35 +199,45 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
     <div style={{ display: 'flex', height: '100vh', fontFamily: F_SANS, background: C.bg, color: C.text, overflow: 'hidden' }}>
 
       {/* ── Sidebar ── */}
-      <aside style={{ width: 232, flexShrink: 0, background: C.sidebarBg, borderRight: `1px solid ${C.sidebarBorder}`, display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <aside {...hoverProps} style={{ width: locked ? EXPANDED_W : COLLAPSED_W, flexShrink: 0, height: '100vh', position: 'relative', transition: 'width .18s ease' }}>
+        <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: expanded ? EXPANDED_W : COLLAPSED_W, background: C.sidebarBg, borderRight: `1px solid ${C.sidebarBorder}`, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', transition: 'width .18s ease', zIndex: 50 }}>
 
         {/* Brand */}
         <div style={{ padding: '20px 22px 18px', borderBottom: `1px solid ${C.sidebarBorder}`, display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg, #f4b942, #b45309)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <span style={{ color: '#0a0a0a', fontSize: 13, fontWeight: 900, fontFamily: F_SANS, letterSpacing: '-0.04em' }}>A</span>
           </div>
-          <div>
-            <div style={{ fontFamily: F_SANS, fontSize: 13.5, fontWeight: 500, color: '#fafafa', letterSpacing: '-0.01em', lineHeight: 1.1 }}>Anosupo AI</div>
-            <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 2 }}>
-              {adminRole.charAt(0).toUpperCase() + adminRole.slice(1)} · Dashboard
+          {expanded && (
+            <div>
+              <div style={{ fontFamily: F_SANS, fontSize: 13.5, fontWeight: 500, color: '#fafafa', letterSpacing: '-0.01em', lineHeight: 1.1 }}>Anosupo AI</div>
+              <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 2 }}>
+                {adminRole.charAt(0).toUpperCase() + adminRole.slice(1)} · Dashboard
+              </div>
             </div>
-          </div>
+          )}
+          {expanded && (
+            <button onClick={toggleLock} aria-label={locked ? 'Unlock sidebar' : 'Lock sidebar open'} title={locked ? 'Unlock sidebar' : 'Lock sidebar open'}
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: locked ? '#f4b942' : C.sidebarText, display: 'flex', alignItems: 'center', padding: 4 }}>
+              <PinIcon size={15} />
+            </button>
+          )}
         </div>
 
         {/* Nav */}
         <div style={{ padding: '10px', flex: 1, overflow: 'auto' }}>
           {NAV_GROUPS.map((g, gi) => (
             <div key={gi} style={{ marginTop: gi === 0 ? 6 : 14 }}>
-              <div style={{ fontFamily: F_MONO, fontSize: 9.5, color: '#525252', letterSpacing: '0.14em', textTransform: 'uppercase', padding: '4px 12px 8px' }}>{g.label}</div>
+              {expanded && (<div style={{ fontFamily: F_MONO, fontSize: 9.5, color: '#525252', letterSpacing: '0.14em', textTransform: 'uppercase', padding: '4px 12px 8px' }}>{g.label}</div>)}
               {g.items.map((it) => {
                 const isActive = page === it.id;
                 const badge = it.badge === 'pending' ? pendingCount : it.badge === 'appeals' ? pendingAppeals : null;
+                const Icon = it.icon;
                 return (
                   <button key={it.id} onClick={() => setPage(it.id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 12px', borderRadius: 8, marginBottom: 1, background: isActive ? C.sidebarActive : 'transparent', border: 'none', cursor: 'pointer', color: isActive ? C.sidebarActiveText : C.sidebarText, fontSize: 13, fontFamily: F_SANS, fontWeight: isActive ? 500 : 400, textAlign: 'left' }}>
-                    <span style={{ width: 16, textAlign: 'center', fontFamily: F_MONO, fontSize: 12.5 }}>{it.icon}</span>
-                    <span style={{ flex: 1 }}>{it.label}</span>
-                    {badge != null && badge > 0 && (
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: expanded ? 'flex-start' : 'center', gap: 10, width: '100%', padding: '8px 12px', borderRadius: 8, marginBottom: 1, background: isActive ? C.sidebarActive : 'transparent', border: 'none', cursor: 'pointer', color: isActive ? C.sidebarActiveText : C.sidebarText, fontSize: 13, fontFamily: F_SANS, fontWeight: isActive ? 500 : 400, textAlign: 'left' }}>
+                    <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={18} /></span>
+                    <span style={{ flex: 1, opacity: expanded ? 1 : 0, width: expanded ? 'auto' : 0, overflow: 'hidden', whiteSpace: 'nowrap', transition: 'opacity .12s' }}>{it.label}</span>
+                    {expanded && badge != null && badge > 0 && (
                       <span style={{ background: C.accent, color: '#0a0a0a', fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 999, lineHeight: 1.4 }}>{badge}</span>
                     )}
                   </button>
@@ -233,6 +248,7 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
         </div>
 
         {/* Dual clocks */}
+        {expanded && (
         <div style={{ margin: '0 10px 10px', padding: '12px', background: 'rgba(255,255,255,0.02)', border: `1px solid ${C.sidebarBorder}`, borderRadius: 9 }}>
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{ flex: 1 }}>
@@ -248,8 +264,10 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
             </div>
           </div>
         </div>
+        )}
 
         {/* User row */}
+        {expanded && (
         <div style={{ padding: '12px 14px', borderTop: `1px solid ${C.sidebarBorder}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
             <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, #f4b942, #b45309)', color: '#0a0a0a', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inits}</div>
@@ -259,6 +277,8 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
             </div>
             <button onClick={signOut} style={{ background: 'transparent', color: C.sidebarText, border: 'none', cursor: 'pointer', fontSize: 14, padding: 6, borderRadius: 6 }}>↩</button>
           </div>
+        </div>
+        )}
         </div>
       </aside>
 
