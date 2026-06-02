@@ -81,3 +81,53 @@ describe('break-out / break-in (multi-session, secs)', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('lunch-out / lunch-in (single-use, secs)', () => {
+  test('lunch-out inserts when no lunch yet', async () => {
+    const insertBuilder = builder({ error: null });
+    supabase.from.mockImplementation((t) => {
+      if (t === 'users') return builder({ data: ACTIVE_USER });
+      const b = builder({ data: [] }); // no existing lunch rows
+      b.insert = insertBuilder.insert;
+      return b;
+    });
+    const res = await request(makeApp())
+      .post('/webhook/attendance')
+      .set('Authorization', `Bearer ${token()}`)
+      .send({ action: 'lunch-out', local_time: '12:00:00', date: '2026-06-02' });
+    expect(res.status).toBe(200);
+    expect(insertBuilder.insert).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'Maria Cruz', date: '2026-06-02', lunch_out: '12:00:00', lunch_in: '', duration_secs: 0,
+    }));
+  });
+
+  test('lunch-out rejected when lunch already consumed', async () => {
+    supabase.from.mockImplementation((t) => {
+      if (t === 'users') return builder({ data: ACTIVE_USER });
+      return builder({ data: [{ id: 1, lunch_out: '12:00:00', lunch_in: '12:55:00' }] });
+    });
+    const res = await request(makeApp())
+      .post('/webhook/attendance')
+      .set('Authorization', `Bearer ${token()}`)
+      .send({ action: 'lunch-out', local_time: '14:00:00', date: '2026-06-02' });
+    expect(res.status).toBe(400);
+  });
+
+  test('lunch-in closes open lunch with duration_secs', async () => {
+    const updateBuilder = builder({ error: null });
+    supabase.from.mockImplementation((t) => {
+      if (t === 'users') return builder({ data: ACTIVE_USER });
+      const b = builder({ data: [{ id: 5, lunch_out: '12:00:00', lunch_in: '' }] });
+      b.update = updateBuilder.update;
+      return b;
+    });
+    const res = await request(makeApp())
+      .post('/webhook/attendance')
+      .set('Authorization', `Bearer ${token()}`)
+      .send({ action: 'lunch-in', local_time: '12:55:10', date: '2026-06-02' });
+    expect(res.status).toBe(200);
+    expect(updateBuilder.update).toHaveBeenCalledWith(expect.objectContaining({
+      lunch_in: '12:55:10', duration_secs: 3310,
+    }));
+  });
+});

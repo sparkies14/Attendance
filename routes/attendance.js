@@ -122,20 +122,28 @@ router.post('/', async (req, res) => {
   }
 
   if (action === 'lunch-out') {
+    const { data: rows } = await supabase
+      .from('lunch_log').select('id, lunch_in').eq('name', officialName).eq('date', date);
+    if (rows && rows.length > 0) {
+      // Either an open lunch, or one already consumed today — both block a new lunch-out.
+      const consumed = rows.some(r => r.lunch_in && r.lunch_in !== '');
+      return res.status(400).json({ error: consumed ? 'Lunch already taken today.' : 'You are already on lunch.' });
+    }
     const { error } = await supabase.from('lunch_log').insert({
-      name: officialName, date, lunch_out: local_time, lunch_in: '', duration_mins: 0,
+      name: officialName, date, lunch_out: local_time, lunch_in: '', duration_secs: 0,
     });
     if (error) return res.status(500).json({ error: error.message });
     return res.json({ success: true, message: 'Lunch out recorded!' });
   }
 
   if (action === 'lunch-in') {
-    const { data: lunchRow } = await supabase
-      .from('lunch_log').select('id, lunch_out').eq('name', officialName).eq('date', date).maybeSingle();
-    if (!lunchRow) return res.status(400).json({ error: 'No lunch-out record found.' });
-    const duration_mins = timeToMinutes(local_time) - timeToMinutes(lunchRow.lunch_out);
+    const { data: rows } = await supabase
+      .from('lunch_log').select('id, lunch_out, lunch_in').eq('name', officialName).eq('date', date);
+    const lunchRow = (rows || []).find(r => !r.lunch_in || r.lunch_in === '');
+    if (!lunchRow) return res.status(400).json({ error: 'No open lunch to return from.' });
+    const duration_secs = Math.max(0, timeToSeconds(local_time) - timeToSeconds(lunchRow.lunch_out));
     const { error } = await supabase.from('lunch_log')
-      .update({ lunch_in: local_time, duration_mins }).eq('id', lunchRow.id);
+      .update({ lunch_in: local_time, duration_secs }).eq('id', lunchRow.id);
     if (error) return res.status(500).json({ error: error.message });
     return res.json({ success: true, message: 'Lunch in recorded!' });
   }
