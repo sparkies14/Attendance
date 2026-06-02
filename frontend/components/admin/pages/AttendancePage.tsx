@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { DashboardData } from '../AdminDashboard';
 
 interface Props {
@@ -39,6 +39,18 @@ function nameColor(name: string): string {
 
 function initials(name: string): string {
   return name.split(' ').map((w) => w[0] ?? '').join('').slice(0, 2).toUpperCase();
+}
+
+/** Seconds-of-day for the current JST wall clock. */
+function jstNowSecs(): number {
+  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+  return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+}
+
+/** Parse "HH:MM:SS" into seconds-of-day. */
+function parseHmsSecs(hms: string): number {
+  const [h, m, s] = hms.split(':').map(Number);
+  return (h || 0) * 3600 + (m || 0) * 60 + (s || 0);
 }
 
 /** Compute the Mon–Sun of the week containing `date` (JST-based) */
@@ -141,6 +153,43 @@ function PersonChip({ name, state, tint }: PersonChipProps) {
   );
 }
 
+interface OutChipProps {
+  name: string;
+  kind: 'break' | 'lunch';
+  start: string;        // "HH:MM:SS" JST
+  usedSecs: number;     // completed sessions today
+  budgetSecs: number;
+}
+function OutChip({ name, kind, start, usedSecs, budgetSecs }: OutChipProps) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const elapsed = Math.max(0, jstNowSecs() - parseHmsSecs(start));
+  const over = usedSecs + elapsed > budgetSecs;
+  const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const ss = String(elapsed % 60).padStart(2, '0');
+  const tint = over ? C.red : (kind === 'lunch' ? C.blue : C.accent);
+  const init = initials(name);
+
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '6px 12px 6px 6px', background: C.surface2, border: `1px solid ${over ? C.redBorder : C.border}`, borderRadius: 999 }}>
+      <span style={{ width: 22, height: 22, borderRadius: '50%', background: `${tint}22`, color: tint, fontSize: 10, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{init}</span>
+      <span style={{ fontFamily: F_SANS, fontSize: 12, color: C.text, fontWeight: 500 }}>{name}</span>
+      <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: tint, letterSpacing: '0.02em', fontVariantNumeric: 'tabular-nums' }}>
+        on {kind} {mm}:{ss}
+      </span>
+      {over && (
+        <span style={{ fontFamily: F_MONO, fontSize: 9, fontWeight: 600, letterSpacing: '0.08em', color: C.red, background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 6, padding: '2px 6px' }}>
+          OVER
+        </span>
+      )}
+    </div>
+  );
+}
+
 interface DayCellProps {
   status: string;
   clockIn: string;
@@ -196,7 +245,7 @@ export default function AttendancePage({ dashboard }: Props) {
 
   // ── Derived counts ──
   const members = dashboard?.members ?? [];
-  const summary = dashboard?.summary ?? { clockedIn: 0, clockedOut: 0, notIn: 0, pending: 0, total: 0 };
+  const summary = dashboard?.summary ?? { clockedIn: 0, clockedOut: 0, notIn: 0, pending: 0, total: 0, onBreak: 0, onLunch: 0, overBudget: 0, onLeave: 0, emergency: 0 };
 
   const presentCount = summary.clockedIn + summary.clockedOut;
   const lateCount    = members.filter(m => m.lateStatus !== '' && m.lateStatus !== 'ON TIME').length;
@@ -215,8 +264,12 @@ export default function AttendancePage({ dashboard }: Props) {
     m.status === 'NOT CLOCKED IN' || m.status === 'PENDING APPROVAL'
   );
 
-  // Panel: "On lunch / on break" — CLOCKED IN members as approximation (no break API)
-  const clockedInMembers = members.filter(m => m.status === 'CLOCKED IN' || m.status === 'CLOCKED IN (LATE)');
+  // Panel: members currently out on lunch or break (live timers).
+  const outMembers = members.filter(m => m.onBreak || m.onLunch);
+  const budgets = dashboard?.budgets ?? { breakSecs: 900, lunchSecs: 3600 };
+
+  // Panel: members who emergency-clocked-out today.
+  const emergencyMembers = members.filter(m => m.emergency);
 
   // ── Filtered table members ──
   const filtered = members.filter(m => {
@@ -285,7 +338,7 @@ export default function AttendancePage({ dashboard }: Props) {
       </div>
 
       {/* ── Stat row ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
         <StatCard
           label="Present today"
           value={String(presentCount)}
@@ -304,11 +357,20 @@ export default function AttendancePage({ dashboard }: Props) {
         />
         <StatCard
           label="On leave"
-          value="—"
-          sub={<>no leave data</>}
+          value={String(summary.onLeave ?? 0)}
+          sub={<>approved today</>}
           icon="✦"
           tint={C.purple}
-          trend="N/A"
+          trend={(summary.onLeave ?? 0) === 0 ? 'Nobody on leave' : `${summary.onLeave} on leave`}
+        />
+        <StatCard
+          label="Over budget"
+          value={String(summary.overBudget ?? 0)}
+          sub={<>break / lunch</>}
+          icon="◷"
+          tint={C.red}
+          trend={(summary.overBudget ?? 0) > 0 ? 'Over allowance' : 'Within budget'}
+          trendAlert={(summary.overBudget ?? 0) > 0}
         />
         <StatCard
           label="Absent"
@@ -323,17 +385,16 @@ export default function AttendancePage({ dashboard }: Props) {
 
       {/* ── Active panels ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <PanelCard title="Clocked in / active" count={clockedInMembers.length}>
-          {clockedInMembers.length === 0 ? (
-            <span style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3 }}>No active members</span>
+        <PanelCard title="On lunch / break" count={outMembers.length} alert={outMembers.some(m => (m.breakUsedSecs ?? 0) > budgets.breakSecs || (m.lunchUsedSecs ?? 0) > budgets.lunchSecs)}>
+          {outMembers.length === 0 ? (
+            <span style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3 }}>Nobody on lunch or break</span>
           ) : (
-            clockedInMembers.slice(0, 6).map((m) => (
-              <PersonChip
-                key={m.email}
-                name={m.name}
-                state={m.clockIn ? `In at ${m.clockIn}` : 'Active'}
-                tint={nameColor(m.name)}
-              />
+            outMembers.map((m) => (
+              m.onLunch ? (
+                <OutChip key={`${m.email}-l`} name={m.name} kind="lunch" start={m.lunchStart || '00:00:00'} usedSecs={m.lunchUsedSecs ?? 0} budgetSecs={budgets.lunchSecs} />
+              ) : (
+                <OutChip key={`${m.email}-b`} name={m.name} kind="break" start={m.breakStart || '00:00:00'} usedSecs={m.breakUsedSecs ?? 0} budgetSecs={budgets.breakSecs} />
+              )
             ))
           )}
         </PanelCard>
@@ -352,6 +413,18 @@ export default function AttendancePage({ dashboard }: Props) {
           )}
         </PanelCard>
       </div>
+
+      {emergencyMembers.length > 0 && (
+        <PanelCard title="Emergency clock-outs" count={emergencyMembers.length} alert>
+          {emergencyMembers.map((m) => (
+            <div key={m.email} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '6px 12px 6px 6px', background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 999 }}>
+              <span style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(220,38,38,0.18)', color: C.red, fontSize: 10, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{initials(m.name)}</span>
+              <span style={{ fontFamily: F_SANS, fontSize: 12, color: C.text, fontWeight: 500 }}>{m.name}</span>
+              <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.red, letterSpacing: '0.02em' }}>{m.emergencyReason || 'Emergency'}</span>
+            </div>
+          ))}
+        </PanelCard>
+      )}
 
       {/* ── Controls row ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const, background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '10px 14px' }}>
