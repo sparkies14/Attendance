@@ -245,7 +245,7 @@ export default function AttendancePage({ dashboard }: Props) {
 
   // ── Derived counts ──
   const members = dashboard?.members ?? [];
-  const summary = dashboard?.summary ?? { clockedIn: 0, clockedOut: 0, notIn: 0, pending: 0, total: 0 };
+  const summary = dashboard?.summary ?? { clockedIn: 0, clockedOut: 0, notIn: 0, pending: 0, total: 0, onBreak: 0, onLunch: 0, overBudget: 0, onLeave: 0, emergency: 0 };
 
   const presentCount = summary.clockedIn + summary.clockedOut;
   const lateCount    = members.filter(m => m.lateStatus !== '' && m.lateStatus !== 'ON TIME').length;
@@ -335,7 +335,7 @@ export default function AttendancePage({ dashboard }: Props) {
       </div>
 
       {/* ── Stat row ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
         <StatCard
           label="Present today"
           value={String(presentCount)}
@@ -354,11 +354,20 @@ export default function AttendancePage({ dashboard }: Props) {
         />
         <StatCard
           label="On leave"
-          value="—"
-          sub={<>no leave data</>}
+          value={String(summary.onLeave ?? 0)}
+          sub={<>approved today</>}
           icon="✦"
           tint={C.purple}
-          trend="N/A"
+          trend={(summary.onLeave ?? 0) === 0 ? 'Nobody on leave' : `${summary.onLeave} on leave`}
+        />
+        <StatCard
+          label="Over budget"
+          value={String(summary.overBudget ?? 0)}
+          sub={<>break / lunch</>}
+          icon="◷"
+          tint={C.red}
+          trend={(summary.overBudget ?? 0) > 0 ? 'Over allowance' : 'Within budget'}
+          trendAlert={(summary.overBudget ?? 0) > 0}
         />
         <StatCard
           label="Absent"
