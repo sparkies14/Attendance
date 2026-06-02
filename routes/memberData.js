@@ -26,14 +26,14 @@ router.get('/', async (req, res) => {
   const [
     { data: allAttendance },
     { data: allLeave },
-    { data: lunchToday },
-    { data: breakToday },
+    { data: lunchRows },
+    { data: breakRows },
     { data: monthPlanEvents },
   ] = await Promise.all([
     supabase.from('attendance').select('*').eq('email', email),
     supabase.from('leave_log').select('*').eq('email', email),
-    supabase.from('lunch_log').select('*').eq('name', officialName).eq('date', today).maybeSingle(),
-    supabase.from('break_log').select('*').eq('name', officialName).eq('date', today).maybeSingle(),
+    supabase.from('lunch_log').select('*').eq('name', officialName).eq('date', today),
+    supabase.from('break_log').select('*').eq('name', officialName).eq('date', today),
     supabase.from('plan_events').select('date').eq('user_id', userId)
       .gte('date', `${yearNum}-${String(monthNum).padStart(2,'0')}-01`)
       .lte('date', `${yearNum}-${String(monthNum).padStart(2,'0')}-${String(new Date(yearNum, monthNum, 0).getDate()).padStart(2,'0')}`),
@@ -98,6 +98,22 @@ router.get('/', async (req, res) => {
     planEventsByDate[d] = (planEventsByDate[d] || 0) + 1;
   }
 
+  const BREAK_BUDGET_SECS = 900;   // 15 min
+  const LUNCH_BUDGET_SECS = 3600;  // 60 min
+
+  const breaks = breakRows || [];
+  const openBreak = breaks.find(b => !b.break_in || b.break_in === '');
+  const breakUsedSecs = breaks
+    .filter(b => b.break_in && b.break_in !== '')
+    .reduce((sum, b) => sum + (b.duration_secs || 0), 0);
+
+  const lunches = lunchRows || [];
+  const openLunch = lunches.find(l => !l.lunch_in || l.lunch_in === '');
+  const lunchUsedSecs = lunches
+    .filter(l => l.lunch_in && l.lunch_in !== '')
+    .reduce((sum, l) => sum + (l.duration_secs || 0), 0);
+  const lunchConsumed = lunches.some(l => l.lunch_in && l.lunch_in !== '');
+
   res.json({
     month: monthNum,
     year: yearNum,
@@ -105,13 +121,19 @@ router.get('/', async (req, res) => {
     calendar,
     summary,
     planEventsByDate,
-    onLunch:    !!(lunchToday && !lunchToday.lunch_in),
-    onBreak:    !!(breakToday && !breakToday.break_in),
-    hadLunch:   !!(lunchToday),
-    lunchStart: lunchToday?.lunch_out || null,
-    lunchEnd:   (lunchToday?.lunch_in && lunchToday.lunch_in !== '') ? lunchToday.lunch_in : null,
-    breakStart: breakToday?.break_out || null,
-    breakEnd:   (breakToday?.break_in && breakToday.break_in !== '') ? breakToday.break_in : null,
+    onLunch:    !!openLunch,
+    onBreak:    !!openBreak,
+    hadLunch:   lunchConsumed,
+    lunchStart: openLunch?.lunch_out || null,
+    lunchEnd:   null,
+    breakStart: openBreak?.break_out || null,
+    breakEnd:   null,
+    // budgeted-timer fields
+    breakBudgetSecs: BREAK_BUDGET_SECS,
+    breakUsedSecs,
+    lunchBudgetSecs: LUNCH_BUDGET_SECS,
+    lunchUsedSecs,
+    lunchConsumed,
     leaveHistory,
   });
 });
