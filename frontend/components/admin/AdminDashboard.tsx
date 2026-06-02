@@ -47,6 +47,11 @@ export interface DashboardData {
     notIn: number;
     pending: number;
     total: number;
+    onBreak: number;
+    onLunch: number;
+    overBudget: number;
+    onLeave: number;
+    emergency: number;
   };
   members: {
     name: string;
@@ -59,9 +64,18 @@ export interface DashboardData {
     lateStatus: string;
     emergency?: boolean;
     emergencyReason?: string | null;
+    onBreak?: boolean;
+    breakStart?: string | null;
+    breakUsedSecs?: number;
+    onLunch?: boolean;
+    lunchStart?: string | null;
+    lunchUsedSecs?: number;
+    onLeave?: boolean;
+    leaveType?: string | null;
   }[];
   pendingApprovals: PendingAttendance[];
   pendingLeave: PendingLeave[];
+  budgets?: { breakSecs: number; lunchSecs: number };
 }
 
 interface Props {
