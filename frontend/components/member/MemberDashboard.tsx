@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { ComponentType } from 'react';
+import { useSidebarCollapse, COLLAPSED_W } from '../hooks/useSidebarCollapse';
+import { HomeIcon, CalendarIcon, DoorIcon, TimesheetIcon, SettingIcon, PinIcon } from '../icons/NavIcons';
 import DevResetButton from '@/components/dev/DevResetButton'; // DEV ONLY — remove this line and its usage below
 import HomePage from './pages/HomePage';
 import CalendarPage from './pages/CalendarPage';
@@ -111,12 +114,12 @@ const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Rom
 const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
 const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
-const NAV: { id: Page; label: string; icon: string }[] = [
-  { id: 'home',     label: 'Home',         icon: '◉' },
-  { id: 'calendar', label: 'Calendar · plan', icon: '▦' },
-  { id: 'leave',    label: 'Leave history', icon: '⌇' },
-  { id: 'payroll',  label: 'Timesheet',    icon: '¥' },
-  { id: 'account',  label: 'Account',      icon: '○' },
+const NAV: { id: Page; label: string; icon: ComponentType<{ size?: number }> }[] = [
+  { id: 'home',     label: 'Home',            icon: HomeIcon },
+  { id: 'calendar', label: 'Calendar · plan', icon: CalendarIcon },
+  { id: 'leave',    label: 'Leave history',   icon: DoorIcon },
+  { id: 'payroll',  label: 'Timesheet',       icon: TimesheetIcon },
+  { id: 'account',  label: 'Account',         icon: SettingIcon },
 ];
 
 const DAYS_LONG   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -168,27 +171,38 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
 
   const dateStr = `${DAYS_LONG[jst.getDay()]}, ${MONTHS_LONG[jst.getMonth()]} ${jst.getDate()} · Week ${week}`;
 
+  const { expanded, locked, toggleLock, hoverProps, EXPANDED_W } = useSidebarCollapse(220);
+
   return (<>
     <div style={{ display: 'flex', height: '100vh', fontFamily: F_SANS, overflow: 'hidden', background: C.bg, color: C.text }}>
 
       {/* ── Sidebar (always dark) ── */}
-      <aside style={{ width: 220, flexShrink: 0, background: C.sidebarBg, borderRight: `1px solid ${C.sidebarBorder}`, display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <aside {...hoverProps} style={{ width: locked ? EXPANDED_W : COLLAPSED_W, flexShrink: 0, height: '100vh', position: 'relative', transition: 'width .18s ease' }}>
+        <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: expanded ? EXPANDED_W : COLLAPSED_W, background: C.sidebarBg, borderRight: `1px solid ${C.sidebarBorder}`, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', transition: 'width .18s ease', zIndex: 50 }}>
 
         {/* Brand */}
         <div style={{ padding: '20px 22px 22px', borderBottom: `1px solid ${C.sidebarBorder}`, display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg, #f4b942, #b45309)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <span style={{ color: '#0a0a0a', fontSize: 13, fontWeight: 900, fontFamily: F_SANS, letterSpacing: '-0.04em' }}>A</span>
           </div>
-          <div>
-            <div style={{ fontFamily: F_SANS, fontSize: 13.5, fontWeight: 500, color: '#fafafa', letterSpacing: '-0.01em', lineHeight: 1.1 }}>Anosupo AI</div>
-            <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 2 }}>Attendance</div>
-          </div>
+          {expanded && (
+            <div>
+              <div style={{ fontFamily: F_SANS, fontSize: 13.5, fontWeight: 500, color: '#fafafa', letterSpacing: '-0.01em', lineHeight: 1.1 }}>Anosupo AI</div>
+              <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 2 }}>Attendance</div>
+            </div>
+          )}
+          {expanded && (
+            <button onClick={toggleLock} aria-label={locked ? 'Unlock sidebar' : 'Lock sidebar open'} title={locked ? 'Unlock sidebar' : 'Lock sidebar open'}
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: locked ? '#f4b942' : C.sidebarText, display: 'flex', alignItems: 'center', padding: 4 }}>
+              <PinIcon size={15} />
+            </button>
+          )}
         </div>
 
         {/* Nav */}
         <div style={{ padding: '14px 10px', flex: 1 }}>
-          <div style={{ fontFamily: F_MONO, fontSize: 9.5, color: '#525252', letterSpacing: '0.14em', textTransform: 'uppercase', padding: '4px 12px 8px' }}>Menu</div>
-          {NAV.map(({ id, label, icon }) => {
+          {expanded && (<div style={{ fontFamily: F_MONO, fontSize: 9.5, color: '#525252', letterSpacing: '0.14em', textTransform: 'uppercase', padding: '4px 12px 8px' }}>Menu</div>)}
+          {NAV.map(({ id, label, icon: Icon }) => {
             const on = page === id;
             return (
               <button
@@ -203,14 +217,15 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
                   fontSize: 13, fontFamily: F_SANS, fontWeight: on ? 500 : 400,
                 }}
               >
-                <span style={{ width: 16, textAlign: 'center', fontFamily: F_MONO, fontSize: 13, flexShrink: 0 }}>{icon}</span>
-                <span>{label}</span>
+                <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={18} /></span>
+                <span style={{ opacity: expanded ? 1 : 0, whiteSpace: 'nowrap', transition: 'opacity .12s' }}>{label}</span>
               </button>
             );
           })}
         </div>
 
         {/* User row */}
+        {expanded && (
         <div style={{ padding: '14px 14px 16px', borderTop: `1px solid ${C.sidebarBorder}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #f4b942, #b45309)', color: '#0a0a0a', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -227,6 +242,8 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
           >
             Sign out
           </button>
+        </div>
+        )}
         </div>
       </aside>
 
