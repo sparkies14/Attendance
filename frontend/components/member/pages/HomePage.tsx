@@ -107,6 +107,10 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
   const [lunchUsed,   setLunchUsed]   = useState(memberData?.lunchUsedSecs ?? 0);
   const [lunchConsumed, setLunchConsumed] = useState(memberData?.lunchConsumed ?? false);
   const [tick, setTick] = useState(0); // forces re-render each second for countdowns
+  const EMERGENCY_REASONS = ['Family emergency', 'Medical / health issue', 'Accident', 'Transportation / commute problem', 'Severe weather / disaster', 'Other'];
+  const [showEmergency, setShowEmergency] = useState(false);
+  const [emReason, setEmReason]   = useState(EMERGENCY_REASONS[0]);
+  const [emOther,  setEmOther]    = useState('');
 
   // Appeal form (for rejected manual clock-in)
   const [appealReason,    setAppealReason]    = useState('');
@@ -224,6 +228,13 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
     });
   }
   function clockOut()   { doAction({ action: 'clock-out', local_time: time, date }); }
+  function submitEmergency() {
+    const reason = emReason === 'Other' ? emOther.trim() : emReason;
+    if (!reason) { setErr('Please describe the emergency.'); return; }
+    const j = getJST();
+    doAction({ action: 'emergency', local_time: j.timeSecs, date, reason });
+    setShowEmergency(false); setEmOther('');
+  }
   function lunchToggle(){ const j = getJST(); doAction({ action: onLunch ? 'lunch-in' : 'lunch-out', local_time: j.timeSecs, date }); }
   function breakToggle(){ const j = getJST(); doAction({ action: onBreak ? 'break-in' : 'break-out', local_time: j.timeSecs, date }); }
 
@@ -469,6 +480,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
             {working && (
               <>
                 <ActionBtn onClick={clockOut} disabled={loading} danger>Clock out</ActionBtn>
+                <ActionBtn onClick={() => setShowEmergency(true)} disabled={loading} danger>🚨 Emergency</ActionBtn>
                 <ActionBtn onClick={lunchToggle} disabled={loading || (lunchConsumed && !onLunch)} active={onLunch} activeColor={onLunch && lunchRemaining < 0 ? C.red : C.accent}>
                   {onLunch
                     ? `🍱 On Lunch · ${fmt(lunchRemaining)}${lunchRemaining < 0 ? ' over' : ' left'}`
@@ -654,6 +666,26 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
           </form>
         </div>
       </div>
+      {showEmergency && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}
+             onClick={() => setShowEmergency(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: C.surface, borderRadius: 14, padding: 22, width: 360, maxWidth: '90vw', border: `1px solid ${C.border}` }}>
+            <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text, marginBottom: 10 }}>🚨 What&apos;s the emergency?</div>
+            <select value={emReason} onChange={e => setEmReason(e.target.value)}
+              style={{ width: '100%', padding: '9px 11px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 14, background: C.surface, color: C.text, marginBottom: 10 }}>
+              {EMERGENCY_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+            {emReason === 'Other' && (
+              <input value={emOther} onChange={e => setEmOther(e.target.value)} placeholder="Describe the emergency"
+                style={{ width: '100%', padding: '9px 11px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 14, background: C.surface, color: C.text, marginBottom: 10, boxSizing: 'border-box' }} />
+            )}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowEmergency(false)} style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.text2, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={submitEmergency} disabled={loading} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#dc2626', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Confirm exit</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
