@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const supabase = require('../lib/supabase');
 const { sendMessage, CHANNELS } = require('../lib/discord');
-const { classifyLateStatus, timeToMinutes, calcRawHours } = require('../lib/rules');
+const { classifyLateStatus, timeToMinutes, calcRawHours, timeToSeconds } = require('../lib/rules');
 const requireAuth = require('../middleware/requireAuth');
 
 router.use(requireAuth);
@@ -141,20 +141,27 @@ router.post('/', async (req, res) => {
   }
 
   if (action === 'break-out') {
+    // Guard: must not already have an open break session today.
+    const { data: openRows } = await supabase
+      .from('break_log').select('id').eq('name', officialName).eq('date', date).eq('break_in', '');
+    if (openRows && openRows.length > 0) {
+      return res.status(400).json({ error: 'You already have an open break.' });
+    }
     const { error } = await supabase.from('break_log').insert({
-      name: officialName, date, break_out: local_time, break_in: '', duration_mins: 0,
+      name: officialName, date, break_out: local_time, break_in: '', duration_secs: 0,
     });
     if (error) return res.status(500).json({ error: error.message });
     return res.json({ success: true, message: 'Break out recorded!' });
   }
 
   if (action === 'break-in') {
-    const { data: breakRow } = await supabase
-      .from('break_log').select('id, break_out').eq('name', officialName).eq('date', date).maybeSingle();
-    if (!breakRow) return res.status(400).json({ error: 'No break-out record found.' });
-    const duration_mins = timeToMinutes(local_time) - timeToMinutes(breakRow.break_out);
+    const { data: openRows } = await supabase
+      .from('break_log').select('id, break_out').eq('name', officialName).eq('date', date).eq('break_in', '');
+    const breakRow = openRows && openRows[0];
+    if (!breakRow) return res.status(400).json({ error: 'No open break to return from.' });
+    const duration_secs = Math.max(0, timeToSeconds(local_time) - timeToSeconds(breakRow.break_out));
     const { error } = await supabase.from('break_log')
-      .update({ break_in: local_time, duration_mins }).eq('id', breakRow.id);
+      .update({ break_in: local_time, duration_secs }).eq('id', breakRow.id);
     if (error) return res.status(500).json({ error: error.message });
     return res.json({ success: true, message: 'Break in recorded!' });
   }
