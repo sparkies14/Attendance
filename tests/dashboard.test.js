@@ -46,3 +46,60 @@ describe('GET / — absent bug (date-format root cause)', () => {
     expect(maria.status).toBe('CLOCKED IN');
   });
 });
+
+describe('GET / — break/lunch/leave/emergency enrichment', () => {
+  function setup(over = false) {
+    supabase.from.mockImplementation((t) => {
+      if (t === 'users') return builder({ data: [
+        { name: 'Maria Cruz', email: 'maria@x.com', job_role: 'Dev', status: 'Active' },
+        { name: 'Leo Tan',    email: 'leo@x.com',   job_role: 'QA',  status: 'Active' },
+      ] });
+      if (t === 'attendance') return builder({ data: [
+        { email: 'maria@x.com', clock_in: '09:00:00', clock_out: '', late_status: 'ON TIME', status: 'Approved', emergency: false },
+        { email: 'leo@x.com',   clock_in: '09:05:00', clock_out: '', late_status: 'ON TIME', status: 'Approved', emergency: true, emergency_reason: 'Family' },
+      ] });
+      if (t === 'break_log') return builder({ data: [
+        { name: 'Maria Cruz', break_out: '10:30:00', break_in: '', duration_secs: 0 },
+        { name: 'Maria Cruz', break_out: '09:30:00', break_in: '09:33:20', duration_secs: over ? 1000 : 200 },
+      ] });
+      if (t === 'lunch_log') return builder({ data: [
+        { name: 'Leo Tan', lunch_out: '12:00:00', lunch_in: '', duration_secs: 0 },
+      ] });
+      if (t === 'leave_log') return builder({ data: [] });
+      return builder({ data: [] });
+    });
+  }
+
+  test('per-member break/lunch fields are computed', async () => {
+    setup();
+    const res = await request(makeApp()).get('/');
+    const maria = res.body.members.find(m => m.email === 'maria@x.com');
+    const leo   = res.body.members.find(m => m.email === 'leo@x.com');
+    expect(maria.onBreak).toBe(true);
+    expect(maria.breakStart).toBe('10:30:00');
+    expect(maria.breakUsedSecs).toBe(200);
+    expect(leo.onLunch).toBe(true);
+    expect(leo.lunchStart).toBe('12:00:00');
+  });
+
+  test('summary includes onBreak/onLunch/overBudget/onLeave/emergency counts', async () => {
+    setup();
+    const res = await request(makeApp()).get('/');
+    expect(res.body.summary.onBreak).toBe(1);
+    expect(res.body.summary.onLunch).toBe(1);
+    expect(res.body.summary.emergency).toBe(1);
+    expect(res.body.summary.overBudget).toBe(0);
+  });
+
+  test('overBudget counts completed usage beyond budget', async () => {
+    setup(true);
+    const res = await request(makeApp()).get('/');
+    expect(res.body.summary.overBudget).toBe(1);
+  });
+
+  test('payload exposes budgets', async () => {
+    setup();
+    const res = await request(makeApp()).get('/');
+    expect(res.body.budgets).toEqual({ breakSecs: 900, lunchSecs: 3600 });
+  });
+});
