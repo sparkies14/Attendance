@@ -480,16 +480,18 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
             {working && (
               <>
                 <ActionBtn onClick={clockOut} disabled={loading} danger>Clock out</ActionBtn>
-                <ActionBtn onClick={() => setShowEmergency(true)} disabled={loading} danger>🚨 Emergency</ActionBtn>
+                <ActionBtn onClick={() => setShowEmergency(true)} disabled={loading} danger><IcnAlert />Emergency</ActionBtn>
                 <ActionBtn onClick={lunchToggle} disabled={loading || (lunchConsumed && !onLunch)} active={onLunch} activeColor={onLunch && lunchRemaining < 0 ? C.red : C.accent}>
+                  <IcnUtensils />
                   {onLunch
-                    ? `🍱 On Lunch · ${fmt(lunchRemaining)}${lunchRemaining < 0 ? ' over' : ' left'}`
-                    : lunchConsumed ? '🍱 Lunch taken' : '🍱 Lunch'}
+                    ? `On Lunch · ${fmt(lunchRemaining)}${lunchRemaining < 0 ? ' over' : ' left'}`
+                    : lunchConsumed ? 'Lunch taken' : 'Lunch'}
                 </ActionBtn>
                 <ActionBtn onClick={breakToggle} disabled={loading || (!onBreak && breakRemaining <= 0)} active={onBreak} activeColor={onBreak && breakRemaining < 0 ? C.red : C.purple}>
+                  <IcnCoffee />
                   {onBreak
-                    ? `☕ On Break · ${fmt(breakRemaining)}${breakRemaining < 0 ? ' over' : ' left'}`
-                    : breakRemaining <= 0 ? '☕ No break left' : `☕ Break · ${fmt(Math.max(0, breakRemaining))} left`}
+                    ? `On Break · ${fmt(breakRemaining)}${breakRemaining < 0 ? ' over' : ' left'}`
+                    : breakRemaining <= 0 ? 'No break left' : `Break · ${fmt(Math.max(0, breakRemaining))} left`}
                 </ActionBtn>
               </>
             )}
@@ -670,7 +672,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}
              onClick={() => setShowEmergency(false)}>
           <div onClick={e => e.stopPropagation()} style={{ background: C.surface, borderRadius: 14, padding: 22, width: 360, maxWidth: '90vw', border: `1px solid ${C.border}` }}>
-            <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text, marginBottom: 10 }}>🚨 What&apos;s the emergency?</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontFamily: F_SERIF, fontSize: 20, color: C.text, marginBottom: 10 }}><span style={{ color: C.red, display: 'inline-flex' }}><IcnAlert size={20} /></span>What&apos;s the emergency?</div>
             <select value={emReason} onChange={e => setEmReason(e.target.value)}
               style={{ width: '100%', padding: '9px 11px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 14, background: C.surface, color: C.text, marginBottom: 10 }}>
               {EMERGENCY_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
@@ -707,9 +709,40 @@ function ActionBtn({ onClick, disabled, primary, danger, active, activeColor, ch
     <button
       onClick={onClick}
       disabled={disabled}
-      style={{ padding: '10px 20px', background: bg, color, border, borderRadius: 9, fontSize: 13.5, fontFamily: "'Geist', system-ui, sans-serif", fontWeight: active ? 600 : 500, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}
+      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '10px 20px', background: bg, color, border, borderRadius: 9, fontSize: 13.5, fontFamily: "'Geist', system-ui, sans-serif", fontWeight: active ? 600 : 500, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}
     >
       {children}
     </button>
+  );
+}
+
+// ── Inline line icons (inherit currentColor; no emoji) ──
+function IcnAlert({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden>
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}
+function IcnUtensils({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden>
+      <path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2" />
+      <path d="M7 2v20" />
+      <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+    </svg>
+  );
+}
+function IcnCoffee({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }} aria-hidden>
+      <path d="M17 8h1a4 4 0 1 1 0 8h-1" />
+      <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+      <line x1="6" y1="2" x2="6" y2="4" />
+      <line x1="10" y1="2" x2="10" y2="4" />
+      <line x1="14" y1="2" x2="14" y2="4" />
+    </svg>
   );
 }

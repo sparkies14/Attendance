@@ -442,8 +442,13 @@ export default function AttendancePage({ dashboard }: Props) {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, lineHeight: 1.15 }}>
                             <span style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{m.name}</span>
                             {m.emergency && (
-                              <span title={m.emergencyReason || 'Emergency'} style={{ padding: '1px 7px', borderRadius: 999, background: 'rgba(220,38,38,0.10)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.30)', fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.06em' }}>
-                                🚨 EMERGENCY
+                              <span title={m.emergencyReason || 'Emergency'} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, background: 'rgba(220,38,38,0.10)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.30)', fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.06em' }}>
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+                                  <line x1="12" y1="9" x2="12" y2="13" />
+                                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                                </svg>
+                                EMERGENCY
                               </span>
                             )}
                           </div>
