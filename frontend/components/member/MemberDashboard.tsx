@@ -209,7 +209,7 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
                 key={id}
                 onClick={() => setPage(id)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                  display: 'flex', alignItems: 'center', justifyContent: expanded ? 'flex-start' : 'center', gap: 10, width: '100%',
                   padding: '9px 12px', marginBottom: 2, borderRadius: 8,
                   background: on ? C.sidebarActive : 'transparent',
                   border: 'none', cursor: 'pointer', textAlign: 'left',
@@ -218,7 +218,7 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
                 }}
               >
                 <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={18} /></span>
-                <span style={{ opacity: expanded ? 1 : 0, whiteSpace: 'nowrap', transition: 'opacity .12s' }}>{label}</span>
+                <span style={{ opacity: expanded ? 1 : 0, width: expanded ? 'auto' : 0, overflow: 'hidden', whiteSpace: 'nowrap', transition: 'opacity .12s' }}>{label}</span>
               </button>
             );
           })}
