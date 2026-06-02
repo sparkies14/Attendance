@@ -130,6 +130,33 @@ describe('clock-in — re-clock-in (clock_out is filled)', () => {
     );
   });
 
+  test('manual resume after emergency reopens the existing record (no new Pending insert)', async () => {
+    // After an emergency the day's record exists and is clocked out.
+    const emergencyRecord = {
+      id: 9,
+      clock_in: '9:00 AM',
+      clock_out: '1:00 PM',
+      last_clock_in: '9:00 AM',
+      accumulated_hours: 0,
+    };
+    const updateChain = c(null);
+
+    supabase.from
+      .mockReturnValueOnce(c(ACTIVE_USER))       // users select
+      .mockReturnValueOnce(c(emergencyRecord))   // attendance select (existing, clocked out)
+      .mockReturnValueOnce(updateChain);         // attendance update (reopen)
+
+    // Resume while "late" → frontend sends entry_type: 'manual' with a reason.
+    const res = await request(makeApp())
+      .post('/').send({ ...BASE_BODY, action: 'clock-in', entry_type: 'manual', reason: 'back from emergency', local_time: '2:00 PM' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toMatch(/re-clock in recorded/i);
+    // Must REOPEN (update clock_out:'') and must NOT insert a new Pending row.
+    expect(updateChain.update).toHaveBeenCalledWith(expect.objectContaining({ clock_out: '' }));
+    expect(updateChain.insert).not.toHaveBeenCalled();
+  });
+
   test('uses last_clock_in when available for segment calculation', async () => {
     // First clock-in at 9:00, last_clock_in reset to 11:30 AM (after a re-clock-in),
     // then clocked out at 12:30 PM → segment = 1 raw hour

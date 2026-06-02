@@ -25,19 +25,6 @@ router.post('/', async (req, res) => {
     ? classifyLateStatus(Number(jst_hour), Number(jst_minute))
     : '';
 
-  if (entry_type === 'manual' && action === 'clock-in') {
-    const { error } = await supabase.from('attendance').insert({
-      email, name: officialName, date,
-      clock_in: local_time, clock_out: '', total_hours: 0,
-      last_clock_in: local_time, accumulated_hours: 0,
-      entry_type, status: 'Pending', late_status, reason, fingerprint, role,
-    });
-    if (error) return res.status(500).json({ error: error.message });
-    await sendMessage(CHANNELS.approvals,
-      `📋 **Manual Entry** — ${officialName}\nDate: ${date} | Time: ${local_time} | Reason: ${reason}`);
-    return res.json({ success: true, message: 'Manual entry submitted! Waiting for manager approval.' });
-  }
-
   if (action === 'clock-in') {
     const { data: existing } = await supabase
       .from('attendance')
@@ -50,7 +37,9 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ error: 'You are already clocked in.' });
       }
 
-      // Re-clock-in: closed segment exists, accumulate its raw hours
+      // Re-clock-in / resume: a closed segment exists (normal clock-out OR an
+      // emergency exit), so reopen it and accumulate its raw hours. This runs for
+      // ANY entry_type — resuming an existing day must never create a second row.
       const segmentFrom = existing.last_clock_in || existing.clock_in;
       const rawSegmentHours = calcRawHours(segmentFrom, existing.clock_out);
       const new_accumulated = (existing.accumulated_hours || 0) + rawSegmentHours;
@@ -64,7 +53,21 @@ router.post('/', async (req, res) => {
       return res.json({ success: true, message: 'Re-clock in recorded!' });
     }
 
-    // First clock-in of the day
+    // No record yet today. A manual FIRST clock-in needs manager approval.
+    if (entry_type === 'manual') {
+      const { error } = await supabase.from('attendance').insert({
+        email, name: officialName, date,
+        clock_in: local_time, clock_out: '', total_hours: 0,
+        last_clock_in: local_time, accumulated_hours: 0,
+        entry_type, status: 'Pending', late_status, reason, fingerprint, role,
+      });
+      if (error) return res.status(500).json({ error: error.message });
+      await sendMessage(CHANNELS.approvals,
+        `📋 **Manual Entry** — ${officialName}\nDate: ${date} | Time: ${local_time} | Reason: ${reason}`);
+      return res.json({ success: true, message: 'Manual entry submitted! Waiting for manager approval.' });
+    }
+
+    // Automatic first clock-in of the day.
     const { error } = await supabase.from('attendance').insert({
       email, name: officialName, date,
       clock_in: local_time, clock_out: '', total_hours: 0,
