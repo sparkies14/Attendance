@@ -1,4 +1,4 @@
-const { classifyLateStatus, timeToMinutes, calcNetHours, calcRawHours, calendarDayStatus } = require('../lib/rules');
+const { classifyLateStatus, timeToMinutes, calcNetHours, calcRawHours, calendarDayStatus, timeToSeconds } = require('../lib/rules');
 
 describe('classifyLateStatus', () => {
   test('before 9:00 → ON TIME', () => expect(classifyLateStatus(8, 59)).toBe('ON TIME'));
@@ -30,6 +30,18 @@ describe('calcRawHours', () => {
   test("'09:00' to '11:00' → 2", () => expect(calcRawHours('09:00', '11:00')).toBe(2));
   test("'09:00' to '09:00' → 0 (same time)", () => expect(calcRawHours('09:00', '09:00')).toBe(0));
   test("'11:00' to '09:00' → 0 (reversed, clamped to 0)", () => expect(calcRawHours('11:00', '09:00')).toBe(0));
+});
+
+describe('timeToSeconds', () => {
+  test('parses HH:MM:SS to seconds of day', () => {
+    expect(timeToSeconds('00:00:00')).toBe(0);
+    expect(timeToSeconds('00:00:45')).toBe(45);
+    expect(timeToSeconds('01:02:03')).toBe(3723);
+    expect(timeToSeconds('13:30:00')).toBe(48600);
+  });
+  test('treats missing seconds as 0', () => {
+    expect(timeToSeconds('09:05')).toBe(32700);
+  });
 });
 
 describe('calendarDayStatus', () => {
