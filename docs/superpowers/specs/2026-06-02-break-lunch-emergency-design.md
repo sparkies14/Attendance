@@ -28,8 +28,18 @@ live countdown; soft overage handling for both; and a new **Emergency** action
 ## Emergency button
 
 - Red **🚨 Emergency** button beside Clock Out on the member page.
-- Pressing it opens a small inline prompt: **"What's the emergency?"** (required
-  short text). On confirm it:
+- Pressing it opens a small inline prompt: **"What's the emergency?"** with a
+  **dropdown of preset reasons** (fast pick when rushing) plus an **"Other"**
+  choice that reveals a **free-text field**. Preset options:
+  - Family emergency
+  - Medical / health issue
+  - Accident
+  - Transportation / commute problem
+  - Severe weather / disaster
+  - Other… (reveals a required free-text input)
+- Validation: a preset must be chosen; if "Other", the free-text is required.
+  The stored `emergency_reason` is the preset label, or the typed text for
+  "Other". On confirm it:
   - ends the work day exactly like Clock Out (sets `clock_out`, computes
     `total_hours`, status Approved),
   - sets `attendance.emergency = true` and stores `attendance.emergency_reason`,
