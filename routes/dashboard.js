@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const supabase = require('../lib/supabase');
-const { todayJST } = require('../lib/rules');
+const { todayJSTISO } = require('../lib/rules');
 const requireAuth = require('../middleware/requireAuth');
 const requireRole = require('../middleware/requireRole');
 
@@ -8,7 +8,7 @@ router.use(requireAuth);
 router.use(requireRole('owner', 'admin'));
 
 router.get('/', async (req, res) => {
-  const today = todayJST();
+  const today = todayJSTISO();
 
   const [
     { data: todayAtt },
