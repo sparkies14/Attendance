@@ -43,6 +43,8 @@ router.get('/', async (req, res) => {
       clockOut: rec?.clock_out || '-',
       totalHours: rec?.total_hours ?? '-',
       lateStatus: rec?.late_status || '',
+      emergency: rec?.emergency ?? false,
+      emergencyReason: rec?.emergency_reason ?? null,
     };
   });
 

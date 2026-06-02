@@ -439,7 +439,14 @@ export default function AttendancePage({ dashboard }: Props) {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                         <span style={{ width: 32, height: 32, borderRadius: '50%', background: `${hue}22`, color: hue, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{init}</span>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 500, color: C.text, lineHeight: 1.15 }}>{m.name}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, lineHeight: 1.15 }}>
+                            <span style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{m.name}</span>
+                            {m.emergency && (
+                              <span title={m.emergencyReason || 'Emergency'} style={{ padding: '1px 7px', borderRadius: 999, background: 'rgba(220,38,38,0.10)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.30)', fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.06em' }}>
+                                🚨 EMERGENCY
+                              </span>
+                            )}
+                          </div>
                           <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, marginTop: 1, letterSpacing: '0.02em' }}>
                             {m.role}{m.clockIn ? ` · in at ${m.clockIn}` : ''}
                           </div>

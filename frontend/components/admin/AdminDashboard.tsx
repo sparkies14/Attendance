@@ -57,6 +57,8 @@ export interface DashboardData {
     clockOut: string;
     totalHours: number | string;
     lateStatus: string;
+    emergency?: boolean;
+    emergencyReason?: string | null;
   }[];
   pendingApprovals: PendingAttendance[];
   pendingLeave: PendingLeave[];
