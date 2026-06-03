@@ -4,6 +4,7 @@ import { clientFetch } from '@/lib/clientFetch';
 
 import { useState, useEffect } from 'react';
 import type { UserProfile, MemberData, LeaveBalance, CalendarDay } from '../MemberDashboard';
+import { C, F_SERIF, F_SANS, F_MONO, tickTrack } from '../theme';
 
 interface Props {
   user: UserProfile;
@@ -12,28 +13,13 @@ interface Props {
   apiUrl: string;
 }
 
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-};
-
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
-
 const STATUS_COLOR: Record<string, string> = {
-  present:  '#16a34a',
-  late:     '#b45309',
-  absent:   '#dc2626',
-  leave:    '#7c3aed',
-  pending:  '#b45309',
-  rejected: '#dc2626',
+  present:  C.green,
+  late:     C.accent,
+  absent:   C.red,
+  leave:    C.purple,
+  pending:  C.accent,
+  rejected: C.red,
 };
 
 const LEAVE_TYPES = ['Vacation', 'Sick', 'Personal', 'Other'];
@@ -391,8 +377,8 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
           {/* Progress bar */}
           {(working || done) && (
             <div style={{ marginBottom: 20 }}>
-              <div style={{ position: 'relative', height: 6, background: C.border, borderRadius: 999, overflow: 'hidden', marginBottom: 8 }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${C.accent}, ${C.green})`, borderRadius: 999, transition: 'width 1s linear' }} />
+              <div style={{ position: 'relative', height: 6, borderRadius: 999, overflow: 'hidden', marginBottom: 8, ...tickTrack }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${C.accent}, ${C.green})`, borderRadius: 999, transition: 'width 1s linear', zIndex: 1 }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em' }}>
                 <span style={{ color: pct >= 100 ? C.green : C.text3 }}>{pct >= 100 ? 'Target reached!' : `${(targetH - hoursWorked).toFixed(1)}h to go`}</span>
@@ -414,7 +400,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
                   <div style={{ display: 'inline-flex', background: C.surface2, borderRadius: 999, padding: 3, border: `1px solid ${C.border}` }}>
                     {(['auto','manual'] as const).map(t => (
                       <button key={t} onClick={() => setEntryType(t)}
-                        style={{ padding: '5px 14px', background: entryType === t ? C.text : 'transparent', color: entryType === t ? '#fafafa' : C.text3, border: 'none', borderRadius: 999, fontSize: 11.5, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.04em', transition: 'all 0.15s' }}>
+                        style={{ padding: '5px 14px', background: entryType === t ? C.text : 'transparent', color: entryType === t ? C.onAccent : C.text3, border: 'none', borderRadius: 999, fontSize: 11.5, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.04em', transition: 'all 0.15s' }}>
                         {t.charAt(0).toUpperCase() + t.slice(1)}
                       </button>
                     ))}
@@ -476,7 +462,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
                     <button
                       type="submit"
                       disabled={appealLoading}
-                      style={{ padding: '10px 20px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 9, fontSize: 13, fontFamily: F_SANS, fontWeight: 500, cursor: appealLoading ? 'not-allowed' : 'pointer', opacity: appealLoading ? 0.6 : 1 }}
+                      style={{ padding: '10px 20px', background: C.text, color: C.onAccent, border: 'none', borderRadius: 9, fontSize: 13, fontFamily: F_SANS, fontWeight: 500, cursor: appealLoading ? 'not-allowed' : 'pointer', opacity: appealLoading ? 0.6 : 1 }}
                     >
                       {appealLoading ? 'Submitting…' : 'Submit appeal'}
                     </button>
@@ -560,12 +546,12 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
                     {isWeekend ? <span style={{ color: C.text3 }}>Weekend</span> : cin ? <>{cin} <span style={{ color: C.text3 }}>→</span> {cout ?? '—'}</> : <span style={{ color: C.text3 }}>—</span>}
                   </div>
                   {/* Bar */}
-                  <div style={{ flex: 1, position: 'relative', height: 12, background: C.surface2, borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{ flex: 1, position: 'relative', height: 12, borderRadius: 4, overflow: 'hidden', ...tickTrack }}>
                     {hrs > 0 && (
-                      <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${barW}%`, background: tint, borderRadius: 4 }} />
+                      <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${barW}%`, background: tint, borderRadius: 4, zIndex: 1 }} />
                     )}
                     {/* 8h marker at 80% */}
-                    <div style={{ position: 'absolute', top: -1, bottom: -1, left: '80%', width: 1, background: C.borderStrong, opacity: 0.5 }} />
+                    <div style={{ position: 'absolute', top: -1, bottom: -1, left: '80%', width: 1, background: C.borderStrong, opacity: 0.5, zIndex: 2 }} />
                   </div>
                   {/* Hours */}
                   <div style={{ width: 48, flexShrink: 0, textAlign: 'right', fontFamily: F_MONO, fontSize: 12, color: hrs > 0 ? tint : C.text3, fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
@@ -633,8 +619,8 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
             <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.green, letterSpacing: '0.04em', marginBottom: 12 }}>
               {Math.max(0, leaveBalance.balance)} days available
             </div>
-            <div style={{ height: 4, background: C.border, borderRadius: 999 }}>
-              <div style={{ height: '100%', width: `${Math.min(100, (leaveBalance.used / (leaveBalance.grantsEarned || 1)) * 100)}%`, background: leaveBalance.balance <= 5 ? C.accent : C.text, borderRadius: 999 }} />
+            <div style={{ height: 4, borderRadius: 999, overflow: 'hidden', position: 'relative', ...tickTrack }}>
+              <div style={{ height: '100%', width: `${Math.min(100, (leaveBalance.used / (leaveBalance.grantsEarned || 1)) * 100)}%`, background: leaveBalance.balance <= 5 ? C.accent : C.text, borderRadius: 999, position: 'relative', zIndex: 1 }} />
             </div>
             {leaveBalance.balance <= 5 && leaveBalance.balance > 0 && (
               <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.accent, marginTop: 8, letterSpacing: '0.02em' }}>
@@ -669,7 +655,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
               <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 5 }}>Reason</label>
               <textarea value={leaveReason} onChange={e => setLeaveReason(e.target.value)} required rows={2} style={{ ...inp, resize: 'vertical' }} />
             </div>
-            <button type="submit" disabled={lLoading} style={{ width: '100%', padding: '9px 16px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 9, fontSize: 13, fontFamily: F_SANS, fontWeight: 500, cursor: lLoading ? 'not-allowed' : 'pointer', opacity: lLoading ? 0.6 : 1 }}>
+            <button type="submit" disabled={lLoading} style={{ width: '100%', padding: '9px 16px', background: C.text, color: C.onAccent, border: 'none', borderRadius: 9, fontSize: 13, fontFamily: F_SANS, fontWeight: 500, cursor: lLoading ? 'not-allowed' : 'pointer', opacity: lLoading ? 0.6 : 1 }}>
               {lLoading ? 'Submitting…' : '+ Request leave'}
             </button>
           </form>
@@ -690,7 +676,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
             )}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button onClick={() => setShowEmergency(false)} style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${C.border}`, background: 'transparent', color: C.text2, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={submitEmergency} disabled={loading} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#dc2626', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Confirm exit</button>
+              <button onClick={submitEmergency} disabled={loading} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: C.red, color: C.onAccent, fontWeight: 600, cursor: 'pointer' }}>Confirm exit</button>
             </div>
           </div>
         </div>
@@ -709,14 +695,14 @@ function StatusBadge({ bg, color, dot, pulse, children }: { bg: string; color: s
 }
 
 function ActionBtn({ onClick, disabled, primary, danger, active, activeColor, children }: { onClick: () => void; disabled?: boolean; primary?: boolean; danger?: boolean; active?: boolean; activeColor?: string; children: React.ReactNode }) {
-  const bg     = active ? `${activeColor}18` : danger ? 'transparent' : primary ? '#0a0a0a' : 'transparent';
-  const color  = active ? activeColor! : danger ? '#dc2626' : primary ? '#fafafa' : '#525252';
-  const border = active ? `1.5px solid ${activeColor}55` : danger ? '1px solid rgba(220,38,38,0.3)' : primary ? 'none' : '1px solid #e6e6e6';
+  const bg     = active ? `${activeColor}18` : danger ? 'transparent' : primary ? C.text : 'transparent';
+  const color  = active ? activeColor! : danger ? C.red : primary ? C.onAccent : C.text2;
+  const border = active ? `1.5px solid ${activeColor}55` : danger ? `1px solid ${C.redBorder}` : primary ? 'none' : `1px solid ${C.border}`;
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '10px 20px', background: bg, color, border, borderRadius: 9, fontSize: 13.5, fontFamily: "'Geist', system-ui, sans-serif", fontWeight: active ? 600 : 500, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}
+      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '10px 20px', background: bg, color, border, borderRadius: 9, fontSize: 13.5, fontFamily: F_SANS, fontWeight: active ? 600 : 500, cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}
     >
       {children}
     </button>
