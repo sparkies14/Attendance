@@ -546,7 +546,7 @@ export default function MembersPage({ apiUrl, adminRole }: Props) {
                           height: 34,
                           borderRadius: '50%',
                           background: color,
-                          color: '#fff',
+                          color: C.onAccent,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -581,7 +581,7 @@ export default function MembersPage({ apiUrl, adminRole }: Props) {
                                   style={{ padding: '3px 7px', border: `1px solid ${C.border}`, borderRadius: 5, fontFamily: F_MONO, fontSize: 10.5, color: C.text, background: C.bg, width: 150 }}
                                 />
                                 <button onClick={() => saveDiscordId(user.id)} disabled={discordLoading}
-                                  style={{ padding: '3px 8px', background: C.green, color: '#fff', border: 'none', borderRadius: 5, fontFamily: F_MONO, fontSize: 10, cursor: discordLoading ? 'not-allowed' : 'pointer' }}>
+                                  style={{ padding: '3px 8px', background: C.green, color: C.onAccent, border: 'none', borderRadius: 5, fontFamily: F_MONO, fontSize: 10, cursor: discordLoading ? 'not-allowed' : 'pointer' }}>
                                   {discordLoading ? '…' : 'Save'}
                                 </button>
                                 <button onClick={() => { setDiscordEditId(null); setDiscordErr(null); }}
