@@ -236,7 +236,7 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Timesheet.</div>
+          <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Timesheet.</div>
           <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
             Hours tracker · pay period {startLabel} – {endLabel}, {pp.endYear}
           </div>
@@ -273,16 +273,16 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
 
             {/* Big serif number */}
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14 }}>
-              <div style={{ fontFamily: F_SERIF, fontSize: 96, lineHeight: 0.85, color: C.text, letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums' }}>
+              <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 96, lineHeight: 0.85, color: C.text, letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums' }}>
                 {hFull}<span style={{ fontSize: 56, color: C.text2 }}>h</span>
               </div>
               {mPart > 0 && (
-                <div style={{ fontFamily: F_SERIF, fontSize: 48, color: C.text2, letterSpacing: '-0.03em', lineHeight: 0.9, fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 48, color: C.text2, letterSpacing: '-0.03em', lineHeight: 0.9, fontVariantNumeric: 'tabular-nums' }}>
                   {mPart}<span style={{ fontSize: 28 }}>m</span>
                 </div>
               )}
               <div style={{ marginBottom: 8 }}>
-                <div style={{ fontFamily: F_SERIF, fontSize: 22, color: C.text3, letterSpacing: '-0.015em', lineHeight: 1 }}>/ {reqHours}h</div>
+                <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 22, color: C.text3, letterSpacing: '-0.015em', lineHeight: 1 }}>/ {reqHours}h</div>
                 <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 4 }}>Required</div>
               </div>
             </div>
@@ -325,7 +325,7 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
             <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Projection</div>
             <div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <div style={{ fontFamily: F_SERIF, fontSize: 44, lineHeight: 0.9, color: C.text, letterSpacing: '-0.025em', fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 44, lineHeight: 0.9, color: C.text, letterSpacing: '-0.025em', fontVariantNumeric: 'tabular-nums' }}>
                   {Math.floor(projected)}<span style={{ color: C.text2 }}>h</span>
                 </div>
                 <div style={{ fontFamily: F_MONO, fontSize: 12.5, color: overUnder >= 0 ? C.green : C.red, letterSpacing: '0.04em' }}>
@@ -368,7 +368,7 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
           <div>
-            <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text, letterSpacing: '-0.015em' }}>Daily ledger</div>
+            <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 20, color: C.text, letterSpacing: '-0.015em' }}>Daily ledger</div>
             <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 3 }}>Day-by-day hours · this period</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
