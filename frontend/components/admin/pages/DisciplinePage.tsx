@@ -1,23 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { clientFetch } from '@/lib/clientFetch';
+import { C, F_SERIF, F_SANS, F_MONO } from '../../theme';
 
 interface Props { apiUrl: string; adminRole: string; }
-
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-  btnBg: '#0a0a0a', btnText: '#fafafa',
-};
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 interface DisciplineRecord {
   id: number; user_id: string; reason: string; issued_by: string; issued_at: string;
@@ -104,10 +90,9 @@ export default function DisciplinePage({ apiUrl }: Props) {
     finally { setAckBusy(null); }
   }
 
-  void F_SERIF;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1100 }}>
-      <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Discipline.</div>
+      <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Discipline.</div>
 
       {/* Issue warning */}
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
@@ -123,7 +108,7 @@ export default function DisciplinePage({ apiUrl }: Props) {
             <input type="text" value={issueReason} onChange={e => setIssueReason(e.target.value)} required placeholder="Brief reason…" style={{ ...inp, width: '100%' }} />
           </div>
           <button type="submit" disabled={issueBusy}
-            style={{ padding: '7px 16px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, fontWeight: 500, cursor: issueBusy ? 'not-allowed' : 'pointer', opacity: issueBusy ? 0.6 : 1 }}>
+            style={{ padding: '7px 16px', background: C.btnBg, color: C.btnText, border: 'none', borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, fontWeight: 500, cursor: issueBusy ? 'not-allowed' : 'pointer', opacity: issueBusy ? 0.6 : 1 }}>
             {issueBusy ? '…' : 'Issue warning'}
           </button>
         </form>
@@ -155,8 +140,12 @@ export default function DisciplinePage({ apiUrl }: Props) {
             {isOpen && (
               <div style={{ borderTop: `1px solid ${C.border}` }}>
                 {m.records.map((r, ri) => {
-                  const status = r.voided ? 'Voided' : r.acknowledged ? 'Acknowledged' : 'Active';
-                  const statusColor = r.voided ? C.text3 : r.acknowledged ? C.green : C.red;
+                  const isVoided = r.voided;
+                  const isAcked  = r.acknowledged;
+                  const status = isVoided ? 'Voided' : isAcked ? 'Acknowledged' : 'Active';
+                  const statusBg     = isVoided ? C.surface2   : isAcked ? C.greenSoft  : C.redSoft;
+                  const statusBorder = isVoided ? C.border      : isAcked ? C.greenBorder : C.redBorder;
+                  const statusColor  = isVoided ? C.text3       : isAcked ? C.green       : C.red;
                   return (
                     <div key={r.id} style={{ padding: '14px 20px', borderBottom: ri < m.records.length - 1 ? `1px solid ${C.border}` : 'none', background: r.voided ? C.surface2 : 'transparent' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
@@ -170,7 +159,7 @@ export default function DisciplinePage({ apiUrl }: Props) {
                           )}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                          <span style={{ padding: '2px 9px', borderRadius: 999, fontFamily: F_MONO, fontSize: 10, color: statusColor, background: `${statusColor}12`, border: `1px solid ${statusColor}33` }}>{status}</span>
+                          <span style={{ padding: '2px 9px', borderRadius: 999, fontFamily: F_MONO, fontSize: 10, color: statusColor, background: statusBg, border: `1px solid ${statusBorder}` }}>{status}</span>
                           {!r.voided && !r.acknowledged && (
                             <button onClick={() => acknowledge(r.id)} disabled={ackBusy === r.id}
                               style={{ padding: '3px 10px', borderRadius: 6, background: 'transparent', border: `1px solid ${C.greenBorder}`, fontFamily: F_MONO, fontSize: 10.5, color: C.green, cursor: ackBusy === r.id ? 'not-allowed' : 'pointer' }}>
@@ -191,7 +180,7 @@ export default function DisciplinePage({ apiUrl }: Props) {
                           <input type="text" value={voidReason} onChange={e => setVoidReason(e.target.value)} placeholder="Void reason (required)…"
                             style={{ flex: 1, padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, color: C.text, background: C.bg }} />
                           <button onClick={() => voidWarning(r.id)}
-                            style={{ padding: '6px 14px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, fontWeight: 500, cursor: 'pointer' }}>
+                            style={{ padding: '6px 14px', background: C.btnBg, color: C.btnText, border: 'none', borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, fontWeight: 500, cursor: 'pointer' }}>
                             Confirm void
                           </button>
                         </div>
