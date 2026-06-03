@@ -4,7 +4,7 @@ import { clientFetch } from '@/lib/clientFetch';
 
 import { useState, useEffect } from 'react';
 import type { MemberData, CalendarDay } from '../MemberDashboard';
-import { C, F_SERIF, F_SANS, F_MONO, tickTrack } from '../theme';
+import { C, F_SERIF, F_SANS, F_MONO, tickTrack } from '../../theme';
 
 interface Props {
   email: string;

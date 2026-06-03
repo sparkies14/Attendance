@@ -3,7 +3,7 @@
 import { clientFetch } from '@/lib/clientFetch';
 import { useState, useEffect } from 'react';
 import type { MemberData, CalendarDay, PlanEvent } from '../MemberDashboard';
-import { C, F_SERIF, F_SANS, F_MONO } from '../theme';
+import { C, F_SERIF, F_SANS, F_MONO } from '../../theme';
 
 interface Props {
   email: string;

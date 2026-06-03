@@ -4,7 +4,7 @@ import { clientFetch } from '@/lib/clientFetch';
 
 import { useState, useEffect } from 'react';
 import type { UserProfile, MemberData, LeaveBalance, CalendarDay } from '../MemberDashboard';
-import { C, F_SERIF, F_SANS, F_MONO, tickTrack, accentSecs } from '../theme';
+import { C, F_SERIF, F_SANS, F_MONO, tickTrack, accentSecs } from '../../theme';
 
 interface Props {
   user: UserProfile;

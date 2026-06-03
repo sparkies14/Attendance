@@ -38,6 +38,7 @@ input, select, textarea {
   --c-purple:#a99bff; --c-purple-soft:rgba(169,155,255,.12);
   --c-sidebar-bg:#090a0c; --c-sidebar-border:rgba(255,255,255,.07); --c-sidebar-text:#8a8a92; --c-sidebar-active:rgba(84,230,255,.12); --c-sidebar-active-text:#54e6ff;
   --c-on-accent:#0c0d10; --c-brand:#54e6ff; --c-tick:rgba(255,255,255,.07);
+  --c-btn-bg:#edecf0; --c-btn-text:#0c0d10; --c-orange:#f2b85c; --c-purple-border:rgba(169,155,255,.30);
 }
 [data-mode="light"] {
   --c-bg:#f7f1e4; --c-surface:#fffdf7; --c-surface2:#f1e9d7;
@@ -50,4 +51,5 @@ input, select, textarea {
   --c-purple:#6d4bd6; --c-purple-soft:rgba(109,75,214,.10);
   --c-sidebar-bg:#efe6d4; --c-sidebar-border:rgba(40,28,8,.10); --c-sidebar-text:#6b6355; --c-sidebar-active:rgba(194,65,12,.12); --c-sidebar-active-text:#c2410c;
   --c-on-accent:#fffdf7; --c-brand:#c2410c; --c-tick:rgba(40,28,8,.11);
+  --c-btn-bg:#211a12; --c-btn-text:#fffdf7; --c-orange:#b8791a; --c-purple-border:rgba(109,75,214,.30);
 }
