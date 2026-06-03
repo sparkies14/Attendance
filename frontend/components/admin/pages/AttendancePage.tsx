@@ -157,11 +157,12 @@ function OutChip({ name, kind, start, usedSecs, budgetSecs }: OutChipProps) {
   const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
   const ss = String(elapsed % 60).padStart(2, '0');
   const tint = over ? C.red : (kind === 'lunch' ? C.blue : C.accent);
+  const tintSoft = over ? C.redSoft : (kind === 'lunch' ? C.blueSoft : C.accentSoft);
   const init = initials(name);
 
   return (
     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '6px 12px 6px 6px', background: C.surface2, border: `1px solid ${over ? C.redBorder : C.border}`, borderRadius: 999 }}>
-      <span style={{ width: 22, height: 22, borderRadius: '50%', background: `${tint}22`, color: tint, fontSize: 10, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{init}</span>
+      <span style={{ width: 22, height: 22, borderRadius: '50%', background: tintSoft, color: tint, fontSize: 10, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{init}</span>
       <span style={{ fontFamily: F_SANS, fontSize: 12, color: C.text, fontWeight: 500 }}>{name}</span>
       <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: tint, letterSpacing: '0.02em', fontVariantNumeric: 'tabular-nums' }}>
         on {kind} {mm}:{ss}
