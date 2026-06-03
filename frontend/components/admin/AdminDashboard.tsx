@@ -18,6 +18,8 @@ import DisciplinePage    from './pages/DisciplinePage';
 import AppealsAdminPage  from './pages/AppealsAdminPage';
 import AuditLogPage      from './pages/AuditLogPage';
 import LeaveBalancesPage from './pages/LeaveBalancesPage';
+import { C, F_SERIF, F_SANS, F_MONO, accentSecs } from '../theme';
+import { useThemeMode, ThemeModeContext } from '../useThemeMode';
 
 export interface PendingAttendance {
   id: number;
@@ -93,24 +95,6 @@ interface Props {
 type Page = 'attendance' | 'approvals' | 'leave' | 'calendar' | 'payroll' | 'insights' | 'members'
           | 'tardy' | 'holidays' | 'policy' | 'discipline' | 'appeals-admin' | 'audit' | 'leave-balances';
 
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-  btnBg: '#0a0a0a', btnText: '#fafafa',
-  sidebarBg: '#050505', sidebarBorder: '#161616',
-  sidebarText: '#737373', sidebarActive: 'rgba(244,185,66,0.12)', sidebarActiveText: '#f4b942',
-};
-
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
-
 const NAV_GROUPS: { label: string; items: { id: Page; label: string; icon: ComponentType<{ size?: number }>; badge: 'pending' | 'leave' | 'appeals' | null }[] }[] = [
   { label: 'Overview',   items: [
     { id: 'attendance'    as Page, label: 'Attendance',     icon: HomeIcon,        badge: null },
@@ -142,6 +126,7 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
   const [localClock, setLocalClock] = useState('');
   const [dashData, setDashData] = useState<DashboardData | null>(dashboard);
   const [pendingAppeals, setPendingAppeals] = useState(0);
+  const { mode, toggle } = useThemeMode();
 
   async function refreshDashboard() {
     try {
@@ -196,7 +181,7 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
   void F_SERIF;
 
   return (<>
-    <div style={{ display: 'flex', height: '100vh', fontFamily: F_SANS, background: C.bg, color: C.text, overflow: 'hidden' }}>
+    <div data-mode={mode} style={{ display: 'flex', height: '100vh', fontFamily: F_SANS, background: C.bg, color: C.text, overflow: 'hidden' }}>
 
       {/* ── Sidebar ── */}
       <aside {...hoverProps} style={{ width: locked ? EXPANDED_W : COLLAPSED_W, flexShrink: 0, height: '100vh', position: 'relative', transition: 'width .18s ease' }}>
@@ -204,12 +189,12 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
 
         {/* Brand */}
         <div style={{ padding: '20px 22px 18px', borderBottom: `1px solid ${C.sidebarBorder}`, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg, #f4b942, #b45309)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ color: '#0a0a0a', fontSize: 13, fontWeight: 900, fontFamily: F_SANS, letterSpacing: '-0.04em' }}>A</span>
+          <div style={{ width: 28, height: 28, borderRadius: 7, background: C.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ color: C.onAccent, fontSize: 13, fontWeight: 900, fontFamily: F_SANS, letterSpacing: '-0.04em' }}>A</span>
           </div>
           {expanded && (
             <div>
-              <div style={{ fontFamily: F_SANS, fontSize: 13.5, fontWeight: 500, color: '#fafafa', letterSpacing: '-0.01em', lineHeight: 1.1 }}>Anosupo AI</div>
+              <div style={{ fontFamily: F_SANS, fontSize: 13.5, fontWeight: 500, color: C.text, letterSpacing: '-0.01em', lineHeight: 1.1 }}>Anosupo AI</div>
               <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 2 }}>
                 {adminRole.charAt(0).toUpperCase() + adminRole.slice(1)} · Dashboard
               </div>
@@ -217,7 +202,7 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
           )}
           {expanded && (
             <button onClick={toggleLock} aria-label={locked ? 'Unlock sidebar' : 'Lock sidebar open'} title={locked ? 'Unlock sidebar' : 'Lock sidebar open'}
-              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: locked ? '#f4b942' : C.sidebarText, display: 'flex', alignItems: 'center', padding: 4 }}>
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: locked ? C.sidebarActiveText : C.sidebarText, display: 'flex', alignItems: 'center', padding: 4 }}>
               <PinIcon size={15} />
             </button>
           )}
@@ -227,7 +212,7 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
         <div style={{ padding: '10px', flex: 1, overflow: 'auto' }}>
           {NAV_GROUPS.map((g, gi) => (
             <div key={gi} style={{ marginTop: gi === 0 ? 6 : 14 }}>
-              {expanded && (<div style={{ fontFamily: F_MONO, fontSize: 9.5, color: '#525252', letterSpacing: '0.14em', textTransform: 'uppercase', padding: '4px 12px 8px' }}>{g.label}</div>)}
+              {expanded && (<div style={{ fontFamily: F_MONO, fontSize: 9.5, color: C.text2, letterSpacing: '0.14em', textTransform: 'uppercase', padding: '4px 12px 8px' }}>{g.label}</div>)}
               {g.items.map((it) => {
                 const isActive = page === it.id;
                 const badge = it.badge === 'pending' ? pendingCount : it.badge === 'appeals' ? pendingAppeals : null;
@@ -238,7 +223,7 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
                     <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={18} /></span>
                     <span style={{ flex: 1, opacity: expanded ? 1 : 0, width: expanded ? 'auto' : 0, overflow: 'hidden', whiteSpace: 'nowrap', transition: 'opacity .12s' }}>{it.label}</span>
                     {expanded && badge != null && badge > 0 && (
-                      <span style={{ background: C.accent, color: '#0a0a0a', fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 999, lineHeight: 1.4 }}>{badge}</span>
+                      <span style={{ background: C.accent, color: C.onAccent, fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 999, lineHeight: 1.4 }}>{badge}</span>
                     )}
                   </button>
                 );
@@ -253,26 +238,35 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: F_MONO, fontSize: 9, color: C.sidebarText, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Japan</div>
-              <div style={{ fontFamily: F_MONO, fontSize: 16, color: '#fafafa', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', marginTop: 2 }}>{jstClock || '--:--:--'}</div>
+              <div style={{ fontFamily: F_MONO, fontSize: 16, color: C.text, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', marginTop: 2 }}>{accentSecs(jstClock || '--:--:--')}</div>
               <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, marginTop: 1 }}>{dateStr}</div>
             </div>
             <div style={{ width: 1, background: C.sidebarBorder, alignSelf: 'stretch' }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: F_MONO, fontSize: 9, color: C.sidebarText, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Local</div>
-              <div style={{ fontFamily: F_MONO, fontSize: 16, color: '#fafafa', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', marginTop: 2 }}>{localClock || '--:--:--'}</div>
+              <div style={{ fontFamily: F_MONO, fontSize: 16, color: C.text, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', marginTop: 2 }}>{accentSecs(localClock || '--:--:--')}</div>
               <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, marginTop: 1 }}>{localDateStr}</div>
             </div>
           </div>
         </div>
         )}
 
+        {/* Dark/light toggle — always visible (collapsed + expanded) */}
+        <div style={{ margin: '0 10px 10px' }}>
+          <button onClick={toggle} aria-label="Toggle dark / light"
+            style={{ display:'flex', alignItems:'center', justifyContent: expanded ? 'flex-start' : 'center', gap:8, width:'100%', padding:'8px 10px', background:C.sidebarActive, color:C.sidebarActiveText, border:`1px solid ${C.sidebarBorder}`, borderRadius:8, fontFamily:F_MONO, fontSize:11, letterSpacing:'0.06em', textTransform:'uppercase', cursor:'pointer' }}>
+            <span style={{ fontSize:13, lineHeight:1 }}>{mode === 'dark' ? '☀' : '☾'}</span>
+            {expanded && <span>{mode === 'dark' ? 'Light' : 'Dark'}</span>}
+          </button>
+        </div>
+
         {/* User row */}
         {expanded && (
         <div style={{ padding: '12px 14px', borderTop: `1px solid ${C.sidebarBorder}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, #f4b942, #b45309)', color: '#0a0a0a', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inits}</div>
+            <div style={{ width: 30, height: 30, borderRadius: '50%', background: C.brand, color: C.onAccent, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inits}</div>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 500, color: '#fafafa', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{adminName || adminEmail}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 500, color: C.text, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{adminName || adminEmail}</div>
               <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, letterSpacing: '0.04em', marginTop: 1 }}>{adminRole.charAt(0).toUpperCase() + adminRole.slice(1)}</div>
             </div>
             <button onClick={signOut} style={{ background: 'transparent', color: C.sidebarText, border: 'none', cursor: 'pointer', fontSize: 14, padding: 6, borderRadius: 6 }}>↩</button>
@@ -283,46 +277,48 @@ export default function AdminDashboard({ adminName, adminRole, adminEmail, dashb
       </aside>
 
       {/* ── Main ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <ThemeModeContext.Provider value={mode}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-        {/* Topbar */}
-        <div style={{ borderBottom: `1px solid ${C.border}`, padding: '14px 28px', display: 'flex', alignItems: 'center', gap: 14, background: C.surface, flexShrink: 0 }}>
-          <div style={{ position: 'relative', flex: '0 1 380px' }}>
-            <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontFamily: F_MONO, fontSize: 12, color: C.text3 }}>⌕</span>
-            <input placeholder="Search members, dates, leave types…" style={{ width: '100%', padding: '8px 12px 8px 32px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 999, fontFamily: F_SANS, fontSize: 12.5, color: C.text, outline: 'none', boxSizing: 'border-box' as const }} />
-            <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontFamily: F_MONO, fontSize: 10, color: C.text3, padding: '1px 6px', border: `1px solid ${C.border}`, borderRadius: 4 }}>⌘K</span>
+          {/* Topbar */}
+          <div style={{ borderBottom: `1px solid ${C.border}`, padding: '14px 28px', display: 'flex', alignItems: 'center', gap: 14, background: C.surface, flexShrink: 0 }}>
+            <div style={{ position: 'relative', flex: '0 1 380px' }}>
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontFamily: F_MONO, fontSize: 12, color: C.text3 }}>⌕</span>
+              <input placeholder="Search members, dates, leave types…" style={{ width: '100%', padding: '8px 12px 8px 32px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 999, fontFamily: F_SANS, fontSize: 12.5, color: C.text, outline: 'none', boxSizing: 'border-box' as const }} />
+              <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontFamily: F_MONO, fontSize: 10, color: C.text3, padding: '1px 6px', border: `1px solid ${C.border}`, borderRadius: 4 }}>⌘K</span>
+            </div>
+            <div style={{ flex: 1 }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button style={{ width: 34, height: 34, borderRadius: 999, border: `1px solid ${C.border}`, background: C.surface, color: C.text2, cursor: 'pointer', position: 'relative', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                ⚲
+                {pendingCount > 0 && <span style={{ position: 'absolute', top: 7, right: 7, width: 7, height: 7, background: C.accent, borderRadius: '50%', border: `2px solid ${C.surface}` }} />}
+              </button>
+              <button style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px 5px 5px', borderRadius: 999, border: `1px solid ${C.border}`, background: C.surface, cursor: 'pointer' }}>
+                <span style={{ width: 26, height: 26, borderRadius: '50%', background: C.brand, color: C.onAccent, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{inits}</span>
+                <span style={{ fontFamily: F_SANS, fontSize: 12.5, color: C.text }}>{adminName.split(' ')[0] || 'Admin'}</span>
+              </button>
+            </div>
           </div>
-          <div style={{ flex: 1 }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button style={{ width: 34, height: 34, borderRadius: 999, border: `1px solid ${C.border}`, background: C.surface, color: C.text2, cursor: 'pointer', position: 'relative', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              ⚲
-              {pendingCount > 0 && <span style={{ position: 'absolute', top: 7, right: 7, width: 7, height: 7, background: C.accent, borderRadius: '50%', border: `2px solid ${C.surface}` }} />}
-            </button>
-            <button style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px 5px 5px', borderRadius: 999, border: `1px solid ${C.border}`, background: C.surface, cursor: 'pointer' }}>
-              <span style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, #f4b942, #b45309)', color: '#0a0a0a', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{inits}</span>
-              <span style={{ fontFamily: F_SANS, fontSize: 12.5, color: C.text }}>{adminName.split(' ')[0] || 'Admin'}</span>
-            </button>
+
+          {/* Page content */}
+          <div style={{ flex: 1, overflow: 'auto', padding: '24px 28px 28px', background: C.bg }}>
+            {page === 'attendance' && <AttendancePage dashboard={dashData} apiUrl={apiUrl} />}
+            {page === 'approvals'  && <ApprovalsPage  dashboard={dashData} apiUrl={apiUrl} token={token} onRefresh={refreshDashboard} onViewAudit={() => setPage('audit')} />}
+            {page === 'leave'      && <ApprovalsPage  dashboard={dashData} apiUrl={apiUrl} token={token} onRefresh={refreshDashboard} filterKind="leave" onViewAudit={() => setPage('audit')} />}
+            {page === 'calendar'   && <CalendarPage />}
+            {page === 'payroll'    && <TeamPayrollPage dashboard={dashData} apiUrl={apiUrl} />}
+            {page === 'insights'   && <InsightsPage apiUrl={apiUrl} />}
+            {page === 'members'        && <MembersPage      apiUrl={apiUrl} adminRole={adminRole} />}
+            {page === 'tardy'          && <TardyPage        apiUrl={apiUrl} adminRole={adminRole} />}
+            {page === 'holidays'       && <HolidaysPage     apiUrl={apiUrl} adminRole={adminRole} />}
+            {page === 'policy'         && <PolicyPage       apiUrl={apiUrl} adminRole={adminRole} />}
+            {page === 'discipline'     && <DisciplinePage   apiUrl={apiUrl} adminRole={adminRole} />}
+            {page === 'appeals-admin'  && <AppealsAdminPage apiUrl={apiUrl} adminRole={adminRole} onPendingCount={setPendingAppeals} />}
+            {page === 'audit'          && <AuditLogPage     apiUrl={apiUrl} adminRole={adminRole} />}
+            {page === 'leave-balances' && <LeaveBalancesPage apiUrl={apiUrl} adminRole={adminRole} />}
           </div>
         </div>
-
-        {/* Page content */}
-        <div style={{ flex: 1, overflow: 'auto', padding: '24px 28px 28px', background: C.bg }}>
-          {page === 'attendance' && <AttendancePage dashboard={dashData} apiUrl={apiUrl} />}
-          {page === 'approvals'  && <ApprovalsPage  dashboard={dashData} apiUrl={apiUrl} token={token} onRefresh={refreshDashboard} onViewAudit={() => setPage('audit')} />}
-          {page === 'leave'      && <ApprovalsPage  dashboard={dashData} apiUrl={apiUrl} token={token} onRefresh={refreshDashboard} filterKind="leave" onViewAudit={() => setPage('audit')} />}
-          {page === 'calendar'   && <CalendarPage />}
-          {page === 'payroll'    && <TeamPayrollPage dashboard={dashData} apiUrl={apiUrl} />}
-          {page === 'insights'   && <InsightsPage apiUrl={apiUrl} />}
-          {page === 'members'        && <MembersPage      apiUrl={apiUrl} adminRole={adminRole} />}
-          {page === 'tardy'          && <TardyPage        apiUrl={apiUrl} adminRole={adminRole} />}
-          {page === 'holidays'       && <HolidaysPage     apiUrl={apiUrl} adminRole={adminRole} />}
-          {page === 'policy'         && <PolicyPage       apiUrl={apiUrl} adminRole={adminRole} />}
-          {page === 'discipline'     && <DisciplinePage   apiUrl={apiUrl} adminRole={adminRole} />}
-          {page === 'appeals-admin'  && <AppealsAdminPage apiUrl={apiUrl} adminRole={adminRole} onPendingCount={setPendingAppeals} />}
-          {page === 'audit'          && <AuditLogPage     apiUrl={apiUrl} adminRole={adminRole} />}
-          {page === 'leave-balances' && <LeaveBalancesPage apiUrl={apiUrl} adminRole={adminRole} />}
-        </div>
-      </div>
+      </ThemeModeContext.Provider>
     </div>
     {/* DEV ONLY — remove this line and the import above to disable */}
     <DevResetButton apiUrl={apiUrl} onReset={() => window.location.reload()} />

@@ -10,8 +10,8 @@ import CalendarPage from './pages/CalendarPage';
 import LeavePage from './pages/LeavePage';
 import PayrollPage from './pages/PayrollPage';
 import AccountPage from './pages/AccountPage';
-import { C, F_SERIF, F_SANS, F_MONO, accentSecs } from './theme';
-import { useMemberMode } from './useMemberMode';
+import { C, F_SERIF, F_SANS, F_MONO, accentSecs } from '../theme';
+import { useThemeMode } from '../useThemeMode';
 
 export interface UserProfile {
   id: number;
@@ -157,7 +157,7 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
 
   const dateStr = `${DAYS_LONG[jst.getDay()]}, ${MONTHS_LONG[jst.getMonth()]} ${jst.getDate()} · Week ${week}`;
 
-  const { mode, toggle } = useMemberMode();
+  const { mode, toggle } = useThemeMode();
 
   const { expanded, locked, toggleLock, hoverProps, EXPANDED_W } = useSidebarCollapse(220);
 

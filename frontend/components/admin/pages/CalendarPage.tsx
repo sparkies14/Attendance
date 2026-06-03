@@ -2,22 +2,7 @@
 
 import { useState } from 'react';
 import React from 'react';
-
-// ── Color / font constants ────────────────────────────────────────────────────
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)', purpleBorder: 'rgba(124,58,237,0.25)',
-  btnBg: '#0a0a0a', btnText: '#fafafa',
-};
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
+import { C, F_SERIF, F_SANS, F_MONO } from '../../theme';
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
 const TEAM_MEMBERS = [
@@ -70,10 +55,10 @@ interface KindMeta {
 }
 
 const KIND_MAP: Record<EventKind, KindMeta> = {
-  meeting: { tint: C.blue,   bg: C.blueSoft,   border: C.blueBorder,           icon: '◷', label: 'Meeting' },
-  leave:   { tint: C.purple, bg: C.purpleSoft, border: 'rgba(167,139,250,0.3)', icon: '✦', label: 'Leave'   },
-  task:    { tint: C.accent, bg: C.accentSoft, border: C.accentBorder,          icon: '◆', label: 'Task'    },
-  holiday: { tint: C.red,    bg: C.redSoft,    border: C.redBorder,             icon: '★', label: 'Holiday' },
+  meeting: { tint: C.blue,   bg: C.blueSoft,   border: C.blueBorder,   icon: '◷', label: 'Meeting' },
+  leave:   { tint: C.purple, bg: C.purpleSoft, border: C.purpleBorder, icon: '✦', label: 'Leave'   },
+  task:    { tint: C.accent, bg: C.accentSoft, border: C.accentBorder, icon: '◆', label: 'Task'    },
+  holiday: { tint: C.red,    bg: C.redSoft,    border: C.redBorder,    icon: '★', label: 'Holiday' },
 };
 
 // ── Upcoming tile ─────────────────────────────────────────────────────────────
@@ -95,7 +80,7 @@ function UpcomingTile({ kind, label, sub, tag }: UpcomingTileProps) {
         </div>
         <span style={{ fontFamily: F_MONO, fontSize: 9.5, color: C.text3, letterSpacing: '0.04em', padding: '2px 7px', borderRadius: 4, background: C.surface2, border: `1px solid ${C.border}` }}>{tag}</span>
       </div>
-      <div style={{ marginTop: 10, fontFamily: F_SERIF, fontSize: 18, color: C.text, letterSpacing: '-0.015em', lineHeight: 1.2 }}>{label}</div>
+      <div style={{ marginTop: 10, fontFamily: F_SERIF, fontWeight: 600, fontSize: 18, color: C.text, letterSpacing: '-0.015em', lineHeight: 1.2 }}>{label}</div>
       <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.04em', marginTop: 5 }}>{sub}</div>
     </div>
   );
@@ -135,10 +120,10 @@ function TeamDayBox({ day, events, isToday, isSelected, isWeekend, onClick }: Te
     >
       {/* Day number row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontFamily: F_SANS, fontSize: 12.5, fontWeight: isToday ? 600 : 500, color: isWeekend ? C.text3 : C.text, lineHeight: 1 }}>
+        <span style={{ fontFamily: F_SANS, fontSize: 12.5, fontWeight: isToday ? 600 : 500, color: isToday ? C.onAccent : (isWeekend ? C.text3 : C.text), lineHeight: 1 }}>
           {day}
           {isToday && (
-            <span style={{ fontFamily: F_MONO, fontSize: 8.5, color: C.accent, letterSpacing: '0.1em', padding: '1px 4px', borderRadius: 999, background: 'rgba(244,185,66,0.18)', marginLeft: 5 }}>
+            <span style={{ fontFamily: F_MONO, fontSize: 8.5, color: C.accent, letterSpacing: '0.1em', padding: '1px 4px', borderRadius: 999, background: C.accentSoft, marginLeft: 5 }}>
               NOW
             </span>
           )}
@@ -236,7 +221,7 @@ function DaySidebar({ selectedDay, displayDate, events }: DaySidebarProps) {
           <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.accent, letterSpacing: '0.12em', textTransform: 'uppercase' as const }}>Today</div>
           <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Wk {weekNum}</div>
         </div>
-        <div style={{ fontFamily: F_SERIF, fontSize: 30, color: C.text, letterSpacing: '-0.025em', lineHeight: 1 }}>
+        <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 30, color: C.text, letterSpacing: '-0.025em', lineHeight: 1 }}>
           {monthName} {selectedDay},{' '}
           <span style={{ fontStyle: 'italic', color: C.text2 }}>{dayName}</span>
         </div>
@@ -399,7 +384,7 @@ export default function CalendarPage() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' as const }}>
         <div>
-          <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>
+          <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>
             Team <span style={{ fontStyle: 'italic', color: C.text2 }}>calendar.</span>
           </div>
           <div style={{ fontFamily: F_MONO, fontSize: 11.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginTop: 8 }}>
@@ -478,7 +463,7 @@ export default function CalendarPage() {
           >
             ‹
           </button>
-          <span style={{ fontFamily: F_SERIF, fontSize: 18, color: C.text, letterSpacing: '-0.015em', minWidth: 110, textAlign: 'center' as const }}>
+          <span style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 18, color: C.text, letterSpacing: '-0.015em', minWidth: 110, textAlign: 'center' as const }}>
             {monthName} <span style={{ fontStyle: 'italic', color: C.text2 }}>{displayYear}</span>
           </span>
           <button

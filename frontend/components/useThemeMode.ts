@@ -1,10 +1,11 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, createContext } from 'react';
 
-const KEY = 'att_member_mode';
+const KEY = 'att_theme_mode';
 export type Mode = 'dark' | 'light';
+export const ThemeModeContext = createContext<Mode>('dark');
 
-export function useMemberMode() {
+export function useThemeMode() {
   const [mode, setMode] = useState<Mode>(() => {
     if (typeof window === 'undefined') return 'dark';
     return (window.localStorage.getItem(KEY) as Mode) === 'light' ? 'light' : 'dark';

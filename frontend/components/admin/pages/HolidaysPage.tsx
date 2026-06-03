@@ -1,23 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { clientFetch } from '@/lib/clientFetch';
+import { C, F_SERIF, F_SANS, F_MONO } from '../../theme';
 
 interface Props { apiUrl: string; adminRole: string; }
-
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-  btnBg: '#0a0a0a', btnText: '#fafafa',
-};
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 interface Holiday { id: number; date: string; name: string; country: string; source?: string; }
 
@@ -110,11 +96,10 @@ export default function HolidaysPage({ apiUrl, adminRole }: Props) {
 
   const visible = filter === 'All' ? holidays : holidays.filter(h => h.country === filter);
 
-  void F_SERIF;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 900 }}>
       <div>
-        <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Holidays.</div>
+        <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Holidays.</div>
         <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>{holidays.length} total · PH &amp; JP</div>
       </div>
 
@@ -122,7 +107,7 @@ export default function HolidaysPage({ apiUrl, adminRole }: Props) {
       <div style={{ display: 'flex', gap: 4 }}>
         {['All', ...COUNTRIES].map(c => (
           <button key={c} onClick={() => setFilter(c)}
-            style={{ padding: '5px 14px', borderRadius: 7, background: filter === c ? C.text : 'transparent', color: filter === c ? '#fafafa' : C.text3, border: `1px solid ${filter === c ? C.text : C.border}`, fontFamily: F_SANS, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
+            style={{ padding: '5px 14px', borderRadius: 7, background: filter === c ? C.btnBg : 'transparent', color: filter === c ? C.btnText : C.text3, border: `1px solid ${filter === c ? C.btnBg : C.border}`, fontFamily: F_SANS, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
             {c === 'All' ? 'All' : `${FLAG[c]} ${c}`}
           </button>
         ))}
@@ -141,11 +126,11 @@ export default function HolidaysPage({ apiUrl, adminRole }: Props) {
           <input type="number" value={syncYear} onChange={e => setSyncYear(parseInt(e.target.value, 10) || syncYear)}
             style={{ padding: '7px 10px', width: 90, border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F_MONO, fontSize: 13, color: C.text, background: C.surface }} />
           <button onClick={syncHolidays} disabled={syncBusy}
-            style={{ padding: '7px 14px', background: C.text, color: C.surface, border: 'none', borderRadius: 8, fontFamily: F_SANS, fontSize: 13, fontWeight: 500, cursor: syncBusy ? 'not-allowed' : 'pointer', opacity: syncBusy ? 0.6 : 1 }}>
+            style={{ padding: '7px 14px', background: C.btnBg, color: C.btnText, border: 'none', borderRadius: 8, fontFamily: F_SANS, fontSize: 13, fontWeight: 500, cursor: syncBusy ? 'not-allowed' : 'pointer', opacity: syncBusy ? 0.6 : 1 }}>
             {syncBusy ? 'Syncing…' : 'Sync'}
           </button>
-          {syncMsg && <span style={{ fontFamily: F_MONO, fontSize: 11, color: '#16a34a' }}>{syncMsg}</span>}
-          {syncErr && <span style={{ fontFamily: F_MONO, fontSize: 11, color: '#dc2626' }}>{syncErr}</span>}
+          {syncMsg && <span style={{ fontFamily: F_MONO, fontSize: 11, color: C.green }}>{syncMsg}</span>}
+          {syncErr && <span style={{ fontFamily: F_MONO, fontSize: 11, color: C.red }}>{syncErr}</span>}
         </div>
       </div>
 
@@ -168,14 +153,14 @@ export default function HolidaysPage({ apiUrl, adminRole }: Props) {
                   <td style={{ padding: '11px 16px', fontFamily: F_MONO, fontSize: 12.5, color: C.text2 }}>{h.date}</td>
                   <td style={{ padding: '11px 16px', fontSize: 13, color: C.text, fontWeight: 500 }}>
                     {h.name}
-                    <span style={{ marginLeft: 8, padding: '1px 7px', borderRadius: 999, fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.06em',
-                      background: h.source === 'auto' ? '#f5f5f5' : 'rgba(37,99,235,0.08)',
-                      color: h.source === 'auto' ? '#737373' : '#2563eb',
-                      border: `1px solid ${h.source === 'auto' ? '#e6e6e6' : 'rgba(37,99,235,0.22)'}` }}>
+                    <span style={{ marginLeft: 8, padding: '1px 7px', borderRadius: 999, fontFamily: F_MONO, fontSize: 9, letterSpacing: '0.06em',
+                      background: h.source === 'auto' ? C.surface2 : C.blueSoft,
+                      color: h.source === 'auto' ? C.text3 : C.blue,
+                      border: `1px solid ${h.source === 'auto' ? C.border : C.blueBorder}` }}>
                       {h.source === 'auto' ? 'AUTO' : 'MANUAL'}
                     </span>
                   </td>
-                  <td style={{ padding: '11px 16px', fontFamily: F_MONO, fontSize: 13 }}>{FLAG[h.country] ?? h.country} {h.country}</td>
+                  <td style={{ padding: '11px 16px', fontFamily: F_MONO, fontSize: 13, color: C.text }}>{FLAG[h.country] ?? h.country} {h.country}</td>
                   {isOwner && (
                     <td style={{ padding: '11px 16px', textAlign: 'right' }}>
                       <button onClick={() => deleteHoliday(h.id)} disabled={deletingId === h.id}
@@ -210,7 +195,7 @@ export default function HolidaysPage({ apiUrl, adminRole }: Props) {
                 </select>
               </div>
               <button type="submit" disabled={addBusy}
-                style={{ padding: '7px 16px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, fontWeight: 500, cursor: addBusy ? 'not-allowed' : 'pointer', opacity: addBusy ? 0.6 : 1 }}>
+                style={{ padding: '7px 16px', background: C.btnBg, color: C.btnText, border: 'none', borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, fontWeight: 500, cursor: addBusy ? 'not-allowed' : 'pointer', opacity: addBusy ? 0.6 : 1 }}>
                 {addBusy ? '…' : '+ Add'}
               </button>
             </form>
