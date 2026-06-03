@@ -1,23 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { clientFetch } from '@/lib/clientFetch';
+import { C, F_SERIF, F_SANS, F_MONO } from '../../theme';
 
 interface Props { apiUrl: string; adminRole: string; }
-
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-  btnBg: '#0a0a0a', btnText: '#fafafa',
-};
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 interface Config {
   threshold_minor_tardy: number; threshold_major_tardy: number;
@@ -89,7 +75,7 @@ export default function PolicyPage({ apiUrl, adminRole }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 640 }}>
       <div>
-        <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Policy config.</div>
+        <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Policy config.</div>
         <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
           Tardy &amp; AWOL thresholds · {isOwner ? 'Editable' : 'Thresholds read-only · toggle editable'}
         </div>
@@ -119,7 +105,7 @@ export default function PolicyPage({ apiUrl, adminRole }: Props) {
             {isOwner && (
               <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
                 <button type="submit" disabled={saving}
-                  style={{ padding: '9px 22px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 9, fontFamily: F_SANS, fontSize: 13, fontWeight: 500, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}>
+                  style={{ padding: '9px 22px', background: C.btnBg, color: C.btnText, border: 'none', borderRadius: 9, fontFamily: F_SANS, fontSize: 13, fontWeight: 500, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}>
                   {saving ? 'Saving…' : 'Save changes'}
                 </button>
                 {saveMsg && <span style={{ fontFamily: F_MONO, fontSize: 11, color: C.green }}>{saveMsg}</span>}
@@ -145,7 +131,7 @@ export default function PolicyPage({ apiUrl, adminRole }: Props) {
                 aria-pressed={lateManual}
                 style={{ position: 'relative', width: 46, height: 26, flexShrink: 0, borderRadius: 999, border: 'none', cursor: toggleBusy ? 'default' : 'pointer', background: lateManual ? C.accent : C.borderStrong, transition: 'background 0.15s', opacity: toggleBusy ? 0.6 : 1 }}
               >
-                <span style={{ position: 'absolute', top: 3, left: lateManual ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.15s' }} />
+                <span style={{ position: 'absolute', top: 3, left: lateManual ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: C.surface, transition: 'left 0.15s' }} />
               </button>
             </div>
             {saveMsg && <div style={{ marginTop: 8, fontFamily: F_MONO, fontSize: 11, color: C.green }}>{saveMsg}</div>}
