@@ -2,28 +2,12 @@
 
 import { useState } from 'react';
 import type { DashboardData } from '../AdminDashboard';
+import { C, F_SERIF, F_SANS, F_MONO, tickTrack } from '../../theme';
 
 interface Props {
   dashboard: DashboardData | null;
   apiUrl: string;
 }
-
-// ── Color / font constants ──────────────────────────────────────────────────
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-  btnBg: '#0a0a0a', btnText: '#fafafa',
-};
-
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 // ── Month names ─────────────────────────────────────────────────────────────
 const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -152,7 +136,7 @@ function SummaryTile({
         }} />
       )}
       <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontFamily: F_SERIF, fontSize: 46, lineHeight: 0.9, color: tint, letterSpacing: '-0.03em', marginTop: 10 }}>{big}</div>
+      <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 46, lineHeight: 0.9, color: tint, letterSpacing: '-0.03em', marginTop: 10 }}>{big}</div>
       <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.04em', marginTop: 8 }}>{small}</div>
     </div>
   );
@@ -162,7 +146,7 @@ function FootStat({ label, v, sub, tint }: { label: string; v: string; sub: stri
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '14px 16px' }}>
       <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontFamily: F_SERIF, fontSize: 26, color: tint, letterSpacing: '-0.022em', lineHeight: 1, marginTop: 8 }}>{v}</div>
+      <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 26, color: tint, letterSpacing: '-0.022em', lineHeight: 1, marginTop: 8 }}>{v}</div>
       <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.04em', marginTop: 6 }}>{sub}</div>
     </div>
   );
@@ -220,22 +204,25 @@ function PayrollRow({ m, isLast }: { m: PayrollMember; isLast: boolean }) {
 
       {/* Pace bar */}
       <td style={{ padding: '12px 16px' }}>
-        <div style={{ position: 'relative', height: 14, background: C.surface2, borderRadius: 4, overflow: 'visible' }}>
+        <div style={{ position: 'relative', height: 14, borderRadius: 4, overflow: 'visible', ...tickTrack }}>
           <div style={{
             position: 'absolute', top: 0, left: 0, height: '100%',
             width: `${Math.min(pct, 100)}%`, background: fillColor, borderRadius: 4,
+            zIndex: 1,
           }} />
           {pct > 100 && (
             <div style={{
               position: 'absolute', top: 0, left: '100%',
               height: '100%', width: `${pct - 100}%`,
               background: C.green, opacity: 0.5, borderRadius: 4,
+              zIndex: 1,
             }} />
           )}
           <div style={{
             position: 'absolute', top: -2, bottom: -2,
             left: '100%', width: 1,
             background: C.text2, transform: 'translateX(-0.5px)',
+            zIndex: 2,
           }} />
         </div>
         <div style={{
@@ -357,7 +344,7 @@ export default function TeamPayrollPage({ dashboard }: Props) {
         alignItems: 'flex-end', gap: 16, flexWrap: 'wrap',
       }}>
         <div>
-          <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>
+          <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>
             Payroll <span style={{ fontStyle: 'italic', color: C.text2 }}>summary.</span>
           </div>
           <div style={{ fontFamily: F_MONO, fontSize: 11.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
@@ -421,13 +408,13 @@ export default function TeamPayrollPage({ dashboard }: Props) {
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 10 }}>
               <div style={{
-                fontFamily: F_SERIF, fontSize: 64, lineHeight: 0.85,
+                fontFamily: F_SERIF, fontWeight: 600, fontSize: 64, lineHeight: 0.85,
                 color: C.text, letterSpacing: '-0.035em', fontVariantNumeric: 'tabular-nums',
               }}>
                 {Math.round(totalHours)}<span style={{ fontSize: 38, color: C.text2 }}>h</span>
               </div>
               <div style={{ marginBottom: 5 }}>
-                <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text3, letterSpacing: '-0.015em', lineHeight: 1 }}>
+                <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 20, color: C.text3, letterSpacing: '-0.015em', lineHeight: 1 }}>
                   / {totalTarget}h
                 </div>
                 <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 4 }}>
@@ -436,12 +423,13 @@ export default function TeamPayrollPage({ dashboard }: Props) {
               </div>
             </div>
 
-            {/* Gradient progress bar */}
-            <div style={{ marginTop: 14, height: 4, borderRadius: 999, background: C.border, overflow: 'hidden' }}>
+            {/* Gradient progress bar — tickTrack applied to track container */}
+            <div style={{ marginTop: 14, height: 4, borderRadius: 999, overflow: 'hidden', ...tickTrack }}>
               <div style={{
                 width: `${Math.min((totalHours / totalTarget) * 100, 100)}%`,
                 height: '100%',
                 background: `linear-gradient(90deg, ${C.accent}, ${C.green})`,
+                position: 'relative', zIndex: 1,
               }} />
             </div>
             <div style={{
