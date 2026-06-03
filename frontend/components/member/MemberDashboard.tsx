@@ -10,6 +10,8 @@ import CalendarPage from './pages/CalendarPage';
 import LeavePage from './pages/LeavePage';
 import PayrollPage from './pages/PayrollPage';
 import AccountPage from './pages/AccountPage';
+import { C, F_SERIF, F_SANS, F_MONO } from './theme';
+import { useMemberMode } from './useMemberMode';
 
 export interface UserProfile {
   id: number;
@@ -98,22 +100,6 @@ export interface MemberDashboardProps {
 
 type Page = 'home' | 'calendar' | 'leave' | 'payroll' | 'account';
 
-// Design tokens (light mode — sidebar always dark)
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626',
-  sidebarBg: '#050505', sidebarText: '#a3a3a3', sidebarBorder: '#161616',
-  sidebarActive: 'rgba(244,185,66,0.12)', sidebarActiveText: '#f4b942',
-};
-
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
-
 const NAV: { id: Page; label: string; icon: ComponentType<{ size?: number }> }[] = [
   { id: 'home',     label: 'Home',            icon: HomeIcon },
   { id: 'calendar', label: 'Calendar · plan', icon: CalendarIcon },
@@ -171,10 +157,12 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
 
   const dateStr = `${DAYS_LONG[jst.getDay()]}, ${MONTHS_LONG[jst.getMonth()]} ${jst.getDate()} · Week ${week}`;
 
+  const { mode, toggle } = useMemberMode();
+
   const { expanded, locked, toggleLock, hoverProps, EXPANDED_W } = useSidebarCollapse(220);
 
   return (<>
-    <div style={{ display: 'flex', height: '100vh', fontFamily: F_SANS, overflow: 'hidden', background: C.bg, color: C.text }}>
+    <div data-mode={mode} style={{ display: 'flex', height: '100vh', fontFamily: F_SANS, overflow: 'hidden', background: C.bg, color: C.text }}>
 
       {/* ── Sidebar (always dark) ── */}
       <aside {...hoverProps} style={{ width: locked ? EXPANDED_W : COLLAPSED_W, flexShrink: 0, height: '100vh', position: 'relative', transition: 'width .18s ease' }}>
@@ -182,18 +170,18 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
 
         {/* Brand */}
         <div style={{ padding: '20px 22px 22px', borderBottom: `1px solid ${C.sidebarBorder}`, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg, #f4b942, #b45309)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ color: '#0a0a0a', fontSize: 13, fontWeight: 900, fontFamily: F_SANS, letterSpacing: '-0.04em' }}>A</span>
+          <div style={{ width: 28, height: 28, borderRadius: 7, background: C.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ color: C.onAccent, fontSize: 13, fontWeight: 900, fontFamily: F_SANS, letterSpacing: '-0.04em' }}>A</span>
           </div>
           {expanded && (
             <div>
-              <div style={{ fontFamily: F_SANS, fontSize: 13.5, fontWeight: 500, color: '#fafafa', letterSpacing: '-0.01em', lineHeight: 1.1 }}>Anosupo AI</div>
+              <div style={{ fontFamily: F_SANS, fontSize: 13.5, fontWeight: 500, color: C.onAccent, letterSpacing: '-0.01em', lineHeight: 1.1 }}>Anosupo AI</div>
               <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 2 }}>Attendance</div>
             </div>
           )}
           {expanded && (
             <button onClick={toggleLock} aria-label={locked ? 'Unlock sidebar' : 'Lock sidebar open'} title={locked ? 'Unlock sidebar' : 'Lock sidebar open'}
-              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: locked ? '#f4b942' : C.sidebarText, display: 'flex', alignItems: 'center', padding: 4 }}>
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: locked ? C.sidebarActiveText : C.sidebarText, display: 'flex', alignItems: 'center', padding: 4 }}>
               <PinIcon size={15} />
             </button>
           )}
@@ -201,7 +189,7 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
 
         {/* Nav */}
         <div style={{ padding: '14px 10px', flex: 1 }}>
-          {expanded && (<div style={{ fontFamily: F_MONO, fontSize: 9.5, color: '#525252', letterSpacing: '0.14em', textTransform: 'uppercase', padding: '4px 12px 8px' }}>Menu</div>)}
+          {expanded && (<div style={{ fontFamily: F_MONO, fontSize: 9.5, color: C.text2, letterSpacing: '0.14em', textTransform: 'uppercase', padding: '4px 12px 8px' }}>Menu</div>)}
           {NAV.map(({ id, label, icon: Icon }) => {
             const on = page === id;
             return (
@@ -228,11 +216,11 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
         {expanded && (
         <div style={{ padding: '14px 14px 16px', borderTop: `1px solid ${C.sidebarBorder}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #f4b942, #b45309)', color: '#0a0a0a', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: C.brand, color: C.onAccent, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               {inits}
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 500, color: '#fafafa', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name || user.email}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 500, color: C.onAccent, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name || user.email}</div>
               <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, letterSpacing: '0.04em', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</div>
             </div>
           </div>
@@ -241,6 +229,10 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
             style={{ width: '100%', background: 'transparent', color: C.sidebarText, border: `1px solid ${C.sidebarBorder}`, borderRadius: 8, padding: '7px', fontSize: 11.5, fontFamily: F_SANS, cursor: 'pointer' }}
           >
             Sign out
+          </button>
+          <button onClick={toggle} aria-label="Toggle dark / light"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '8px 10px', marginTop: 8, background: C.sidebarActive, color: C.sidebarActiveText, border: `1px solid ${C.sidebarBorder}`, borderRadius: 8, fontFamily: F_MONO, fontSize: 10.5, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+            {mode === 'dark' ? '◐ Light mode' : '◑ Dark mode'}
           </button>
         </div>
         )}

@@ -4,6 +4,7 @@ import { clientFetch } from '@/lib/clientFetch';
 
 import { useState, useEffect } from 'react';
 import type { MemberData, CalendarDay } from '../MemberDashboard';
+import { C, F_SERIF, F_SANS, F_MONO, tickTrack } from '../theme';
 
 interface Props {
   email: string;
@@ -11,25 +12,11 @@ interface Props {
   apiUrl: string;
 }
 
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-};
-
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
-
 const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 const BAR_COLOR: Record<string, string> = {
-  present: '#16a34a', late: '#b45309', absent: '#dc2626', leave: '#7c3aed',
+  present: C.green, late: C.accent, absent: C.red, leave: C.purple,
 };
 
 function getJST() {
@@ -308,15 +295,15 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
 
             {/* Gradient progress bar */}
             <div style={{ marginBottom: 10 }}>
-              <div style={{ position: 'relative', height: 10, background: C.border, borderRadius: 999, overflow: 'visible' }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${C.accent}, ${C.green})`, borderRadius: 999 }} />
+              <div style={{ position: 'relative', height: 10, borderRadius: 999, overflow: 'visible', ...tickTrack }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${C.accent}, ${C.green})`, borderRadius: 999, zIndex: 1 }} />
                 {/* Projection ghost */}
                 {projPct > pct && (
-                  <div style={{ position: 'absolute', top: 0, left: `${pct}%`, height: '100%', width: `${projPct - pct}%`, background: `repeating-linear-gradient(-45deg, ${C.green}44 0 4px, transparent 4px 8px)`, borderRadius: 999 }} />
+                  <div style={{ position: 'absolute', top: 0, left: `${pct}%`, height: '100%', width: `${projPct - pct}%`, background: `repeating-linear-gradient(-45deg, ${C.greenSoft} 0 4px, transparent 4px 8px)`, borderRadius: 999, zIndex: 1 }} />
                 )}
                 {/* Target marker */}
-                <div style={{ position: 'absolute', top: -4, left: '100%', width: 2, height: 18, background: C.text, borderRadius: 1, transform: 'translateX(-1px)' }} />
-                <div style={{ position: 'absolute', top: -20, left: '100%', fontFamily: F_MONO, fontSize: 9.5, color: C.text2, letterSpacing: '0.08em', textTransform: 'uppercase', transform: 'translateX(-50%)' }}>Target</div>
+                <div style={{ position: 'absolute', top: -4, left: '100%', width: 2, height: 18, background: C.text, borderRadius: 1, transform: 'translateX(-1px)', zIndex: 2 }} />
+                <div style={{ position: 'absolute', top: -20, left: '100%', fontFamily: F_MONO, fontSize: 9.5, color: C.text2, letterSpacing: '0.08em', textTransform: 'uppercase', transform: 'translateX(-50%)', zIndex: 2 }}>Target</div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.04em' }}>
                 <span>{startLabel} · start</span>
@@ -426,9 +413,9 @@ export default function PayrollPage({ email, initialData, apiUrl }: Props) {
                   {cin ? <>{cin} <span style={{ color: C.text3 }}>→</span> {cout ?? '—'}</> : <span style={{ color: C.text3 }}>—</span>}
                 </div>
                 {/* Bar */}
-                <div style={{ flex: 1, position: 'relative', height: 12, background: C.surface2, borderRadius: 4, overflow: 'hidden' }}>
-                  {hrs > 0 && <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${barW}%`, background: tint, borderRadius: 4 }} />}
-                  <div style={{ position: 'absolute', top: -1, bottom: -1, left: '80%', width: 1, background: C.borderStrong, opacity: 0.5 }} />
+                <div style={{ flex: 1, position: 'relative', height: 12, borderRadius: 4, overflow: 'hidden', ...tickTrack }}>
+                  {hrs > 0 && <div style={{ position: 'absolute', top: 0, left: 0, height: '100%', width: `${barW}%`, background: tint, borderRadius: 4, zIndex: 1 }} />}
+                  <div style={{ position: 'absolute', top: -1, bottom: -1, left: '80%', width: 1, background: C.borderStrong, opacity: 0.5, zIndex: 2 }} />
                 </div>
                 {/* Hours */}
                 <div style={{ width: 56, flexShrink: 0, textAlign: 'right', fontFamily: F_MONO, fontSize: 12.5, color: hrs > 0 ? tint : C.text3, fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
@@ -460,9 +447,9 @@ function Chip({ tint, label, hollow }: { tint: string; label: string; hollow?: b
       display: 'inline-flex', alignItems: 'center', gap: 6,
       padding: '4px 11px', borderRadius: 999,
       background: hollow ? 'transparent' : `${tint}18`,
-      border: `1px solid ${hollow ? '#e6e6e6' : tint + '44'}`,
+      border: `1px solid ${hollow ? C.border : tint + '44'}`,
       color: tint, fontSize: 11.5,
-      fontFamily: "'Geist', system-ui, sans-serif",
+      fontFamily: F_SANS,
       fontWeight: 500,
     }}>
       <span style={{ width: 5, height: 5, borderRadius: '50%', background: tint }} />

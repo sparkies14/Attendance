@@ -3,25 +3,13 @@
 import { clientFetch } from '@/lib/clientFetch';
 import { useState, useEffect } from 'react';
 import type { UserProfile } from '../MemberDashboard';
+import { C, F_SERIF, F_SANS, F_MONO } from '../theme';
 
 interface Props {
   user: UserProfile;
   apiUrl: string;
   hireYear?: number;
 }
-
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-};
-
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 function Chip({ label, bg, color, border }: { label: string; bg: string; color: string; border: string }) {
   return (
@@ -179,7 +167,7 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
         <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 22 }}>Identity</div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg, #f4b942, #b45309)', color: '#0a0a0a', fontSize: 22, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: F_SANS, letterSpacing: '-0.02em' }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: C.brand, color: C.onAccent, fontSize: 22, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: F_SANS, letterSpacing: '-0.02em' }}>
             {inits}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -229,7 +217,7 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
                 <input id="acc-con-pw" type="password" value={conPw} onChange={e => setConPw(e.target.value)} required autoComplete="new-password" style={inp} />
               </div>
               <button type="submit" disabled={pwLoading}
-                style={{ padding: '8px 16px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, fontWeight: 500, cursor: pwLoading ? 'not-allowed' : 'pointer', opacity: pwLoading ? 0.6 : 1, whiteSpace: 'nowrap' as const }}>
+                style={{ padding: '8px 16px', background: C.text, color: C.onAccent, border: 'none', borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, fontWeight: 500, cursor: pwLoading ? 'not-allowed' : 'pointer', opacity: pwLoading ? 0.6 : 1, whiteSpace: 'nowrap' as const }}>
                 {pwLoading ? '…' : 'Update'}
               </button>
             </form>
@@ -287,7 +275,7 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
                 style={{ padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: F_MONO, fontSize: 14, color: C.text, background: C.bg, width: 130, letterSpacing: '0.15em', boxSizing: 'border-box' as const }}
               />
               <button type="submit" disabled={discordLoading}
-                style={{ padding: '8px 16px', background: '#5865F2', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontFamily: F_SANS, fontWeight: 500, cursor: discordLoading ? 'not-allowed' : 'pointer', opacity: discordLoading ? 0.6 : 1 }}>
+                style={{ padding: '8px 16px', background: '#5865F2', color: '#fff' /* static white on Discord brand blue */, border: 'none', borderRadius: 8, fontSize: 13, fontFamily: F_SANS, fontWeight: 500, cursor: discordLoading ? 'not-allowed' : 'pointer', opacity: discordLoading ? 0.6 : 1 }}>
                 {discordLoading ? 'Linking…' : 'Link Discord'}
               </button>
             </form>
@@ -305,7 +293,7 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
           <div style={{ display: 'inline-flex', background: C.surface2, borderRadius: 999, padding: 3, border: `1px solid ${C.border}` }}>
             {(['en', 'ja'] as const).map((l) => (
               <button key={l} onClick={() => toggleLocale(l)}
-                style={{ padding: '5px 18px', background: locale === l ? C.text : 'transparent', color: locale === l ? '#fafafa' : C.text3, border: 'none', borderRadius: 999, fontSize: 12, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }}>
+                style={{ padding: '5px 18px', background: locale === l ? C.text : 'transparent', color: locale === l ? C.onAccent : C.text3, border: 'none', borderRadius: 999, fontSize: 12, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }}>
                 {l === 'en' ? 'English' : '日本語'}
               </button>
             ))}

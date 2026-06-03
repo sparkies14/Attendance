@@ -1,4 +1,4 @@
-import { Geist, Geist_Mono, Instrument_Serif } from 'next/font/google';
+import { Geist, Geist_Mono, Instrument_Serif, Fraunces } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
@@ -12,6 +12,7 @@ const instrumentSerif = Instrument_Serif({
   variable: '--font-instrument-serif',
   display: 'swap',
 });
+const fraunces = Fraunces({ subsets: ['latin'], style: ['normal', 'italic'], variable: '--font-fraunces', display: 'swap' });
 
 export const metadata = {
   title: 'Anosupo AI · 出勤管理',
@@ -27,7 +28,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable}`}>
+    <html lang={locale} className={`${geist.variable} ${geistMono.variable} ${instrumentSerif.variable} ${fraunces.variable}`}>
       <body>
         <NextIntlClientProvider messages={messages}>
           {children}

@@ -4,6 +4,7 @@ import { clientFetch } from '@/lib/clientFetch';
 
 import { useState, useEffect } from 'react';
 import type { LeaveBalance, LeaveRecord } from '../MemberDashboard';
+import { C, F_SERIF, F_SANS, F_MONO } from '../theme';
 
 interface Props {
   email: string;
@@ -12,30 +13,16 @@ interface Props {
   apiUrl: string;
 }
 
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-};
-
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
-
 const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const LEAVE_TYPES = ['Vacation', 'Sick', 'Personal', 'Other'];
 
 const TYPE_COLOR: Record<string, string> = {
-  vacation:  '#2563eb',
-  sick:      '#dc2626',
-  personal:  '#7c3aed',
-  other:     '#b45309',
-  special:   '#b45309',
-  emergency: '#dc2626',
+  vacation:  C.blue,
+  sick:      C.red,
+  personal:  C.purple,
+  other:     C.accent,
+  special:   C.accent,
+  emergency: C.accent,
 };
 
 const STATUS_CONFIG: Record<string, { bg: string; border: string; text: string }> = {
@@ -198,7 +185,7 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          style={{ padding: '8px 16px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 9, fontSize: 13, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}
+          style={{ padding: '8px 16px', background: C.text, color: C.onAccent, border: 'none', borderRadius: 9, fontSize: 13, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}
         >
           + Request leave
         </button>
@@ -226,7 +213,7 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
               <input type="text" value={leaveReason} onChange={e => setLeaveReason(e.target.value)} required placeholder="Brief reason…" style={inp} />
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button type="submit" disabled={formLoading} style={{ padding: '8px 14px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, fontWeight: 500, cursor: formLoading ? 'not-allowed' : 'pointer' }}>
+              <button type="submit" disabled={formLoading} style={{ padding: '8px 14px', background: C.text, color: C.onAccent, border: 'none', borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, fontWeight: 500, cursor: formLoading ? 'not-allowed' : 'pointer' }}>
                 {formLoading ? '…' : 'Submit'}
               </button>
               <button type="button" onClick={() => { setShowForm(false); setFormErr(null); }} style={{ padding: '8px 14px', background: C.surface, color: C.text2, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}>
@@ -389,7 +376,7 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
             <div style={{ display: 'flex', gap: 6 }}>
               {[['all','All'], ['Approved','Approved'], ['Pending','Pending'], ['Rejected','Rejected']].map(([val, lbl]) => (
                 <button key={val} onClick={() => setFilter(val)}
-                  style={{ padding: '5px 12px', background: filter === val ? C.text : 'transparent', color: filter === val ? '#fafafa' : C.text3, border: `1px solid ${filter === val ? C.text : C.border}`, borderRadius: 999, fontSize: 11.5, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}>
+                  style={{ padding: '5px 12px', background: filter === val ? C.text : 'transparent', color: filter === val ? C.onAccent : C.text3, border: `1px solid ${filter === val ? C.text : C.border}`, borderRadius: 999, fontSize: 11.5, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}>
                   {lbl}
                   <span style={{ marginLeft: 5, opacity: 0.6, fontFamily: F_MONO, fontSize: 10 }}>
                     {val === 'all' ? history.length : history.filter(r => r.status === val).length}
@@ -470,7 +457,7 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
                                   style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 7, fontSize: 12.5, color: C.text, background: C.bg, fontFamily: F_SANS, boxSizing: 'border-box' as const }}
                                 />
                               </div>
-                              <button type="submit" disabled={appealLoading} style={{ padding: '7px 14px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 7, fontSize: 12.5, fontFamily: F_SANS, fontWeight: 500, cursor: appealLoading ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+                              <button type="submit" disabled={appealLoading} style={{ padding: '7px 14px', background: C.text, color: C.onAccent, border: 'none', borderRadius: 7, fontSize: 12.5, fontFamily: F_SANS, fontWeight: 500, cursor: appealLoading ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
                                 {appealLoading ? '…' : 'Submit'}
                               </button>
                             </form>
