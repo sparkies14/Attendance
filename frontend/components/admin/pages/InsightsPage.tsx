@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useContext } from 'react';
-import { C, F_SERIF, F_SANS, F_MONO } from '../../theme';
+import { C, F_SERIF, F_SANS, F_MONO, tickTrack } from '../../theme';
 import { ThemeModeContext } from '../../useThemeMode';
 import { clientFetch } from '@/lib/clientFetch';
 
@@ -190,8 +190,8 @@ function TardyRow({ m, max, isLast }: { m: TardyMember; max: number; isLast: boo
         </div>
       </div>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ flex: 1, height: 16, background: C.surface2, borderRadius: 4, overflow: 'hidden' }}>
-          <div style={{ display: 'flex', height: '100%', width: `${barW}%`, minWidth: 4, borderRadius: 4, overflow: 'hidden' }}>
+        <div style={{ ...tickTrack, flex: 1, height: 16, borderRadius: 4, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', height: '100%', width: `${barW}%`, minWidth: 4, borderRadius: 4, overflow: 'hidden', position: 'relative', zIndex: 1 }}>
             {TARDY_CATS.map((cat) => (
               m[cat.key] > 0 ? (
                 <div
@@ -251,8 +251,8 @@ function LeaveRow({ m, isLast }: { m: LeaveMember; isLast: boolean }) {
         </div>
       </td>
       <td style={{ padding: '11px 16px' }}>
-        <div style={{ height: 12, background: C.surface2, borderRadius: 4, overflow: 'hidden' }}>
-          <div style={{ width: `${pct}%`, height: '100%', background: high ? C.accent : C.green, borderRadius: 4 }} />
+        <div style={{ ...tickTrack, height: 12, borderRadius: 4, overflow: 'hidden' }}>
+          <div style={{ width: `${pct}%`, height: '100%', background: high ? C.accent : C.green, borderRadius: 4, position: 'relative', zIndex: 1 }} />
         </div>
         <div style={{ fontFamily: F_MONO, fontSize: 9.5, color: C.text3, marginTop: 3, letterSpacing: '0.03em' }}>{m.used} / {m.entitled} days · {Math.round(pct)}%</div>
       </td>
@@ -522,15 +522,15 @@ export default function InsightsPage({ apiUrl }: Props) {
             ) : (
               <>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 8 }}>
-                  <div style={{ fontFamily: F_SERIF, fontSize: 60, lineHeight: 0.85, color: C.text, letterSpacing: '-0.035em', fontVariantNumeric: 'tabular-nums' }}>{tardyTotal}</div>
+                  <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 60, lineHeight: 0.85, color: C.text, letterSpacing: '-0.035em', fontVariantNumeric: 'tabular-nums' }}>{tardyTotal}</div>
                   <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, marginBottom: 6 }}>events</div>
                 </div>
                 {/* Stacked split bar */}
-                <div style={{ display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', marginTop: 14, background: C.surface2 }}>
+                <div style={{ ...tickTrack, display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', marginTop: 14 }}>
                   {tardyTotal > 0 ? TARDY_CATS.map((cat) => {
                     const v = tardyMembers.reduce((s, m) => s + m[cat.key], 0);
-                    return v > 0 ? <div key={cat.key} style={{ width: `${(v / tardyTotal) * 100}%`, background: cat.color }} /> : null;
-                  }) : <div style={{ width: '100%', background: C.surface2 }} />}
+                    return v > 0 ? <div key={cat.key} style={{ width: `${(v / tardyTotal) * 100}%`, background: cat.color, position: 'relative', zIndex: 1 }} /> : null;
+                  }) : <div style={{ width: '100%', background: C.surface2, position: 'relative', zIndex: 1 }} />}
                 </div>
                 {/* Legend */}
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 10 }}>
@@ -686,7 +686,7 @@ export default function InsightsPage({ apiUrl }: Props) {
             <div style={{ padding: '15px 18px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', gap: 9 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: C.red, boxShadow: `0 0 0 3px ${C.redSoft}`, flexShrink: 0 }} />
               <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: F_SERIF, fontSize: 19, color: C.text, letterSpacing: '-0.015em', lineHeight: 1 }}>Needs attention</div>
+                <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 19, color: C.text, letterSpacing: '-0.015em', lineHeight: 1 }}>Needs attention</div>
                 <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginTop: 4 }}>2+ tardies or active warning</div>
               </div>
               <span style={{ fontFamily: F_MONO, fontSize: 13, color: C.red, fontVariantNumeric: 'tabular-nums' }}>{attMembers.length}</span>
