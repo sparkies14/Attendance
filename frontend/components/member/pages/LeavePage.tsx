@@ -178,7 +178,7 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
       {/* Heading */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 6 }}>
         <div>
-          <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Time off.</div>
+          <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Time off.</div>
           <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
             Balance · Year view · History · {thisYear}
           </div>
@@ -194,7 +194,7 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
       {/* Leave request form */}
       {showForm && (
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px', marginBottom: 16, marginTop: 16 }}>
-          <div style={{ fontFamily: F_SERIF, fontSize: 18, color: C.text, letterSpacing: '-0.01em', marginBottom: 14 }}>New leave request</div>
+          <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 18, color: C.text, letterSpacing: '-0.01em', marginBottom: 14 }}>New leave request</div>
           {formMsg && <div style={{ marginBottom: 10, padding: '8px 10px', background: C.greenSoft, border: `1px solid ${C.greenBorder}`, borderRadius: 8, fontSize: 12.5, color: C.green }}>{formMsg}</div>}
           {formErr && <div style={{ marginBottom: 10, padding: '8px 10px', background: C.redSoft,   border: `1px solid ${C.redBorder}`,   borderRadius: 8, fontSize: 12.5, color: C.red }}>{formErr}</div>}
           <form onSubmit={submitLeave} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr auto', gap: 10, alignItems: 'flex-end' }}>
@@ -233,8 +233,8 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
             {leaveBalance ? (
               <>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontFamily: F_SERIF, fontSize: 64, color: C.text, letterSpacing: '-0.04em', lineHeight: 0.85 }}>{leaveBalance.used}</span>
-                  <span style={{ fontFamily: F_SERIF, fontSize: 32, color: C.text3, letterSpacing: '-0.025em' }}>/ {leaveBalance.grantsEarned}</span>
+                  <span style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 64, color: C.text, letterSpacing: '-0.04em', lineHeight: 0.85 }}>{leaveBalance.used}</span>
+                  <span style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, color: C.text3, letterSpacing: '-0.025em' }}>/ {leaveBalance.grantsEarned}</span>
                 </div>
                 <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.green, letterSpacing: '0.04em', marginBottom: 16 }}>
                   {Math.max(0, leaveBalance.balance)} days available · {pending.length} planned
@@ -305,7 +305,7 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
 
           {/* Upcoming */}
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
-            <div style={{ fontFamily: F_SERIF, fontSize: 18, color: C.text, letterSpacing: '-0.01em', marginBottom: 3 }}>Upcoming</div>
+            <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 18, color: C.text, letterSpacing: '-0.01em', marginBottom: 3 }}>Upcoming</div>
             <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>{upcoming.length} planned</div>
             {upcoming.length === 0 ? (
               <p style={{ fontSize: 12.5, color: C.text3 }}>No upcoming leaves.</p>
@@ -334,7 +334,7 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
 
           {/* Pending action */}
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
-            <div style={{ fontFamily: F_SERIF, fontSize: 18, color: C.text, letterSpacing: '-0.01em', marginBottom: 3 }}>Pending action</div>
+            <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 18, color: C.text, letterSpacing: '-0.01em', marginBottom: 3 }}>Pending action</div>
             <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>{pending.length} awaiting approval</div>
             {pending.length === 0 ? (
               <p style={{ fontSize: 12.5, color: C.text3 }}>Nothing awaiting approval.</p>
@@ -370,7 +370,7 @@ export default function LeavePage({ email, leaveBalance, initialLeaveHistory, ap
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div>
-              <div style={{ fontFamily: F_SERIF, fontSize: 18, color: C.text, letterSpacing: '-0.01em' }}>Leave history</div>
+              <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 18, color: C.text, letterSpacing: '-0.01em' }}>Leave history</div>
               <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 3 }}>All records</div>
             </div>
             <div style={{ display: 'flex', gap: 6 }}>

@@ -4,7 +4,7 @@ import { clientFetch } from '@/lib/clientFetch';
 
 import { useState, useEffect } from 'react';
 import type { UserProfile, MemberData, LeaveBalance, CalendarDay } from '../MemberDashboard';
-import { C, F_SERIF, F_SANS, F_MONO, tickTrack } from '../theme';
+import { C, F_SERIF, F_SANS, F_MONO, tickTrack, accentSecs } from '../theme';
 
 interface Props {
   user: UserProfile;
@@ -332,7 +332,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
           </div>
 
           {/* Serif status headline */}
-          <div style={{ fontFamily: F_SERIF, fontSize: 36, lineHeight: 1.05, letterSpacing: '-0.02em', color: C.text, marginBottom: 6 }}>
+          <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 36, lineHeight: 1.05, letterSpacing: '-0.02em', color: C.text, marginBottom: 6 }}>
             {notIn && !todayIsWeekend && 'Ready to start your day.'}
             {notIn && todayIsWeekend  && <><span style={{ fontStyle: 'normal' }}>It&apos;s the weekend — </span><span style={{ fontStyle: 'italic' }}>enjoy your time off.</span></>}
             {pendingApproval && <><span style={{ fontStyle: 'normal' }}>Clock-in </span><span style={{ fontStyle: 'italic' }}>pending approval.</span></>}
@@ -362,7 +362,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
           {/* Live timer or total */}
           {working && (
             <div style={{ fontFamily: F_MONO, fontSize: 84, fontWeight: 400, color: C.text, letterSpacing: '-0.04em', lineHeight: 0.85, marginBottom: 22, fontVariantNumeric: 'tabular-nums' }}>
-              {fmtSecs(elapsed)}
+              {accentSecs(fmtSecs(elapsed))}
             </div>
           )}
           {done && today?.totalHours && (
@@ -518,7 +518,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
             <div>
-              <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text, letterSpacing: '-0.015em' }}>This week</div>
+              <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 20, color: C.text, letterSpacing: '-0.015em' }}>This week</div>
               <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 3 }}>Daily hours</div>
             </div>
             <div style={{ display: 'flex', gap: 12, fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.04em' }}>
@@ -613,8 +613,8 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
             <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Leave balance</div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
-              <span style={{ fontFamily: F_SERIF, fontSize: 38, color: C.text, letterSpacing: '-0.025em', lineHeight: 1 }}>{leaveBalance.used}</span>
-              <span style={{ fontFamily: F_SERIF, fontSize: 22, color: C.text3, letterSpacing: '-0.015em' }}>/ {leaveBalance.grantsEarned}</span>
+              <span style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 38, color: C.text, letterSpacing: '-0.025em', lineHeight: 1 }}>{leaveBalance.used}</span>
+              <span style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 22, color: C.text3, letterSpacing: '-0.015em' }}>/ {leaveBalance.grantsEarned}</span>
             </div>
             <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.green, letterSpacing: '0.04em', marginBottom: 12 }}>
               {Math.max(0, leaveBalance.balance)} days available
@@ -632,7 +632,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
 
         {/* Leave request form */}
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '20px 22px' }}>
-          <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text, letterSpacing: '-0.015em', marginBottom: 4 }}>
+          <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 20, color: C.text, letterSpacing: '-0.015em', marginBottom: 4 }}>
             Need a day off?
           </div>
           <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 16 }}>Quick leave request</div>
@@ -665,7 +665,7 @@ export default function HomePage({ user, memberData, leaveBalance, apiUrl }: Pro
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}
              onClick={() => setShowEmergency(false)}>
           <div onClick={e => e.stopPropagation()} style={{ background: C.surface, borderRadius: 14, padding: 22, width: 360, maxWidth: '90vw', border: `1px solid ${C.border}` }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontFamily: F_SERIF, fontSize: 20, color: C.text, marginBottom: 10 }}><span style={{ color: C.red, display: 'inline-flex' }}><IcnAlert size={20} /></span>What&apos;s the emergency?</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontFamily: F_SERIF, fontWeight: 600, fontSize: 20, color: C.text, marginBottom: 10 }}><span style={{ color: C.red, display: 'inline-flex' }}><IcnAlert size={20} /></span>What&apos;s the emergency?</div>
             <select value={emReason} onChange={e => setEmReason(e.target.value)}
               style={{ width: '100%', padding: '9px 11px', borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 14, background: C.surface, color: C.text, marginBottom: 10 }}>
               {EMERGENCY_REASONS.map(r => <option key={r} value={r}>{r}</option>)}

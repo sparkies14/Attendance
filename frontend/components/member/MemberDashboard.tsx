@@ -10,7 +10,7 @@ import CalendarPage from './pages/CalendarPage';
 import LeavePage from './pages/LeavePage';
 import PayrollPage from './pages/PayrollPage';
 import AccountPage from './pages/AccountPage';
-import { C, F_SERIF, F_SANS, F_MONO } from './theme';
+import { C, F_SERIF, F_SANS, F_MONO, accentSecs } from './theme';
 import { useMemberMode } from './useMemberMode';
 
 export interface UserProfile {
@@ -175,7 +175,7 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
           </div>
           {expanded && (
             <div>
-              <div style={{ fontFamily: F_SANS, fontSize: 13.5, fontWeight: 500, color: C.onAccent, letterSpacing: '-0.01em', lineHeight: 1.1 }}>Anosupo AI</div>
+              <div style={{ fontFamily: F_SANS, fontSize: 13.5, fontWeight: 500, color: C.text, letterSpacing: '-0.01em', lineHeight: 1.1 }}>Anosupo AI</div>
               <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 2 }}>Attendance</div>
             </div>
           )}
@@ -213,29 +213,34 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
         </div>
 
         {/* User row */}
-        {expanded && (
-        <div style={{ padding: '14px 14px 16px', borderTop: `1px solid ${C.sidebarBorder}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: C.brand, color: C.onAccent, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              {inits}
+        <div style={{ borderTop: `1px solid ${C.sidebarBorder}` }}>
+          {expanded && (
+          <div style={{ padding: '14px 14px 10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: C.brand, color: C.onAccent, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {inits}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 500, color: C.text, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name || user.email}</div>
+                <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, letterSpacing: '0.04em', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</div>
+              </div>
             </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 500, color: C.onAccent, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name || user.email}</div>
-              <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.sidebarText, letterSpacing: '0.04em', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</div>
-            </div>
+            <button
+              onClick={signOut}
+              style={{ width: '100%', background: 'transparent', color: C.sidebarText, border: `1px solid ${C.sidebarBorder}`, borderRadius: 8, padding: '7px', fontSize: 11.5, fontFamily: F_SANS, cursor: 'pointer' }}
+            >
+              Sign out
+            </button>
           </div>
-          <button
-            onClick={signOut}
-            style={{ width: '100%', background: 'transparent', color: C.sidebarText, border: `1px solid ${C.sidebarBorder}`, borderRadius: 8, padding: '7px', fontSize: 11.5, fontFamily: F_SANS, cursor: 'pointer' }}
-          >
-            Sign out
-          </button>
-          <button onClick={toggle} aria-label="Toggle dark / light"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '8px 10px', marginTop: 8, background: C.sidebarActive, color: C.sidebarActiveText, border: `1px solid ${C.sidebarBorder}`, borderRadius: 8, fontFamily: F_MONO, fontSize: 10.5, letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
-            {mode === 'dark' ? '◐ Light mode' : '◑ Dark mode'}
-          </button>
+          )}
+          <div style={{ padding: expanded ? '0 14px 16px' : '10px 10px 10px' }}>
+            <button onClick={toggle} aria-label="Toggle dark / light"
+              style={{ display:'flex', alignItems:'center', justifyContent: expanded ? 'flex-start' : 'center', gap:8, width:'100%', padding:'8px 10px', background:C.sidebarActive, color:C.sidebarActiveText, border:`1px solid ${C.sidebarBorder}`, borderRadius:8, fontFamily:F_MONO, fontSize:11, letterSpacing:'0.06em', textTransform:'uppercase', cursor:'pointer' }}>
+              <span style={{ fontSize:13, lineHeight:1 }}>{mode === 'dark' ? '☀' : '☾'}</span>
+              {expanded && <span>{mode === 'dark' ? 'Light' : 'Dark'}</span>}
+            </button>
+          </div>
         </div>
-        )}
         </div>
       </aside>
 
@@ -245,7 +250,7 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
         {/* Topbar */}
         <div style={{ borderBottom: `1px solid ${C.border}`, padding: '18px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: C.surface, flexShrink: 0 }}>
           <div>
-            <div style={{ fontFamily: F_SERIF, fontSize: 22, lineHeight: 1, letterSpacing: '-0.02em', color: C.text }}>
+            <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 22, lineHeight: 1, letterSpacing: '-0.02em', color: C.text }}>
               {hi}, <span style={{ fontStyle: 'italic' }}>{first}.</span>
             </div>
             <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 6 }}>
@@ -261,12 +266,12 @@ export default function MemberDashboard({ user, leaveBalance, memberData, apiUrl
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontFamily: F_MONO, fontSize: 22, color: C.text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{localClock || '--:--:--'}</div>
+                <div style={{ fontFamily: F_MONO, fontSize: 22, color: C.text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{accentSecs(localClock || '--:--:--')}</div>
                 <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.08em', marginTop: 3 }}>LOCAL</div>
               </div>
               <div style={{ width: 1, height: 32, background: C.border }} />
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontFamily: F_MONO, fontSize: 22, color: C.text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{clock}</div>
+                <div style={{ fontFamily: F_MONO, fontSize: 22, color: C.text, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{accentSecs(clock || '--:--:--')}</div>
                 <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.08em', marginTop: 3 }}>JST · TOKYO</div>
               </div>
             </div>

@@ -236,7 +236,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
         <div>
-          <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>
+          <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>
             My calendar.
           </div>
           <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
@@ -264,7 +264,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <button onClick={prev} disabled={busy} style={{ background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 8, padding: '5px 14px', cursor: 'pointer', fontSize: 14, color: C.text2 }}>←</button>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontFamily: F_SERIF, fontSize: 22, color: C.text, letterSpacing: '-0.02em', lineHeight: 1 }}>
+              <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 22, color: C.text, letterSpacing: '-0.02em', lineHeight: 1 }}>
                 {MONTHS[month-1]} <span style={{ fontStyle: 'italic' }}>{year}</span>
               </div>
               <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.06em', marginTop: 4 }}>
@@ -376,7 +376,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                   <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.accent, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Today's plan</div>
                   <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em' }}>{doneCount}/{events.length} done</div>
                 </div>
-                <div style={{ fontFamily: F_SERIF, fontSize: 24, color: C.text, letterSpacing: '-0.025em', lineHeight: 1.1, marginBottom: 12 }}>
+                <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 24, color: C.text, letterSpacing: '-0.025em', lineHeight: 1.1, marginBottom: 12 }}>
                   {planLabel}
                 </div>
 
@@ -508,7 +508,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                 <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderTopColor: C.accent, borderTopWidth: 2, borderRadius: 14, padding: '18px 20px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <div>
-                      <div style={{ fontFamily: F_SERIF, fontSize: 18, color: C.text, letterSpacing: '-0.015em' }}>
+                      <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 18, color: C.text, letterSpacing: '-0.015em' }}>
                         {MONTHS[month-1]} {selected.day}, {year}
                         <span style={{ fontFamily: F_MONO, fontSize: 10, marginLeft: 10, color: C.text3 }}>
                           {getDOW(year, month, selected.day).toUpperCase()}
@@ -604,7 +604,7 @@ function AtAGlanceCard({ summary, attRate, totalDays, leaveDays, month, year }: 
 }) {
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '18px 20px' }}>
-      <div style={{ fontFamily: F_SERIF, fontSize: 15, color: C.text, letterSpacing: '-0.01em', marginBottom: 2 }}>
+      <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 15, color: C.text, letterSpacing: '-0.01em', marginBottom: 2 }}>
         {MONTHS[month-1]} at a glance.
       </div>
       <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>{year}</div>
@@ -612,8 +612,8 @@ function AtAGlanceCard({ summary, attRate, totalDays, leaveDays, month, year }: 
       {summary ? (
         <>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
-            <span style={{ fontFamily: F_SERIF, fontSize: 48, color: attRate >= 90 ? C.green : attRate >= 70 ? C.accent : C.red, letterSpacing: '-0.03em', lineHeight: 0.9 }}>{attRate}</span>
-            <span style={{ fontFamily: F_SERIF, fontSize: 22, color: C.text3, letterSpacing: '-0.02em' }}>%</span>
+            <span style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 48, color: attRate >= 90 ? C.green : attRate >= 70 ? C.accent : C.red, letterSpacing: '-0.03em', lineHeight: 0.9 }}>{attRate}</span>
+            <span style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 22, color: C.text3, letterSpacing: '-0.02em' }}>%</span>
           </div>
           <div style={{ display: 'flex', height: 5, borderRadius: 999, overflow: 'hidden', marginBottom: 14, gap: 1 }}>
             {totalDays > 0 && (summary.present ?? 0) > 0 && <div style={{ flex: summary.present, background: C.green,  borderRadius: '999px 0 0 999px' }} />}

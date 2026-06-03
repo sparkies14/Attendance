@@ -157,13 +157,13 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
 
       {/* Page heading */}
       <div>
-        <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Account.</div>
+        <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Account.</div>
         <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>Profile · Security · Preferences</div>
       </div>
 
       {/* ── Profile card ── */}
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '24px 28px' }}>
-        <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text, letterSpacing: '-0.015em', marginBottom: 3 }}>Profile</div>
+        <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 20, color: C.text, letterSpacing: '-0.015em', marginBottom: 3 }}>Profile</div>
         <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 22 }}>Identity</div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
@@ -171,7 +171,7 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
             {inits}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: F_SERIF, fontSize: 28, color: C.text, letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: 4 }}>{user.name || user.email}</div>
+            <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 28, color: C.text, letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: 4 }}>{user.name || user.email}</div>
             <div style={{ fontFamily: F_MONO, fontSize: 12, color: C.text3, marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <Chip label={user.role.charAt(0).toUpperCase() + user.role.slice(1)} bg={C.surface2} color={C.text2}  border={C.border} />
@@ -189,7 +189,7 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
 
       {/* ── Security card ── */}
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '24px 28px' }}>
-        <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text, letterSpacing: '-0.015em', marginBottom: 3 }}>Security</div>
+        <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 20, color: C.text, letterSpacing: '-0.015em', marginBottom: 3 }}>Security</div>
         <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 22 }}>Password · Google account</div>
 
         {!user.hasPassword && (
@@ -246,7 +246,7 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
 
       {/* ── Discord card ── */}
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '24px 28px' }}>
-        <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text, letterSpacing: '-0.015em', marginBottom: 3 }}>Discord</div>
+        <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 20, color: C.text, letterSpacing: '-0.015em', marginBottom: 3 }}>Discord</div>
         <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 22 }}>
           {discordLinked ? 'Linked' : 'Clock in from Discord'}
         </div>
@@ -285,7 +285,7 @@ export default function AccountPage({ user, apiUrl, hireYear }: Props) {
 
       {/* ── Preferences card ── */}
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '24px 28px' }}>
-        <div style={{ fontFamily: F_SERIF, fontSize: 20, color: C.text, letterSpacing: '-0.015em', marginBottom: 3 }}>Preferences</div>
+        <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 20, color: C.text, letterSpacing: '-0.015em', marginBottom: 3 }}>Preferences</div>
         <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 22 }}>Language</div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>

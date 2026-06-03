@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { createElement, Fragment, type ReactNode } from 'react';
 
 export const C = {
   bg:'var(--c-bg)', surface:'var(--c-surface)', surface2:'var(--c-surface2)',
@@ -14,7 +15,7 @@ export const C = {
   onAccent:'var(--c-on-accent)', brand:'var(--c-brand)', tick:'var(--c-tick)',
 } as const;
 
-export const F_SERIF = "'Fraunces', var(--font-fraunces, 'Times New Roman'), serif";
+export const F_SERIF = "'Geist', var(--font-geist, -apple-system), system-ui, sans-serif";
 export const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
 export const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
@@ -22,3 +23,9 @@ export const tickTrack: CSSProperties = {
   backgroundColor: 'var(--c-surface2)',
   backgroundImage: 'repeating-linear-gradient(90deg, transparent 0 8px, var(--c-tick) 8px 9px)',
 };
+
+export function accentSecs(time: string): ReactNode {
+  const i = time.lastIndexOf(':');
+  if (i < 0) return time;
+  return createElement(Fragment, null, time.slice(0, i), createElement('span', { style: { color: 'var(--c-accent)' } }, time.slice(i)));
+}
