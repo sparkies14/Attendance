@@ -2,7 +2,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { clientFetch } from '@/lib/clientFetch';
-import { C, F_SANS, F_MONO, F_SERIF, tickTrack } from '../../theme';
+import { C, F_SANS, F_MONO, F_SERIF } from '../../theme';
 
 interface Props { apiUrl: string; adminRole: string; }
 
@@ -61,8 +61,6 @@ export default function LeaveBalancesPage({ apiUrl, adminRole }: Props) {
     balance: acc.balance + m.balance,
   }), { grantsEarned: 0, used: 0, adjustments: 0, balance: 0 });
 
-  const maxGrants = Math.max(...members.map(m => m.grantsEarned), 1);
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1100 }}>
       <div>
@@ -77,7 +75,7 @@ export default function LeaveBalancesPage({ apiUrl, adminRole }: Props) {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${C.border}`, background: C.surface2 }}>
-                {['Member', 'Hire year', 'Grants earned', 'Used', 'Adjustments', 'Balance', 'Fill', ''].map(h => (
+                {['Member', 'Hire year', 'Grants earned', 'Used', 'Adjustments', 'Balance', ''].map(h => (
                   <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 400 }}>{h}</th>
                 ))}
               </tr>
@@ -85,7 +83,6 @@ export default function LeaveBalancesPage({ apiUrl, adminRole }: Props) {
             <tbody>
               {members.map((m, i) => {
                 const isAdj = adjustingEmail === m.email;
-                const usedPct  = m.grantsEarned > 0 ? Math.min(100, Math.round((m.used / m.grantsEarned) * 100)) : 0;
                 const fillColor = m.balance <= 0 ? C.red : m.balance <= 3 ? C.accent : C.green;
                 return (
                   <React.Fragment key={m.email}>
@@ -101,19 +98,6 @@ export default function LeaveBalancesPage({ apiUrl, adminRole }: Props) {
                         {m.adjustments > 0 ? `+${m.adjustments}` : m.adjustments}
                       </td>
                       <td style={{ padding: '12px 16px', fontFamily: F_MONO, fontSize: 13, fontWeight: 600, color: fillColor, fontVariantNumeric: 'tabular-nums' }}>{m.balance}</td>
-                      {/* Fill-bar track with tickTrack */}
-                      <td style={{ padding: '12px 16px', minWidth: 100 }}>
-                        <div style={{ ...tickTrack, height: 8, borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
-                          <div style={{
-                            position: 'relative', zIndex: 1,
-                            width: `${usedPct}%`, height: '100%',
-                            background: fillColor,
-                            borderRadius: 4,
-                            transition: 'width 0.3s ease',
-                          }} />
-                        </div>
-                        <div style={{ fontFamily: F_MONO, fontSize: 9, color: C.text3, marginTop: 3, zIndex: 2, position: 'relative' }}>{usedPct}% used</div>
-                      </td>
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <button onClick={() => { setAdjustingEmail(isAdj ? null : m.email); setAdjAmount(''); setAdjNote(''); setAdjErr(null); }}
                           style={{ padding: '4px 10px', background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F_MONO, fontSize: 10.5, color: C.text2, cursor: 'pointer' }}>
@@ -123,7 +107,7 @@ export default function LeaveBalancesPage({ apiUrl, adminRole }: Props) {
                     </tr>
                     {isAdj && (
                       <tr style={{ borderBottom: i < members.length - 1 ? `1px solid ${C.border}` : 'none' }}>
-                        <td colSpan={8} style={{ padding: '12px 16px', background: C.surface2 }}>
+                        <td colSpan={7} style={{ padding: '12px 16px', background: C.surface2 }}>
                           {adjErr && <div style={{ marginBottom: 8, fontFamily: F_MONO, fontSize: 11, color: C.red }}>{adjErr}</div>}
                           <form onSubmit={e => submitAdjust(m.email, e)} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                             <div>
@@ -153,7 +137,6 @@ export default function LeaveBalancesPage({ apiUrl, adminRole }: Props) {
                   <td style={{ padding: '10px 16px', fontFamily: F_MONO, fontSize: 12.5, fontWeight: 600, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{totals.used}</td>
                   <td style={{ padding: '10px 16px', fontFamily: F_MONO, fontSize: 12.5, fontWeight: 600, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{totals.adjustments > 0 ? `+${totals.adjustments}` : totals.adjustments}</td>
                   <td style={{ padding: '10px 16px', fontFamily: F_MONO, fontSize: 12.5, fontWeight: 600, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{totals.balance}</td>
-                  <td />
                   <td />
                 </tr>
               )}
