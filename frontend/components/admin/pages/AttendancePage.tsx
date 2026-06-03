@@ -2,27 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import type { DashboardData } from '../AdminDashboard';
+import { C, F_SERIF, F_SANS, F_MONO, tickTrack } from '../../theme';
 
 interface Props {
   dashboard: DashboardData | null;
   apiUrl: string;
 }
-
-// ── Color / font constants (same as AdminDashboard) ──────────────────────────
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-  btnBg: '#0a0a0a', btnText: '#fafafa',
-};
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -107,7 +92,7 @@ function StatCard({ label, value, sub, icon, tint, trend, trendAlert }: StatCard
         <span style={{ width: 24, height: 24, borderRadius: 6, background: `${tint}15`, color: tint, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
       </div>
       <div style={{ marginTop: 12, display: 'flex', alignItems: 'baseline', gap: 8 }}>
-        <div style={{ fontFamily: F_SERIF, fontSize: 46, lineHeight: 0.9, color: C.text, letterSpacing: '-0.03em' }}>{value}</div>
+        <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 46, lineHeight: 0.9, color: C.text, letterSpacing: '-0.03em' }}>{value}</div>
         <div style={{ fontFamily: F_MONO, fontSize: 11.5, color: C.text3, marginBottom: 4 }}>{sub}</div>
       </div>
       <div style={{ marginTop: 10, fontFamily: F_MONO, fontSize: 10, color: trendAlert ? C.red : C.text3, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
@@ -310,7 +295,7 @@ export default function AttendancePage({ dashboard }: Props) {
       {/* ── Page header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' as const }}>
         <div>
-          <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>
+          <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>
             Employee attendance.
           </div>
           <div style={{ fontFamily: F_MONO, fontSize: 11.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginTop: 8 }}>
@@ -418,7 +403,7 @@ export default function AttendancePage({ dashboard }: Props) {
         <PanelCard title="Emergency clock-outs" count={emergencyMembers.length} alert>
           {emergencyMembers.map((m) => (
             <div key={m.email} style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '6px 12px 6px 6px', background: C.redSoft, border: `1px solid ${C.redBorder}`, borderRadius: 999 }}>
-              <span style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(220,38,38,0.18)', color: C.red, fontSize: 10, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{initials(m.name)}</span>
+              <span style={{ width: 22, height: 22, borderRadius: '50%', background: C.redSoft, color: C.red, fontSize: 10, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{initials(m.name)}</span>
               <span style={{ fontFamily: F_SANS, fontSize: 12, color: C.text, fontWeight: 500 }}>{m.name}</span>
               <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.red, letterSpacing: '0.02em' }}>{m.emergencyReason || 'Emergency'}</span>
             </div>
@@ -467,7 +452,7 @@ export default function AttendancePage({ dashboard }: Props) {
 
       {/* ── Week nav ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ fontFamily: F_SERIF, fontSize: 18, color: C.text, letterSpacing: '-0.015em' }}>{weekLabel}</span>
+        <span style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 18, color: C.text, letterSpacing: '-0.015em' }}>{weekLabel}</span>
         <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase' as const, padding: '3px 9px', borderRadius: 999, border: `1px solid ${C.border}` }}>This week</span>
         <div style={{ flex: 1 }} />
         <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>Live data</span>
@@ -515,7 +500,7 @@ export default function AttendancePage({ dashboard }: Props) {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, lineHeight: 1.15 }}>
                             <span style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{m.name}</span>
                             {m.emergency && (
-                              <span title={m.emergencyReason || 'Emergency'} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, background: 'rgba(220,38,38,0.10)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.30)', fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.06em' }}>
+                              <span title={m.emergencyReason || 'Emergency'} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 999, background: C.redSoft, color: C.red, border: `1px solid ${C.redBorder}`, fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.06em' }}>
                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                                   <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
                                   <line x1="12" y1="9" x2="12" y2="13" />
