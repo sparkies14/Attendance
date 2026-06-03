@@ -153,7 +153,7 @@ export default function HolidaysPage({ apiUrl, adminRole }: Props) {
                   <td style={{ padding: '11px 16px', fontFamily: F_MONO, fontSize: 12.5, color: C.text2 }}>{h.date}</td>
                   <td style={{ padding: '11px 16px', fontSize: 13, color: C.text, fontWeight: 500 }}>
                     {h.name}
-                    <span style={{ marginLeft: 8, padding: '1px 7px', borderRadius: 999, fontFamily: 'monospace', fontSize: 9, letterSpacing: '0.06em',
+                    <span style={{ marginLeft: 8, padding: '1px 7px', borderRadius: 999, fontFamily: F_MONO, fontSize: 9, letterSpacing: '0.06em',
                       background: h.source === 'auto' ? C.surface2 : C.blueSoft,
                       color: h.source === 'auto' ? C.text3 : C.blue,
                       border: `1px solid ${h.source === 'auto' ? C.border : C.blueBorder}` }}>
