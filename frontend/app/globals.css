@@ -25,3 +25,29 @@ input, select, textarea {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.3; }
 }
+
+/* ── Member theme tokens (Nocturne) ── */
+:root, [data-mode="dark"] {
+  --c-bg:#0c0d10; --c-surface:#131418; --c-surface2:#1a1c21;
+  --c-text:#edecf0; --c-text2:#9b9ba3; --c-text3:#62636b;
+  --c-border:rgba(255,255,255,.075); --c-border-strong:rgba(255,255,255,.14);
+  --c-accent:#54e6ff; --c-accent-soft:rgba(84,230,255,.12); --c-accent-border:rgba(84,230,255,.32);
+  --c-green:#5fd98a; --c-green-soft:rgba(95,217,138,.12); --c-green-border:rgba(95,217,138,.30);
+  --c-red:#ff6b6b; --c-red-soft:rgba(255,107,107,.12); --c-red-border:rgba(255,107,107,.30);
+  --c-blue:#6cb8ff; --c-blue-soft:rgba(108,184,255,.12); --c-blue-border:rgba(108,184,255,.30);
+  --c-purple:#a99bff; --c-purple-soft:rgba(169,155,255,.12);
+  --c-sidebar-bg:#090a0c; --c-sidebar-border:rgba(255,255,255,.07); --c-sidebar-text:#8a8a92; --c-sidebar-active:rgba(84,230,255,.12); --c-sidebar-active-text:#54e6ff;
+  --c-on-accent:#0c0d10; --c-brand:#54e6ff; --c-tick:rgba(255,255,255,.07);
+}
+[data-mode="light"] {
+  --c-bg:#f7f1e4; --c-surface:#fffdf7; --c-surface2:#f1e9d7;
+  --c-text:#211a12; --c-text2:#5f574a; --c-text3:#9d9582;
+  --c-border:rgba(40,28,8,.10); --c-border-strong:rgba(40,28,8,.16);
+  --c-accent:#c2410c; --c-accent-soft:rgba(194,65,12,.12); --c-accent-border:rgba(194,65,12,.40);
+  --c-green:#157f3b; --c-green-soft:rgba(21,127,59,.12); --c-green-border:rgba(21,127,59,.30);
+  --c-red:#c63d1f; --c-red-soft:rgba(198,61,31,.10); --c-red-border:rgba(198,61,31,.30);
+  --c-blue:#1f6feb; --c-blue-soft:rgba(31,111,235,.10); --c-blue-border:rgba(31,111,235,.30);
+  --c-purple:#6d4bd6; --c-purple-soft:rgba(109,75,214,.10);
+  --c-sidebar-bg:#efe6d4; --c-sidebar-border:rgba(40,28,8,.10); --c-sidebar-text:#6b6355; --c-sidebar-active:rgba(194,65,12,.12); --c-sidebar-active-text:#c2410c;
+  --c-on-accent:#fffdf7; --c-brand:#c2410c; --c-tick:rgba(40,28,8,.11);
+}
