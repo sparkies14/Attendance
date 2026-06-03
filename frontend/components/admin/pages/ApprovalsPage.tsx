@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import type { DashboardData } from '../AdminDashboard';
 import { clientFetch } from '@/lib/clientFetch';
 import RecentDecisions from '@/components/admin/RecentDecisions';
+import { C, F_SERIF, F_SANS, F_MONO } from '../../theme';
 
 interface Props {
   dashboard: DashboardData | null;
@@ -13,22 +14,6 @@ interface Props {
   filterKind?: string;
   onViewAudit?: () => void;
 }
-
-// ── Color / font constants (same as AdminDashboard) ──────────────────────────
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)', purpleBorder: 'rgba(124,58,237,0.25)',
-  btnBg: '#0a0a0a', btnText: '#fafafa',
-};
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const PALETTE = [
@@ -104,19 +89,20 @@ interface StatCardProps {
   sub: React.ReactNode;
   icon: string;
   tint: string;
+  tintSoft: string;
   trend: string;
   trendAlert?: boolean;
 }
-function StatCard({ label, value, sub, icon, tint, trend, trendAlert }: StatCardProps) {
+function StatCard({ label, value, sub, icon, tint, tintSoft, trend, trendAlert }: StatCardProps) {
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: `${tint}10`, opacity: 0.6 }} />
+      <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: tintSoft, opacity: 0.6 }} />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
         <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</div>
-        <span style={{ width: 24, height: 24, borderRadius: 6, background: `${tint}15`, color: tint, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
+        <span style={{ width: 24, height: 24, borderRadius: 6, background: tintSoft, color: tint, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
       </div>
       <div style={{ marginTop: 12, display: 'flex', alignItems: 'baseline', gap: 8 }}>
-        <div style={{ fontFamily: F_SERIF, fontSize: 46, lineHeight: 0.9, color: C.text, letterSpacing: '-0.03em' }}>{value}</div>
+        <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 46, lineHeight: 0.9, color: C.text, letterSpacing: '-0.03em' }}>{value}</div>
         <div style={{ fontFamily: F_MONO, fontSize: 11.5, color: C.text3, marginBottom: 4 }}>{sub}</div>
       </div>
       <div style={{ marginTop: 10, fontFamily: F_MONO, fontSize: 10, color: trendAlert ? C.accent : C.text3, letterSpacing: '0.06em' }}>
@@ -182,7 +168,7 @@ function QueueRow({ r, isSelected, onSelect }: QueueRowProps) {
           <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.04em', marginLeft: 8 }}>{r.submitted}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '1px 7px', borderRadius: 4, background: `${C.blue}15`, border: `1px solid ${C.blue}33`, color: C.blue, fontFamily: F_MONO, fontSize: 9.5, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '1px 7px', borderRadius: 4, background: C.blueSoft, border: `1px solid ${C.blueBorder}`, color: C.blue, fontFamily: F_MONO, fontSize: 9.5, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             <span style={{ fontSize: 9 }}>⏱</span> {r.kind}
           </span>
           <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text2, letterSpacing: '0.02em' }}>{r.entry}</span>
@@ -247,7 +233,7 @@ function DetailCard({ r, allItems, selectedIdx, onNav, note, onNoteChange, actio
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-            <div style={{ fontFamily: F_SERIF, fontSize: 24, color: C.text, letterSpacing: '-0.018em', lineHeight: 1 }}>{r.name}</div>
+            <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 24, color: C.text, letterSpacing: '-0.018em', lineHeight: 1 }}>{r.name}</div>
             <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.04em' }}>· {r.role}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
@@ -302,7 +288,7 @@ function DetailCard({ r, allItems, selectedIdx, onNav, note, onNoteChange, actio
       {/* Reason */}
       <div style={{ padding: '18px 22px', borderBottom: `1px solid ${C.border}` }}>
         <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>Member's reason</div>
-        <div style={{ fontFamily: F_SERIF, fontSize: 18, color: C.text, letterSpacing: '-0.015em', lineHeight: 1.4, fontStyle: 'italic' }}>
+        <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 18, color: C.text, letterSpacing: '-0.015em', lineHeight: 1.4, fontStyle: 'italic' }}>
           "{r.reason}"
         </div>
       </div>
@@ -316,7 +302,7 @@ function DetailCard({ r, allItems, selectedIdx, onNav, note, onNoteChange, actio
             <div style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>
               Time-off request
             </div>
-            <div style={{ fontFamily: F_SERIF, fontSize: 26, color: C.text, letterSpacing: '-0.02em', lineHeight: 1 }}>{r.entry}</div>
+            <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 26, color: C.text, letterSpacing: '-0.02em', lineHeight: 1 }}>{r.entry}</div>
             <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', marginTop: 6 }}>Requested for {r.date}</div>
             <div style={{ marginTop: 14, padding: '10px 12px', borderRadius: 8, background: C.surface2, border: `1px solid ${C.border}`, fontSize: 11.5, color: C.text2, lineHeight: 1.5 }}>
               Approving records this as approved time off for {firstName}. There is no clock-in to validate on a leave request.
@@ -356,7 +342,7 @@ function DetailCard({ r, allItems, selectedIdx, onNav, note, onNoteChange, actio
               ].map((s, i) => (
                 <div key={i} style={{ padding: '8px 10px', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 8 }}>
                   <div style={{ fontFamily: F_MONO, fontSize: 9.5, color: C.text3, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{s.lbl}</div>
-                  <div style={{ fontFamily: F_SERIF, fontSize: 22, color: s.tint, letterSpacing: '-0.02em', lineHeight: 1, marginTop: 4 }}>{s.v}</div>
+                  <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 22, color: s.tint, letterSpacing: '-0.02em', lineHeight: 1, marginTop: 4 }}>{s.v}</div>
                 </div>
               ))}
             </div>
@@ -414,7 +400,7 @@ function DetailCard({ r, allItems, selectedIdx, onNav, note, onNoteChange, actio
           <button
             onClick={() => onAction('approve')}
             disabled={actionLoading}
-            style={{ padding: '10px 20px', background: C.green, color: '#0a0a0a', border: 'none', borderRadius: 9, fontFamily: F_SANS, fontSize: 13, fontWeight: 600, cursor: actionLoading ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, opacity: actionLoading ? 0.6 : 1 }}
+            style={{ padding: '10px 20px', background: C.green, color: C.btnText, border: 'none', borderRadius: 9, fontFamily: F_SANS, fontSize: 13, fontWeight: 600, cursor: actionLoading ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, opacity: actionLoading ? 0.6 : 1 }}
           >
             {actionLoading ? '…' : '✓ Approve'}
           </button>
@@ -429,7 +415,7 @@ function LeaveEmptyState() {
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '48px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
       <div style={{ width: 48, height: 48, borderRadius: '50%', background: C.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: C.text3 }}>✦</div>
-      <div style={{ fontFamily: F_SERIF, fontSize: 22, color: C.text, letterSpacing: '-0.015em' }}>No pending leave requests</div>
+      <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 22, color: C.text, letterSpacing: '-0.015em' }}>No pending leave requests</div>
       <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.04em', maxWidth: 300 }}>
         There are no leave requests waiting for your decision right now.
       </div>
@@ -442,7 +428,7 @@ function QueueEmptyState() {
   return (
     <div style={{ padding: '40px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center' }}>
       <div style={{ fontSize: 22, color: C.text3 }}>✓</div>
-      <div style={{ fontFamily: F_SERIF, fontSize: 18, color: C.text }}>Queue is clear</div>
+      <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 18, color: C.text }}>Queue is clear</div>
       <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.04em' }}>No pending approvals match the current filter.</div>
     </div>
   );
@@ -545,7 +531,7 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
       {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>
+          <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>
             {leaveMode
               ? <>Leave <span style={{ fontStyle: 'italic', color: C.text2 }}>requests.</span></>
               : <>Approvals <span style={{ fontStyle: 'italic', color: C.text2 }}>queue.</span></>}
@@ -575,12 +561,13 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
           sub={<>{leaveMode ? leaveCount : manualCount} due today</>}
           icon={leaveMode ? '⌇' : '⏳'}
           tint={leaveMode ? C.blue : C.accent}
+          tintSoft={leaveMode ? C.blueSoft : C.accentSoft}
           trend={(leaveMode ? leaveCount : manualCount) > 0 ? 'Oldest · today' : 'Nothing pending'}
           trendAlert={(leaveMode ? leaveCount : manualCount) > 0}
         />
-        <StatCard label="Approved · this week" value="—" sub={<>no data</>}       icon="✓" tint={C.green}  trend="—" />
-        <StatCard label="Rejected · this week" value="—" sub={<>no data</>}       icon="✕" tint={C.red}    trend="—" />
-        <StatCard label="Avg decision time"    value="—" sub={<>no data</>}       icon="◷" tint={C.blue}   trend="—" />
+        <StatCard label="Approved · this week" value="—" sub={<>no data</>}       icon="✓" tint={C.green}  tintSoft={C.greenSoft}  trend="—" />
+        <StatCard label="Rejected · this week" value="—" sub={<>no data</>}       icon="✕" tint={C.red}    tintSoft={C.redSoft}    trend="—" />
+        <StatCard label="Avg decision time"    value="—" sub={<>no data</>}       icon="◷" tint={C.blue}   tintSoft={C.blueSoft}   trend="—" />
       </div>
 
       {/* ── Master/detail ── */}
@@ -662,7 +649,7 @@ export default function ApprovalsPage({ dashboard, apiUrl, onRefresh, filterKind
           />
         ) : (
           <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '48px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
-            <div style={{ fontFamily: F_SERIF, fontSize: 22, color: C.text }}>Select a request</div>
+            <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 22, color: C.text }}>Select a request</div>
             <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.04em' }}>Click an item in the queue to review it here.</div>
           </div>
         )}
