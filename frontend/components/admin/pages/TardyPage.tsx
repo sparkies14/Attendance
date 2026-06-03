@@ -1,23 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { clientFetch } from '@/lib/clientFetch';
+import { C, F_SERIF, F_SANS, F_MONO } from '../../theme';
 
 interface Props { apiUrl: string; adminRole: string; }
-
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-  btnBg: '#0a0a0a', btnText: '#fafafa',
-};
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 interface TardyMember {
   id: string; name: string; email: string; country: string;
@@ -36,6 +22,14 @@ const MOCK_MEMBERS: TardyMember[] = [
 ];
 const MOCK_THRESHOLDS: Thresholds = { threshold_minor_tardy: 3, threshold_major_tardy: 2, threshold_awol_half: 1, threshold_awol_full: 1 };
 const FLAG: Record<string, string> = { PH: '🇵🇭', JP: '🇯🇵' };
+
+// Per-badge soft+border tokens for the threshold pills
+const THRESHOLD_STYLES: [string, string, string, string][] = [
+  ['Minor tardy', 'threshold_minor_tardy', C.accentSoft, C.accentBorder],
+  ['Major tardy', 'threshold_major_tardy', C.redSoft,    C.redBorder],
+  ['AWOL ½ day',  'threshold_awol_half',   C.redSoft,    C.redBorder],
+  ['AWOL full',   'threshold_awol_full',   C.redSoft,    C.redBorder],
+];
 
 export default function TardyPage({ apiUrl }: Props) {
   const [members,    setMembers]    = useState<TardyMember[]>([]);
@@ -68,19 +62,18 @@ export default function TardyPage({ apiUrl }: Props) {
     finally { setAwolBusy(false); }
   }
 
-  void F_SERIF;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1200 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Tardy &amp; AWOL.</div>
+          <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Tardy &amp; AWOL.</div>
           <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>30-day window · {members.length} members</div>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           {awolMsg && <span style={{ fontFamily: F_MONO, fontSize: 11, color: C.green }}>{awolMsg}</span>}
           {awolErr && <span style={{ fontFamily: F_MONO, fontSize: 11, color: C.red }}>{awolErr}</span>}
           <button onClick={runAwolCheck} disabled={awolBusy}
-            style={{ padding: '8px 16px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 9, fontFamily: F_SANS, fontSize: 13, fontWeight: 500, cursor: awolBusy ? 'not-allowed' : 'pointer', opacity: awolBusy ? 0.6 : 1 }}>
+            style={{ padding: '8px 16px', background: C.btnBg, color: C.btnText, border: 'none', borderRadius: 9, fontFamily: F_SANS, fontSize: 13, fontWeight: 500, cursor: awolBusy ? 'not-allowed' : 'pointer', opacity: awolBusy ? 0.6 : 1 }}>
             {awolBusy ? 'Running…' : 'Run AWOL Check'}
           </button>
         </div>
@@ -88,8 +81,8 @@ export default function TardyPage({ apiUrl }: Props) {
 
       {thresholds && (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {([['Minor tardy', thresholds.threshold_minor_tardy, C.accent], ['Major tardy', thresholds.threshold_major_tardy, C.red], ['AWOL ½ day', thresholds.threshold_awol_half, C.red], ['AWOL full', thresholds.threshold_awol_full, C.red]] as [string, number, string][]).map(([lbl, v, tint]) => (
-            <span key={lbl} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 999, background: `${tint}12`, border: `1px solid ${tint}33`, fontFamily: F_MONO, fontSize: 10.5, color: tint }}>{lbl}: {v}</span>
+          {THRESHOLD_STYLES.map(([lbl, key, soft, border]) => (
+            <span key={lbl} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 999, background: soft, border: `1px solid ${border}`, fontFamily: F_MONO, fontSize: 10.5, color: key === 'threshold_minor_tardy' ? C.accent : C.red }}>{lbl}: {thresholds[key as keyof Thresholds]}</span>
           ))}
         </div>
       )}
