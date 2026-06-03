@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import { C, F_SERIF, F_SANS, F_MONO } from '../../theme';
+import { ThemeModeContext } from '../../useThemeMode';
 import { clientFetch } from '@/lib/clientFetch';
 
 // ── Dev mock data (same shape as real API responses) ───────────────────────
@@ -57,23 +59,6 @@ const MOCK_ATTENTION = {
 interface Props {
   apiUrl: string;
 }
-
-// ── Color / font constants ──────────────────────────────────────────────────
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-  orange: '#c2410c',
-  btnBg: '#0a0a0a', btnText: '#fafafa',
-};
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 // ── Tardy category definitions ──────────────────────────────────────────────
 const TARDY_CATS = [
@@ -154,7 +139,7 @@ function KpiTile({ label, big, sub, tint, alert, noBorder }: {
     <div style={{ padding: '20px 20px', borderRight: noBorder ? 'none' : `1px solid ${C.border}`, position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
       {alert && <div style={{ position: 'absolute', top: 16, right: 16, width: 7, height: 7, borderRadius: '50%', background: C.red, boxShadow: `0 0 0 3px ${C.redSoft}` }} />}
       <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.12em', textTransform: 'uppercase' as const }}>{label}</div>
-      <div style={{ fontFamily: F_SERIF, fontSize: 42, lineHeight: 0.9, color: tint, letterSpacing: '-0.03em', marginTop: 10, fontVariantNumeric: 'tabular-nums' }}>{big}</div>
+      <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 42, lineHeight: 0.9, color: tint, letterSpacing: '-0.03em', marginTop: 10, fontVariantNumeric: 'tabular-nums' }}>{big}</div>
       <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.03em', marginTop: 8 }}>{sub}</div>
     </div>
   );
@@ -172,7 +157,7 @@ function SectionCard({ title, sub, report, range, onDownload, hasPaddingTop, chi
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
       <div style={{ padding: '15px 18px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, borderBottom: `1px solid ${C.border}` }}>
         <div>
-          <div style={{ fontFamily: F_SERIF, fontSize: 21, color: C.text, letterSpacing: '-0.02em', lineHeight: 1 }}>{title}</div>
+          <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 21, color: C.text, letterSpacing: '-0.02em', lineHeight: 1 }}>{title}</div>
           <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginTop: 5 }}>{sub}</div>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
@@ -195,11 +180,10 @@ function SectionCard({ title, sub, report, range, onDownload, hasPaddingTop, chi
 // ── Tardy stacked bar row ────────────────────────────────────────────────────
 function TardyRow({ m, max, isLast }: { m: TardyMember; max: number; isLast: boolean }) {
   const barW = max > 0 ? (m.total / max) * 100 : 0;
-  const hue = '#a3a3a3';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', borderBottom: isLast ? 'none' : `1px solid ${C.border}` }}>
       <div style={{ width: 158, display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-        <span style={{ width: 28, height: 28, borderRadius: '50%', background: `${hue}22`, color: hue, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{initials(m.name)}</span>
+        <span style={{ width: 28, height: 28, borderRadius: '50%', background: C.surface2, color: C.text3, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{initials(m.name)}</span>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 12.5, fontWeight: 500, color: C.text, lineHeight: 1.15, whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</div>
           <div style={{ fontFamily: F_MONO, fontSize: 9.5, color: C.text3, marginTop: 1, letterSpacing: '0.04em' }}>{m.country}</div>
@@ -258,12 +242,11 @@ function ThIns({ w, right, children }: { w: string; right?: boolean; children: R
 function LeaveRow({ m, isLast }: { m: LeaveMember; isLast: boolean }) {
   const pct = m.entitled > 0 ? (m.used / m.entitled) * 100 : 0;
   const high = pct >= 60;
-  const hue = '#a3a3a3';
   return (
     <tr style={{ borderBottom: isLast ? 'none' : `1px solid ${C.border}` }}>
       <td style={{ padding: '11px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ width: 28, height: 28, borderRadius: '50%', background: `${hue}22`, color: hue, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{initials(m.name)}</span>
+          <span style={{ width: 28, height: 28, borderRadius: '50%', background: C.surface2, color: C.text3, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{initials(m.name)}</span>
           <div style={{ fontSize: 12.5, fontWeight: 500, color: C.text }}>{m.name}</div>
         </div>
       </td>
@@ -285,7 +268,7 @@ function MiniStat({ label, v, tint, noBorder }: { label: string; v: number; tint
   return (
     <div style={{ flex: 1, padding: '13px 16px', borderRight: noBorder ? 'none' : `1px solid ${C.border}` }}>
       <div style={{ fontFamily: F_MONO, fontSize: 9.5, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>{label}</div>
-      <div style={{ fontFamily: F_SERIF, fontSize: 28, color: tint, letterSpacing: '-0.02em', lineHeight: 1, marginTop: 6 }}>{v}</div>
+      <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 28, color: tint, letterSpacing: '-0.02em', lineHeight: 1, marginTop: 6 }}>{v}</div>
     </div>
   );
 }
@@ -353,6 +336,16 @@ function RangePicker({
 
 // ── Main page ────────────────────────────────────────────────────────────────
 export default function InsightsPage({ apiUrl }: Props) {
+  const mode = useContext(ThemeModeContext);
+  // CHART palette: hex literals required — CSS vars don't resolve in Recharts SVG attributes
+  const CHART = mode === 'dark'
+    ? { grid: 'rgba(255,255,255,.08)', axis: '#9b9ba3',
+        series: ['#54e6ff','#5fd98a','#f2b85c','#a99bff','#ff6b6b'],
+        tipBg: '#131418', tipText: '#edecf0', tipBorder: 'rgba(255,255,255,.14)' }
+    : { grid: 'rgba(40,28,8,.10)', axis: '#5f574a',
+        series: ['#0aa2c0','#157f3b','#b8791a','#6d4bd6','#c63d1f'],
+        tipBg: '#fffdf7', tipText: '#211a12', tipBorder: 'rgba(40,28,8,.16)' };
+
   type Preset = 'month' | '30d' | 'quarter' | 'custom';
   const [preset, setPreset] = useState<Preset>('month');
   const [range, setRange]   = useState({ from: monthStart(), to: todayISO() });
@@ -477,7 +470,7 @@ export default function InsightsPage({ apiUrl }: Props) {
       {/* ── Header ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>
+          <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>
             Reports &amp; <span style={{ fontStyle: 'italic', color: C.text2 }}>insights.</span>
           </div>
           <div style={{ fontFamily: F_MONO, fontSize: 11.5, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
