@@ -1,23 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { clientFetch } from '@/lib/clientFetch';
+import { C, F_SERIF, F_SANS, F_MONO } from '../../theme';
 
 interface Props { apiUrl: string; adminRole: string; }
-
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-  btnBg: '#0a0a0a', btnText: '#fafafa',
-};
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 interface AuditItem { id: number; occurred_at: string; actor_email: string; action: string; details: Record<string, unknown> | null; }
 
@@ -90,11 +76,10 @@ export default function AuditLogPage({ apiUrl, adminRole }: Props) {
     finally { setPurgeBusy(false); }
   }
 
-  void F_SERIF;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1200 }}>
       <div>
-        <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Audit log.</div>
+        <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Audit log.</div>
         <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>{total} entries · 50 per page</div>
       </div>
 
@@ -117,7 +102,7 @@ export default function AuditLogPage({ apiUrl, adminRole }: Props) {
             <label style={{ display: 'block', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>To</label>
             <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} style={inp} />
           </div>
-          <button type="submit" style={{ padding: '7px 16px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, fontWeight: 500, cursor: 'pointer' }}>Apply</button>
+          <button type="submit" style={{ padding: '7px 16px', background: C.btnBg, color: C.btnText, border: 'none', borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, fontWeight: 500, cursor: 'pointer' }}>Apply</button>
           <button type="button" onClick={() => { setFilterActor(''); setFilterAction(''); setFilterFrom(''); setFilterTo(''); setPage(1); setTimeout(() => load(1), 0); }}
             style={{ padding: '7px 14px', background: 'transparent', color: C.text3, border: `1px solid ${C.border}`, borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, cursor: 'pointer' }}>Clear</button>
         </form>
@@ -182,7 +167,7 @@ export default function AuditLogPage({ apiUrl, adminRole }: Props) {
               <input type="date" value={purgeBefore} onChange={e => setPurgeBefore(e.target.value)} required style={inp} />
             </div>
             <button type="submit" disabled={purgeBusy}
-              style={{ padding: '7px 16px', background: C.red, color: '#fafafa', border: 'none', borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, fontWeight: 500, cursor: purgeBusy ? 'not-allowed' : 'pointer', opacity: purgeBusy ? 0.6 : 1 }}>
+              style={{ padding: '7px 16px', background: C.red, color: C.btnText, border: 'none', borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, fontWeight: 500, cursor: purgeBusy ? 'not-allowed' : 'pointer', opacity: purgeBusy ? 0.6 : 1 }}>
               {purgeBusy ? 'Purging…' : 'Purge'}
             </button>
           </form>
