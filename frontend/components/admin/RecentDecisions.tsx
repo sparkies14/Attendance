@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { clientFetch } from '@/lib/clientFetch';
+import { C, F_SANS, F_MONO } from '../theme';
 
 interface Decision {
   id: number | string;
@@ -18,14 +19,6 @@ interface Props {
   refreshKey?: number;
   onViewAudit?: () => void;
 }
-
-const C = {
-  surface: '#ffffff', surface2: '#f5f5f5', border: '#e6e6e6',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  green: '#16a34a', red: '#dc2626', blue: '#2563eb',
-};
-const F_SANS = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 function timeAgo(iso: string): string {
   const then = new Date(iso).getTime();
