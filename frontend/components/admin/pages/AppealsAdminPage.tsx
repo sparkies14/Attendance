@@ -1,23 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { clientFetch } from '@/lib/clientFetch';
+import { C, F_SERIF, F_SANS, F_MONO } from '../../theme';
 
 interface Props { apiUrl: string; adminRole: string; onPendingCount?: (n: number) => void; }
-
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-  btnBg: '#0a0a0a', btnText: '#fafafa',
-};
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 interface Appeal {
   id: number; user_id: string; target_type: string; target_id: string;
@@ -37,11 +23,15 @@ function fmtDate(iso: string): string {
   try { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch { return iso; }
 }
 
-const TYPE_COLOR: Record<string, string> = { attendance: '#2563eb', leave: '#7c3aed', discipline: '#dc2626' };
+const TYPE_COLOR: Record<string, { text: string; soft: string; border: string }> = {
+  attendance: { text: C.blue,   soft: C.blueSoft,   border: C.blueBorder },
+  leave:      { text: C.purple, soft: C.purpleSoft,  border: C.purpleBorder },
+  discipline: { text: C.red,    soft: C.redSoft,     border: C.redBorder },
+};
 const STATUS_CONFIG: Record<string, { bg: string; border: string; text: string }> = {
-  Pending:  { bg: 'rgba(180,83,9,0.08)',  border: 'rgba(180,83,9,0.25)',  text: '#b45309' },
-  Approved: { bg: 'rgba(22,163,74,0.08)', border: 'rgba(22,163,74,0.25)', text: '#16a34a' },
-  Rejected: { bg: 'rgba(220,38,38,0.08)', border: 'rgba(220,38,38,0.22)', text: '#dc2626' },
+  Pending:  { bg: C.accentSoft,  border: C.accentBorder, text: C.accent },
+  Approved: { bg: C.greenSoft,   border: C.greenBorder,  text: C.green },
+  Rejected: { bg: C.redSoft,     border: C.redBorder,    text: C.red },
 };
 
 export default function AppealsAdminPage({ apiUrl, onPendingCount }: Props) {
@@ -82,12 +72,11 @@ export default function AppealsAdminPage({ apiUrl, onPendingCount }: Props) {
 
   const visible = appeals.filter(a => a.status === tab);
 
-  void F_SERIF;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1100 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Appeals.</div>
+          <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Appeals.</div>
           <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>
             {appeals.filter(a => a.status === 'Pending').length} pending
           </div>
@@ -95,7 +84,7 @@ export default function AppealsAdminPage({ apiUrl, onPendingCount }: Props) {
         <div style={{ display: 'flex', gap: 4 }}>
           {(['Pending', 'Approved', 'Rejected'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
-              style={{ padding: '5px 14px', borderRadius: 7, background: tab === t ? C.text : 'transparent', color: tab === t ? '#fafafa' : C.text3, border: `1px solid ${tab === t ? C.text : C.border}`, fontFamily: F_SANS, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
+              style={{ padding: '5px 14px', borderRadius: 7, background: tab === t ? C.btnBg : 'transparent', color: tab === t ? C.btnText : C.text3, border: `1px solid ${tab === t ? C.btnBg : C.border}`, fontFamily: F_SANS, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
               {t} <span style={{ fontFamily: F_MONO, fontSize: 10, opacity: 0.7 }}>{appeals.filter(a => a.status === t).length}</span>
             </button>
           ))}
@@ -109,7 +98,7 @@ export default function AppealsAdminPage({ apiUrl, onPendingCount }: Props) {
 
       {!busy && visible.map(a => {
         const sc = STATUS_CONFIG[a.status] ?? STATUS_CONFIG.Pending;
-        const tc = TYPE_COLOR[a.target_type] ?? C.text2;
+        const tc = TYPE_COLOR[a.target_type] ?? { text: C.text2, soft: C.surface2, border: C.border };
         const isResolving = resolvingId === a.id;
         return (
           <div key={a.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, overflow: 'hidden' }}>
@@ -120,7 +109,7 @@ export default function AppealsAdminPage({ apiUrl, onPendingCount }: Props) {
                   <span style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3 }}>{a.email}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                  <span style={{ display: 'inline-flex', padding: '2px 9px', borderRadius: 999, background: `${tc}12`, border: `1px solid ${tc}33`, fontFamily: F_MONO, fontSize: 10, color: tc, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{a.target_type}</span>
+                  <span style={{ display: 'inline-flex', padding: '2px 9px', borderRadius: 999, background: tc.soft, border: `1px solid ${tc.border}`, fontFamily: F_MONO, fontSize: 10, color: tc.text, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{a.target_type}</span>
                   <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3 }}>#{a.target_id}</span>
                   <span style={{ fontFamily: F_MONO, fontSize: 10.5, color: C.text3 }}>{fmtDate(a.created_at)}</span>
                 </div>
@@ -160,7 +149,7 @@ export default function AppealsAdminPage({ apiUrl, onPendingCount }: Props) {
                       style={{ width: '100%', padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, color: C.text, background: C.bg, boxSizing: 'border-box' as const }} />
                   </div>
                   <button onClick={() => resolve(a.id)} disabled={resolveBusy}
-                    style={{ padding: '7px 16px', background: outcome === 'Approved' ? C.green : C.red, color: '#0a0a0a', border: 'none', borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, fontWeight: 600, cursor: resolveBusy ? 'not-allowed' : 'pointer', opacity: resolveBusy ? 0.6 : 1 }}>
+                    style={{ padding: '7px 16px', background: outcome === 'Approved' ? C.green : C.red, color: C.onAccent, border: 'none', borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, fontWeight: 600, cursor: resolveBusy ? 'not-allowed' : 'pointer', opacity: resolveBusy ? 0.6 : 1 }}>
                     {resolveBusy ? '…' : `Confirm ${outcome}`}
                   </button>
                 </div>
