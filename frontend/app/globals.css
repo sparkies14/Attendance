@@ -26,7 +26,7 @@ input, select, textarea {
   50%       { opacity: 0.3; }
 }
 
-/* ── Member theme tokens (Nocturne) ── */
+/* ── Shared theme tokens (Nocturne) ── */
 :root, [data-mode="dark"] {
   --c-bg:#0c0d10; --c-surface:#131418; --c-surface2:#1a1c21;
   --c-text:#edecf0; --c-text2:#9b9ba3; --c-text3:#62636b;
