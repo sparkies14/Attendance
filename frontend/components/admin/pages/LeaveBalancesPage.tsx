@@ -2,23 +2,9 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { clientFetch } from '@/lib/clientFetch';
+import { C, F_SANS, F_MONO, F_SERIF, tickTrack } from '../../theme';
 
 interface Props { apiUrl: string; adminRole: string; }
-
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-  btnBg: '#0a0a0a', btnText: '#fafafa',
-};
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 interface BalanceMember {
   email: string; name: string; hire_year: number;
@@ -75,11 +61,12 @@ export default function LeaveBalancesPage({ apiUrl, adminRole }: Props) {
     balance: acc.balance + m.balance,
   }), { grantsEarned: 0, used: 0, adjustments: 0, balance: 0 });
 
-  void F_SERIF;
+  const maxGrants = Math.max(...members.map(m => m.grantsEarned), 1);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 1100 }}>
       <div>
-        <div style={{ fontFamily: F_SERIF, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Leave balances.</div>
+        <div style={{ fontFamily: F_SERIF, fontWeight: 600, fontSize: 32, lineHeight: 1, letterSpacing: '-0.025em', color: C.text }}>Leave balances.</div>
         <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 8 }}>{members.length} members · current year</div>
       </div>
 
@@ -90,7 +77,7 @@ export default function LeaveBalancesPage({ apiUrl, adminRole }: Props) {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: `1px solid ${C.border}`, background: C.surface2 }}>
-                {['Member', 'Hire year', 'Grants earned', 'Used', 'Adjustments', 'Balance', ''].map(h => (
+                {['Member', 'Hire year', 'Grants earned', 'Used', 'Adjustments', 'Balance', 'Fill', ''].map(h => (
                   <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 400 }}>{h}</th>
                 ))}
               </tr>
@@ -98,6 +85,8 @@ export default function LeaveBalancesPage({ apiUrl, adminRole }: Props) {
             <tbody>
               {members.map((m, i) => {
                 const isAdj = adjustingEmail === m.email;
+                const usedPct  = m.grantsEarned > 0 ? Math.min(100, Math.round((m.used / m.grantsEarned) * 100)) : 0;
+                const fillColor = m.balance <= 0 ? C.red : m.balance <= 3 ? C.accent : C.green;
                 return (
                   <React.Fragment key={m.email}>
                     <tr style={{ borderBottom: isAdj ? 'none' : i < members.length - 1 ? `1px solid ${C.border}` : 'none' }}>
@@ -111,7 +100,20 @@ export default function LeaveBalancesPage({ apiUrl, adminRole }: Props) {
                       <td style={{ padding: '12px 16px', fontFamily: F_MONO, fontSize: 12.5, color: m.adjustments > 0 ? C.green : m.adjustments < 0 ? C.red : C.text3, fontVariantNumeric: 'tabular-nums' }}>
                         {m.adjustments > 0 ? `+${m.adjustments}` : m.adjustments}
                       </td>
-                      <td style={{ padding: '12px 16px', fontFamily: F_MONO, fontSize: 13, fontWeight: 600, color: m.balance <= 0 ? C.red : m.balance <= 3 ? C.accent : C.green, fontVariantNumeric: 'tabular-nums' }}>{m.balance}</td>
+                      <td style={{ padding: '12px 16px', fontFamily: F_MONO, fontSize: 13, fontWeight: 600, color: fillColor, fontVariantNumeric: 'tabular-nums' }}>{m.balance}</td>
+                      {/* Fill-bar track with tickTrack */}
+                      <td style={{ padding: '12px 16px', minWidth: 100 }}>
+                        <div style={{ ...tickTrack, height: 8, borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
+                          <div style={{
+                            position: 'relative', zIndex: 1,
+                            width: `${usedPct}%`, height: '100%',
+                            background: fillColor,
+                            borderRadius: 4,
+                            transition: 'width 0.3s ease',
+                          }} />
+                        </div>
+                        <div style={{ fontFamily: F_MONO, fontSize: 9, color: C.text3, marginTop: 3, zIndex: 2, position: 'relative' }}>{usedPct}% used</div>
+                      </td>
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <button onClick={() => { setAdjustingEmail(isAdj ? null : m.email); setAdjAmount(''); setAdjNote(''); setAdjErr(null); }}
                           style={{ padding: '4px 10px', background: 'transparent', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F_MONO, fontSize: 10.5, color: C.text2, cursor: 'pointer' }}>
@@ -121,7 +123,7 @@ export default function LeaveBalancesPage({ apiUrl, adminRole }: Props) {
                     </tr>
                     {isAdj && (
                       <tr style={{ borderBottom: i < members.length - 1 ? `1px solid ${C.border}` : 'none' }}>
-                        <td colSpan={7} style={{ padding: '12px 16px', background: C.surface2 }}>
+                        <td colSpan={8} style={{ padding: '12px 16px', background: C.surface2 }}>
                           {adjErr && <div style={{ marginBottom: 8, fontFamily: F_MONO, fontSize: 11, color: C.red }}>{adjErr}</div>}
                           <form onSubmit={e => submitAdjust(m.email, e)} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                             <div>
@@ -133,7 +135,7 @@ export default function LeaveBalancesPage({ apiUrl, adminRole }: Props) {
                               <input type="text" value={adjNote} onChange={e => setAdjNote(e.target.value)} required placeholder="Reason for adjustment…" style={{ ...inp, width: '100%' }} />
                             </div>
                             <button type="submit" disabled={adjBusy}
-                              style={{ padding: '7px 14px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, fontWeight: 500, cursor: adjBusy ? 'not-allowed' : 'pointer', opacity: adjBusy ? 0.6 : 1 }}>
+                              style={{ padding: '7px 14px', background: C.btnBg, color: C.btnText, border: 'none', borderRadius: 7, fontFamily: F_SANS, fontSize: 12.5, fontWeight: 500, cursor: adjBusy ? 'not-allowed' : 'pointer', opacity: adjBusy ? 0.6 : 1 }}>
                               {adjBusy ? '…' : 'Submit'}
                             </button>
                           </form>
@@ -145,12 +147,13 @@ export default function LeaveBalancesPage({ apiUrl, adminRole }: Props) {
               })}
               {/* Totals row */}
               {members.length > 0 && (
-                <tr style={{ borderTop: `1.5px solid ${C.text}`, background: C.surface2 }}>
+                <tr style={{ borderTop: `1.5px solid ${C.borderStrong}`, background: C.surface2 }}>
                   <td style={{ padding: '10px 16px', fontFamily: F_MONO, fontSize: 10.5, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase' }} colSpan={2}>Totals</td>
                   <td style={{ padding: '10px 16px', fontFamily: F_MONO, fontSize: 12.5, fontWeight: 600, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{totals.grantsEarned}</td>
                   <td style={{ padding: '10px 16px', fontFamily: F_MONO, fontSize: 12.5, fontWeight: 600, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{totals.used}</td>
                   <td style={{ padding: '10px 16px', fontFamily: F_MONO, fontSize: 12.5, fontWeight: 600, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{totals.adjustments > 0 ? `+${totals.adjustments}` : totals.adjustments}</td>
                   <td style={{ padding: '10px 16px', fontFamily: F_MONO, fontSize: 12.5, fontWeight: 600, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{totals.balance}</td>
+                  <td />
                   <td />
                 </tr>
               )}
