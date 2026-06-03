@@ -71,7 +71,6 @@ export default function PolicyPage({ apiUrl, adminRole }: Props) {
     finally { setToggleBusy(false); }
   }
 
-  void F_SERIF;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 640 }}>
       <div>
