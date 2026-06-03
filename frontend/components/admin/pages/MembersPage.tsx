@@ -2,27 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { clientFetch } from '@/lib/clientFetch';
+import { C, F_SERIF, F_SANS, F_MONO } from '../../theme';
 
 interface Props {
   apiUrl: string;
   adminRole: string;
 }
-
-// ── Color / font constants (same as every other admin page) ──────────────────
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  blue: '#2563eb', blueSoft: 'rgba(37,99,235,0.08)', blueBorder: 'rgba(37,99,235,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-  btnBg: '#0a0a0a', btnText: '#fafafa',
-};
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const PALETTE = ['#f4b942','#a78bfa','#60a5fa','#4ade80','#fb923c','#f87171','#22c55e','#e879f9'];
@@ -51,9 +36,9 @@ interface User {
 // ── Role pill ────────────────────────────────────────────────────────────────
 function RolePill({ role }: { role: string }) {
   const r = role.toLowerCase();
-  let bg = C.surface2;
-  let color = C.text2;
-  let border = C.border;
+  let bg: string = C.surface2;
+  let color: string = C.text2;
+  let border: string = C.border;
   if (r === 'owner') { bg = C.accentSoft; color = C.accent; border = C.accentBorder; }
   else if (r === 'admin') { bg = C.blueSoft; color = C.blue; border = C.blueBorder; }
 
@@ -78,9 +63,9 @@ function RolePill({ role }: { role: string }) {
 // ── Status pill ───────────────────────────────────────────────────────────────
 function StatusPill({ status }: { status: string }) {
   const s = status.toLowerCase();
-  let bg = C.surface2;
-  let color = C.text2;
-  let border = C.border;
+  let bg: string = C.surface2;
+  let color: string = C.text2;
+  let border: string = C.border;
   if (s === 'active')   { bg = C.greenSoft;  color = C.green;  border = C.greenBorder; }
   else if (s === 'pending') { bg = C.accentSoft; color = C.accent; border = C.accentBorder; }
   else if (s === 'inactive') { bg = C.redSoft; color = C.red; border = C.redBorder; }
@@ -308,10 +293,10 @@ export default function MembersPage({ apiUrl, adminRole }: Props) {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-            <h1 style={{ fontFamily: F_SERIF, fontSize: 32, fontWeight: 400, color: C.text, margin: 0 }}>
+            <h1 style={{ fontFamily: F_SERIF, fontSize: 32, fontWeight: 600, color: C.text, margin: 0 }}>
               Members.
             </h1>
-            <span style={{ fontFamily: F_SERIF, fontSize: 22, fontStyle: 'italic', color: C.text2 }}>team.</span>
+            <span style={{ fontFamily: F_SERIF, fontSize: 22, fontStyle: 'italic', fontWeight: 600, color: C.text2 }}>team.</span>
           </div>
           <div style={{ fontFamily: F_MONO, fontSize: 11, color: C.text3, marginTop: 4, letterSpacing: '0.05em' }}>
             {loading ? '—' : users.length} members · manage roles &amp; access
