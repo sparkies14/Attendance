@@ -3,6 +3,7 @@
 import { clientFetch } from '@/lib/clientFetch';
 import { useState, useEffect } from 'react';
 import type { MemberData, CalendarDay, PlanEvent } from '../MemberDashboard';
+import { C, F_SERIF, F_SANS, F_MONO } from '../theme';
 
 interface Props {
   email: string;
@@ -10,38 +11,23 @@ interface Props {
   apiUrl: string;
 }
 
-const C = {
-  bg: '#fafafa', surface: '#ffffff', surface2: '#f5f5f5',
-  border: '#e6e6e6', borderStrong: '#d4d4d4',
-  text: '#0a0a0a', text2: '#525252', text3: '#a3a3a3',
-  accent: '#b45309', accentSoft: 'rgba(180,83,9,0.08)', accentBorder: 'rgba(180,83,9,0.25)',
-  green: '#16a34a', greenSoft: 'rgba(22,163,74,0.08)', greenBorder: 'rgba(22,163,74,0.25)',
-  red: '#dc2626', redSoft: 'rgba(220,38,38,0.08)', redBorder: 'rgba(220,38,38,0.22)',
-  purple: '#7c3aed', purpleSoft: 'rgba(124,58,237,0.08)',
-  blue: '#2563eb',
-};
-
-const F_SERIF = "'Instrument Serif', var(--font-instrument-serif, 'Times New Roman'), serif";
-const F_SANS  = "'Geist', var(--font-geist, -apple-system), BlinkMacSystemFont, system-ui, sans-serif";
-const F_MONO  = "'Geist Mono', var(--font-geist-mono, 'JetBrains Mono'), ui-monospace, monospace";
-
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const JP_MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 const ERA_BASE = 2019;
 
 const STATUS_CONFIG: Record<string, { bg: string; icon: string; label: string }> = {
-  present: { bg: 'rgba(22,163,74,0.08)',  icon: '',  label: 'On time' },
-  late:    { bg: 'rgba(180,83,9,0.08)',   icon: '⚠', label: 'Late'   },
-  absent:  { bg: 'rgba(220,38,38,0.08)', icon: '●', label: 'Absent' },
-  leave:   { bg: 'rgba(124,58,237,0.08)',icon: '✦', label: 'Leave'  },
-  pending: { bg: 'rgba(163,163,163,0.1)',icon: '○', label: 'Pending'},
+  present: { bg: C.greenSoft,   icon: '',  label: 'On time' },
+  late:    { bg: C.accentSoft,  icon: '⚠', label: 'Late'   },
+  absent:  { bg: C.redSoft,     icon: '●', label: 'Absent' },
+  leave:   { bg: C.purpleSoft,  icon: '✦', label: 'Leave'  },
+  pending: { bg: 'rgba(163,163,163,0.1)', icon: '○', label: 'Pending'},
 };
 
 const STATUS_DOT: Record<string, string> = {
-  present: '#16a34a', late: '#b45309', absent: '#dc2626', leave: '#7c3aed', pending: '#a3a3a3',
+  present: C.green, late: C.accent, absent: C.red, leave: C.purple, pending: C.text3,
 };
 
-const PRIO_COLOR: Record<string, string> = { p1: '#dc2626', p2: '#b45309', p3: '#a3a3a3' };
+const PRIO_COLOR: Record<string, string> = { p1: C.red, p2: C.accent, p3: C.text3 };
 const PRIO_LABEL: Record<string, string> = { p1: 'P1', p2: 'P2', p3: 'P3' };
 
 function getJST() {
@@ -261,11 +247,11 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
         <div style={{ display: 'flex', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 9, padding: 3 }}>
           <button
             onClick={() => switchMode('recap')}
-            style={{ padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontFamily: F_SANS, fontSize: 12, fontWeight: mode === 'recap' ? 500 : 400, background: mode === 'recap' ? C.text : 'transparent', color: mode === 'recap' ? C.surface : C.text3, transition: 'all 0.15s' }}
+            style={{ padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontFamily: F_SANS, fontSize: 12, fontWeight: mode === 'recap' ? 500 : 400, background: mode === 'recap' ? C.text : 'transparent', color: mode === 'recap' ? C.onAccent : C.text3, transition: 'all 0.15s' }}
           >Recap</button>
           <button
             onClick={() => switchMode('plan')}
-            style={{ padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontFamily: F_SANS, fontSize: 12, fontWeight: mode === 'plan' ? 500 : 400, background: mode === 'plan' ? C.text : 'transparent', color: mode === 'plan' ? C.surface : C.text3, transition: 'all 0.15s' }}
+            style={{ padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontFamily: F_SANS, fontSize: 12, fontWeight: mode === 'plan' ? 500 : 400, background: mode === 'plan' ? C.text : 'transparent', color: mode === 'plan' ? C.onAccent : C.text3, transition: 'all 0.15s' }}
           >Plan</button>
         </div>
       </div>
@@ -312,7 +298,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                 const isRecapSel = mode === 'recap' && selected?.day === cell.day;
                 const isHighlit = isPlanSel || isRecapSel;
                 const cellBg    = isToday ? C.text : cell.isWeekend ? 'transparent' : (config?.bg ?? 'transparent');
-                const textCol   = isToday ? '#fafafa' : cell.isWeekend ? C.text3 : C.text;
+                const textCol   = isToday ? C.onAccent : cell.isWeekend ? C.text3 : C.text;
 
                 return (
                   <div
@@ -332,27 +318,27 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                         {cell.day}
                       </span>
                       {isToday && (
-                        <span style={{ fontFamily: F_MONO, fontSize: 7.5, letterSpacing: '0.08em', color: C.accent, background: 'rgba(244,185,66,0.15)', padding: '1px 4px', borderRadius: 3 }}>NOW</span>
+                        <span style={{ fontFamily: F_MONO, fontSize: 7.5, letterSpacing: '0.08em', color: C.accent, background: C.accentSoft, padding: '1px 4px', borderRadius: 3 }}>NOW</span>
                       )}
                       {!isToday && config?.icon && (
                         <span style={{ fontSize: 10, color: STATUS_DOT[cell.status] ?? C.text3 }}>{config.icon}</span>
                       )}
                     </div>
                     {!cell.isWeekend && cell.clockIn && cell.clockIn !== '-' && (
-                      <div style={{ fontFamily: F_MONO, fontSize: 9.5, color: isToday ? 'rgba(255,255,255,0.7)' : C.text3, letterSpacing: '0.02em', lineHeight: 1.2 }}>
+                      <div style={{ fontFamily: F_MONO, fontSize: 9.5, color: isToday ? C.onAccent : C.text3, letterSpacing: '0.02em', lineHeight: 1.2 }}>
                         {cell.clockIn}
                       </div>
                     )}
                     {!cell.isWeekend && cell.totalHours && cell.totalHours !== '-' && parseFloat(String(cell.totalHours)) > 0 && (
-                      <div style={{ fontFamily: F_MONO, fontSize: 9, color: isToday ? 'rgba(255,255,255,0.6)' : STATUS_DOT[cell.status] ?? C.text3, marginTop: 1, lineHeight: 1 }}>
+                      <div style={{ fontFamily: F_MONO, fontSize: 9, color: isToday ? C.onAccent : STATUS_DOT[cell.status] ?? C.text3, marginTop: 1, lineHeight: 1 }}>
                         {parseFloat(String(cell.totalHours)).toFixed(1)}h
                       </div>
                     )}
                     {!cell.isWeekend && (data?.planEventsByDate?.[iso] ?? 0) > 0 && (
-                      <div style={{ position: 'absolute', bottom: 5, right: 6, width: 5, height: 5, borderRadius: '50%', background: isToday ? 'rgba(255,255,255,0.6)' : C.purple }} />
+                      <div style={{ position: 'absolute', bottom: 5, right: 6, width: 5, height: 5, borderRadius: '50%', background: isToday ? C.onAccent : C.purple }} />
                     )}
                     {holidayByDay[cell.day] && (
-                      <span title={holidayByDay[cell.day]} style={{ position: 'absolute', top: 4, right: 4, width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }} />
+                      <span title={holidayByDay[cell.day]} style={{ position: 'absolute', top: 4, right: 4, width: 6, height: 6, borderRadius: '50%', background: C.red }} />
                     )}
                   </div>
                 );
@@ -417,7 +403,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
 
                 {/* Add form */}
                 {showAddForm && (
-                  <div style={{ background: 'rgba(124,58,237,0.04)', border: '1px solid rgba(124,58,237,0.15)', borderRadius: 10, padding: 14, marginBottom: events.length > 0 ? 12 : 0 }}>
+                  <div style={{ background: C.purpleSoft, border: '1px solid rgba(124,58,237,0.15)', borderRadius: 10, padding: 14, marginBottom: events.length > 0 ? 12 : 0 }}>
                     <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.purple, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>New task</div>
                     <input
                       autoFocus
@@ -454,10 +440,10 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                       />
                     </div>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => addEvent(false)} disabled={addBusy || !addTitle.trim()} style={{ padding: '6px 12px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 8, fontSize: 12, fontFamily: F_SANS, fontWeight: 500, cursor: addBusy ? 'not-allowed' : 'pointer' }}>
+                      <button onClick={() => addEvent(false)} disabled={addBusy || !addTitle.trim()} style={{ padding: '6px 12px', background: C.text, color: C.onAccent, border: 'none', borderRadius: 8, fontSize: 12, fontFamily: F_SANS, fontWeight: 500, cursor: addBusy ? 'not-allowed' : 'pointer' }}>
                         {addBusy ? '…' : 'Save'}
                       </button>
-                      <button onClick={() => addEvent(true)} disabled={addBusy || !addTitle.trim()} style={{ padding: '6px 12px', background: 'rgba(124,58,237,0.08)', color: C.purple, border: `1px solid rgba(124,58,237,0.2)`, borderRadius: 8, fontSize: 12, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}>
+                      <button onClick={() => addEvent(true)} disabled={addBusy || !addTitle.trim()} style={{ padding: '6px 12px', background: C.purpleSoft, color: C.purple, border: '1px solid rgba(124,58,237,0.2)', borderRadius: 8, fontSize: 12, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}>
                         Save + add another
                       </button>
                       <button onClick={() => { setShowAddForm(false); setAddTitle(''); setAddStart('09:00'); setAddEnd('10:00'); setAddPriority('p2'); setAddTag(''); }} style={{ padding: '6px 10px', background: 'transparent', color: C.text2, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: F_SANS, cursor: 'pointer' }}>
@@ -485,7 +471,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                         {/* Checkbox */}
                         <button
                           onClick={() => toggleEvent(ev.id, !ev.completed)}
-                          style={{ width: 16, height: 16, borderRadius: 4, border: ev.completed ? 'none' : `1.5px solid ${C.borderStrong}`, background: ev.completed ? C.green : 'transparent', color: '#fff', fontSize: 10, flexShrink: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          style={{ width: 16, height: 16, borderRadius: 4, border: ev.completed ? 'none' : `1.5px solid ${C.borderStrong}`, background: ev.completed ? C.green : 'transparent', color: C.onAccent, fontSize: 10, flexShrink: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         >
                           {ev.completed && '✓'}
                         </button>
@@ -575,7 +561,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
                           style={{ width: '100%', padding: '8px 10px', border: `1px solid ${C.accentBorder}`, borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, resize: 'vertical', boxSizing: 'border-box', background: C.surface }}
                         />
                         <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-                          <button type="submit" disabled={appBusy} style={{ padding: '7px 14px', background: C.text, color: '#fafafa', border: 'none', borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, fontWeight: 500, cursor: appBusy ? 'not-allowed' : 'pointer' }}>
+                          <button type="submit" disabled={appBusy} style={{ padding: '7px 14px', background: C.text, color: C.onAccent, border: 'none', borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, fontWeight: 500, cursor: appBusy ? 'not-allowed' : 'pointer' }}>
                             {appBusy ? 'Submitting…' : 'Submit appeal'}
                           </button>
                           <button type="button" onClick={() => setAppDay(null)} style={{ padding: '7px 14px', background: C.surface, color: C.text2, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12.5, fontFamily: F_SANS, fontWeight: 500, cursor: 'pointer' }}>
@@ -599,7 +585,7 @@ export default function CalendarPage({ email, initialData, apiUrl }: Props) {
               <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>Holidays</div>
               {monthHolidays.map((h, i) => (
                 <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'baseline', padding: '4px 0' }}>
-                  <span style={{ fontFamily: F_MONO, fontSize: 11, color: '#dc2626', minWidth: 56 }}>{h.date.slice(5)}</span>
+                  <span style={{ fontFamily: F_MONO, fontSize: 11, color: C.red, minWidth: 56 }}>{h.date.slice(5)}</span>
                   <span style={{ fontFamily: F_SANS, fontSize: 12.5, color: C.text }}>{h.name}</span>
                 </div>
               ))}
@@ -617,42 +603,42 @@ function AtAGlanceCard({ summary, attRate, totalDays, leaveDays, month, year }: 
   attRate: number; totalDays: number; leaveDays: number; month: number; year: number;
 }) {
   return (
-    <div style={{ background: '#ffffff', border: `1px solid #e6e6e6`, borderRadius: 14, padding: '18px 20px' }}>
-      <div style={{ fontFamily: F_SERIF, fontSize: 15, color: '#0a0a0a', letterSpacing: '-0.01em', marginBottom: 2 }}>
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: '18px 20px' }}>
+      <div style={{ fontFamily: F_SERIF, fontSize: 15, color: C.text, letterSpacing: '-0.01em', marginBottom: 2 }}>
         {MONTHS[month-1]} at a glance.
       </div>
-      <div style={{ fontFamily: F_MONO, fontSize: 10, color: '#a3a3a3', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>{year}</div>
+      <div style={{ fontFamily: F_MONO, fontSize: 10, color: C.text3, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>{year}</div>
 
       {summary ? (
         <>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
-            <span style={{ fontFamily: F_SERIF, fontSize: 48, color: attRate >= 90 ? '#16a34a' : attRate >= 70 ? '#b45309' : '#dc2626', letterSpacing: '-0.03em', lineHeight: 0.9 }}>{attRate}</span>
-            <span style={{ fontFamily: F_SERIF, fontSize: 22, color: '#a3a3a3', letterSpacing: '-0.02em' }}>%</span>
+            <span style={{ fontFamily: F_SERIF, fontSize: 48, color: attRate >= 90 ? C.green : attRate >= 70 ? C.accent : C.red, letterSpacing: '-0.03em', lineHeight: 0.9 }}>{attRate}</span>
+            <span style={{ fontFamily: F_SERIF, fontSize: 22, color: C.text3, letterSpacing: '-0.02em' }}>%</span>
           </div>
           <div style={{ display: 'flex', height: 5, borderRadius: 999, overflow: 'hidden', marginBottom: 14, gap: 1 }}>
-            {totalDays > 0 && (summary.present ?? 0) > 0 && <div style={{ flex: summary.present, background: '#16a34a', borderRadius: '999px 0 0 999px' }} />}
-            {totalDays > 0 && (summary.late    ?? 0) > 0 && <div style={{ flex: summary.late,    background: '#b45309' }} />}
-            {totalDays > 0 && (summary.absent  ?? 0) > 0 && <div style={{ flex: summary.absent,  background: '#dc2626' }} />}
-            {leaveDays > 0                               && <div style={{ flex: leaveDays,        background: '#7c3aed', borderRadius: '0 999px 999px 0' }} />}
+            {totalDays > 0 && (summary.present ?? 0) > 0 && <div style={{ flex: summary.present, background: C.green,  borderRadius: '999px 0 0 999px' }} />}
+            {totalDays > 0 && (summary.late    ?? 0) > 0 && <div style={{ flex: summary.late,    background: C.accent }} />}
+            {totalDays > 0 && (summary.absent  ?? 0) > 0 && <div style={{ flex: summary.absent,  background: C.red }} />}
+            {leaveDays > 0                               && <div style={{ flex: leaveDays,        background: C.purple, borderRadius: '0 999px 999px 0' }} />}
           </div>
           {[
-            { lbl: 'Present', val: summary.present, dot: '#16a34a' },
-            { lbl: 'Late',    val: summary.late,    dot: '#b45309' },
-            { lbl: 'Absent',  val: summary.absent,  dot: '#dc2626' },
-            { lbl: 'Leave',   val: leaveDays,        dot: '#7c3aed' },
-            { lbl: 'Pending', val: summary.pending, dot: '#a3a3a3' },
+            { lbl: 'Present', val: summary.present, dot: C.green  },
+            { lbl: 'Late',    val: summary.late,    dot: C.accent },
+            { lbl: 'Absent',  val: summary.absent,  dot: C.red    },
+            { lbl: 'Leave',   val: leaveDays,        dot: C.purple },
+            { lbl: 'Pending', val: summary.pending, dot: C.text3  },
           ].map(({ lbl, val, dot }) => (
-            <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: `1px solid #e6e6e6` }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: '#525252', fontFamily: F_SANS }}>
+            <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: `1px solid ${C.border}` }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: C.text2, fontFamily: F_SANS }}>
                 <span style={{ width: 7, height: 7, borderRadius: 2, background: dot, display: 'inline-block', flexShrink: 0 }} />
                 {lbl}
               </span>
-              <span style={{ fontFamily: F_MONO, fontSize: 13, fontWeight: 500, color: '#0a0a0a', fontVariantNumeric: 'tabular-nums' }}>{val}</span>
+              <span style={{ fontFamily: F_MONO, fontSize: 13, fontWeight: 500, color: C.text, fontVariantNumeric: 'tabular-nums' }}>{val}</span>
             </div>
           ))}
         </>
       ) : (
-        <p style={{ fontSize: 12.5, color: '#a3a3a3' }}>No data for this month.</p>
+        <p style={{ fontSize: 12.5, color: C.text3 }}>No data for this month.</p>
       )}
     </div>
   );
